@@ -67,6 +67,21 @@ const PAROLE_TERRITORIO = new Set([
   "salumi",
 ]);
 
+const PAROLE_SOCIETARIE = new Set([
+  "salumificio",
+  "caseificio",
+  "oleificio",
+  "pastificio",
+  "azienda",
+  "agricola",
+  "societa",
+  "srl",
+  "srls",
+  "spa",
+  "snc",
+  "sas",
+]);
+
 const STOPWORD = new Set([
   "della",
   "delle",
@@ -185,6 +200,17 @@ function copre(testo: string, frase: string): boolean {
   if (attesi.length === 0) return false;
   const presenti = attesi.filter((parola) => testo.includes(parola)).length;
   return presenti / attesi.length >= 0.7;
+}
+
+/**
+ * La ragione sociale contiene forme societarie e il tipo di stabilimento
+ * ("Salumificio Madeo S.r.l."): per collegare le fonti serve il nome
+ * distintivo, non l'intera etichetta legale.
+ */
+function paroleDistintiveProduttore(produttore: string): string[] {
+  const tutte = [...tokenizza(produttore)];
+  const distintive = tutte.filter((parola) => !PAROLE_SOCIETARIE.has(parola));
+  return distintive.length > 0 ? distintive : tutte;
 }
 
 function decodificaEntita(testo: string): string {
@@ -1151,9 +1177,15 @@ export function sintetizzaFontiWeb(
       /dop|igp|stg|registrat|denominazione/i.test(testoFonte(fonte))
   );
   const fontiProdotto = fonti.filter((fonte) => copre(testoFonte(fonte), prodotto));
-  const fontiProduttore = produttore
-    ? fonti.filter((fonte) => copre(testoFonte(fonte), produttore))
+  const paroleProduttore = produttore
+    ? paroleDistintiveProduttore(produttore)
     : [];
+  const fontiProduttore =
+    paroleProduttore.length > 0
+      ? fonti.filter((fonte) =>
+          paroleProduttore.some((parola) => testoFonte(fonte).includes(parola))
+        )
+      : [];
   const fontiProduttoreCollegate = fontiProduttore.filter(
     (fonte) =>
       (prodotto && copre(testoFonte(fonte), prodotto)) ||

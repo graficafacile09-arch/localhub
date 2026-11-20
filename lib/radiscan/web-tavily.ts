@@ -1,7 +1,8 @@
-import type { RiconoscimentoAi, RicercaWeb } from "./tipi";
+import type { FonteWeb, RiconoscimentoAi, RicercaWeb } from "./tipi";
 import {
   creaRicercaWeb,
   hostPubblico,
+  sintetizzaFontiWeb,
   type CandidatoWeb,
   type OpzioniRicercaWeb,
   type ProviderRicercaWeb,
@@ -28,10 +29,14 @@ import { creaRicercaWebGoogle } from "./web-google";
  */
 
 const ENDPOINT = "https://api.tavily.com/search";
+const ENDPOINT_ESTRAZIONE = "https://api.tavily.com/extract";
 const MAX_QUERY_TAVILY = 6;
-const MAX_RISULTATI_QUERY = 5;
+const MAX_RISULTATI_QUERY = 6;
 const MAX_CANDIDATI = 24;
+const MAX_ESTRAZIONE = 5;
+const MAX_CARATTERI_ESTRATTO = 6_000;
 const TIMEOUT_RICERCA_MS = 8_000;
+const TIMEOUT_ESTRAZIONE_MS = 15_000;
 const TTL_CACHE_MS = 10 * 60 * 1000;
 
 export interface OpzioniRicercaTavily extends OpzioniRicercaWeb {
@@ -52,6 +57,12 @@ interface RisultatoTavily {
 
 interface RispostaTavily {
   results?: unknown;
+  usage?: { credits?: unknown };
+}
+
+interface RispostaEstrazione {
+  results?: unknown;
+  failed_results?: unknown;
   usage?: { credits?: unknown };
 }
 
@@ -152,7 +163,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
         denominazione
           ? `${denominazione} registro europeo`
           : `${prodotto} registro europeo DOP`,
-        `${produttore} certificazioni organismi di controllo`,
+        `${produttore} certificazioni ARSAC RINA organismi di controllo`,
         `${produttore} sito ufficiale prodotti`,
       ]
     : [
@@ -160,7 +171,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
         denominazione ? `${denominazione} DOP` : `${prodotto} DOP`,
         `${prodotto} registro europeo DOP`,
         `${prodotto} consorzio di tutela`,
-        `${prodotto} certificazioni organismo di controllo`,
+        `${prodotto} certificazioni ARSAC RINA organismo di controllo`,
         `${prodotto} sito ufficiale`,
       ];
 
@@ -329,6 +340,113 @@ function messaggioErrori(
   return `Tavily: ${fallite.length}/${totale} ricerche non riuscite (${dettaglio}).`;
 }
 
+interface EsitoEstrazione {
+  crediti: number;
+  estratte: number;
+  fallite: number;
+}
+
+/**
+ * Tavily Extract completa la lettura quando il fetch diretto della pagina
+ * fallisce (403, timeout, pagina resa solo lato client). Non sostituisce la
+ * lettura: il contenuto estratto è marcato come tale e resta distinto dalla
+ * certificazione della singola confezione.
+ */
+async function estraiPagine(
+  fonti: FonteWeb[],
+  apiKey: string,
+  fetchImpl: typeof fetch,
+  signal?: AbortSignal
+): Promise<EsitoEstrazione> {
+  const selezionate = fonti.slice(0, MAX_ESTRAZIONE);
+  const urls = selezionate.map((fonte) => fonte.url);
+  if (urls.length === 0) return { crediti: 0, estratte: 0, fallite: 0 };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_ESTRAZIONE_MS);
+  const annulla = () => controller.abort();
+  signal?.addEventListener("abort", annulla, { once: true });
+  if (signal?.aborted) controller.abort();
+
+  try {
+    const risposta = await fetchImpl(ENDPOINT_ESTRAZIONE, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        urls,
+        extract_depth: "basic",
+        format: "markdown",
+        include_usage: true,
+        timeout: 15,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!risposta.ok) {
+      console.warn(
+        `[radiscan][web] motore=tavily-estract richieste=${urls.length} http=${risposta.status} estratte=0 crediti=0 esito=non_disponibile`
+      );
+      return { crediti: 0, estratte: 0, fallite: urls.length };
+    }
+
+    const payload = (await risposta.json().catch(() => null)) as RispostaEstrazione | null;
+    const voci = Array.isArray(payload?.results)
+      ? payload.results
+      : [];
+    const perUrl = new Map(
+      selezionate.map((fonte) => [chiaveUrl(fonte.url), fonte] as const)
+    );
+    let estratte = 0;
+
+    for (const voce of voci) {
+      if (!voce || typeof voce !== "object") continue;
+      const record = voce as {
+        url?: unknown;
+        raw_content?: unknown;
+        published_date?: unknown;
+      };
+      if (typeof record.url !== "string") continue;
+      const fonte = perUrl.get(chiaveUrl(record.url));
+      if (!fonte) continue;
+      const contenuto =
+        typeof record.raw_content === "string" ? record.raw_content.trim() : "";
+      if (contenuto.length < 20) continue;
+      fonte.estratto = contenuto.slice(0, MAX_CARATTERI_ESTRATTO);
+      fonte.lettoIntegralmente = contenuto.length <= MAX_CARATTERI_ESTRATTO;
+      fonte.pagineLette = null;
+      fonte.relazione =
+        "Pagina estratta con Tavily Extract dopo la ricerca web: contenuto recuperato, non certificazione della confezione.";
+      fonte.dataDocumento = dataIso(record.published_date) ?? fonte.dataDocumento;
+      estratte += 1;
+    }
+
+    const fallite = Array.isArray(payload?.failed_results)
+      ? payload.failed_results.length
+      : Math.max(0, urls.length - estratte);
+    const crediti =
+      typeof payload?.usage?.credits === "number" &&
+      Number.isFinite(payload.usage.credits) &&
+      payload.usage.credits >= 0
+        ? payload.usage.credits
+        : Math.ceil(estratte / 5);
+    console.info(
+      `[radiscan][web] motore=tavily-estract richieste=${urls.length} estratte=${estratte} fallite=${fallite} crediti=${crediti} esito=${estratte > 0 ? "ok" : "senza_contenuto"}`
+    );
+    return { crediti, estratte, fallite };
+  } catch {
+    console.warn(
+      `[radiscan][web] motore=tavily-estract richieste=${urls.length} http=rete estratte=0 crediti=0 esito=rete`
+    );
+    return { crediti: 0, estratte: 0, fallite: urls.length };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", annulla);
+  }
+}
+
 function creaFallback(opzioni: OpzioniRicercaTavily): ProviderRicercaWeb {
   if (opzioni.fallback) return opzioni.fallback;
   return creaRicercaWebGoogle({
@@ -373,6 +491,15 @@ export function creaRicercaWebTavily(
             "Tavily non configurato: TAVILY_API_KEY assente. La ricerca non è stata simulata.",
           durataMs: Date.now() - avvio,
           motore: "tavily",
+          consumi: {
+            provider: "tavily",
+            query: query.length,
+            cache: 0,
+            creditiRicerca: 0,
+            creditiEstrazione: 0,
+            creditiTotali: 0,
+            pagineEstratte: 0,
+          },
         };
       }
 
@@ -385,6 +512,15 @@ export function creaRicercaWebTavily(
           messaggio: "Nessun nome utile per una ricerca Tavily.",
           durataMs: 0,
           motore: "tavily",
+          consumi: {
+            provider: "tavily",
+            query: 0,
+            cache: 0,
+            creditiRicerca: 0,
+            creditiEstrazione: 0,
+            creditiTotali: 0,
+            pagineEstratte: 0,
+          },
         };
       }
 
@@ -424,7 +560,7 @@ export function creaRicercaWebTavily(
       }
 
       console.info(
-        `[radiscan][web] motore=tavily query=${query.length} fallite=${fallite.length} crediti=${crediti} cache=${cacheHit} esito=${candidati.length > 0 ? "ok" : fallite.length === query.length ? "non_disponibile" : "senza_risultati"}`
+        `[radiscan][web] motore=tavily query=${query.length} fallite=${fallite.length} crediti_ricerca=${crediti} cache=${cacheHit} esito=${candidati.length > 0 ? "ok" : fallite.length === query.length ? "non_disponibile" : "senza_risultati"}`
       );
 
       if (fallite.length === query.length) {
@@ -446,6 +582,15 @@ export function creaRicercaWebTavily(
             motore: esitoFallback.motore ?? fallback.nome,
             messaggio,
             durataMs: Date.now() - avvio,
+            consumi: {
+              provider: "tavily",
+              query: query.length,
+              cache: cacheHit,
+              creditiRicerca: crediti,
+              creditiEstrazione: 0,
+              creditiTotali: crediti,
+              pagineEstratte: 0,
+            },
           };
         } catch {
           return {
@@ -471,6 +616,15 @@ export function creaRicercaWebTavily(
             `${errore}Tavily non ha restituito risultati pertinenti: non è una prova di assenza di fonti.`,
           durataMs: Date.now() - avvio,
           motore: "tavily",
+          consumi: {
+            provider: "tavily",
+            query: query.length,
+            cache: cacheHit,
+            creditiRicerca: crediti,
+            creditiEstrazione: 0,
+            creditiTotali: crediti,
+            pagineEstratte: 0,
+          },
         };
       }
 
@@ -478,9 +632,33 @@ export function creaRicercaWebTavily(
       // non trasforma uno snippet in un documento letto.
       const lettore = creaRicercaWeb(opzioni);
       const esito = await lettore.cerca({ ...input, candidati, query });
+
+      // Il lettore HTTP può essere bloccato da un sito. Extract recupera il
+      // contenuto delle sole pagine pertinenti rimaste non lette, senza
+      // trasformare uno snippet in un documento letto.
+      const daEstrarre = esito.fonti
+        .filter(
+          (fonte) => fonte.pagineLette === null && !fonte.lettoIntegralmente
+        )
+        .slice(0, MAX_ESTRAZIONE);
+      const estrazione: EsitoEstrazione =
+        daEstrarre.length > 0
+          ? await estraiPagine(daEstrarre, apiKey, fetchImpl, input.signal)
+          : { crediti: 0, estratte: 0, fallite: 0 };
+      const creditiTotali = crediti + estrazione.crediti;
+      console.info(
+        `[radiscan][web] motore=tavily totale_crediti=${creditiTotali} crediti_ricerca=${crediti} crediti_estrazione=${estrazione.crediti} pagine_estratte=${estrazione.estratte} pagine_fallite=${estrazione.fallite}`
+      );
+      esito.sintesi = sintetizzaFontiWeb(input.riconoscimento, esito.fonti);
+
       const messaggi: string[] = [];
       if (fallite.length > 0) {
         messaggi.push(messaggioErrori(fallite, query.length));
+      }
+      if (estrazione.fallite > 0) {
+        messaggi.push(
+          `Tavily Extract non ha recuperato ${estrazione.fallite} pagina/e: restano risultati non letti.`
+        );
       }
       if (esito.fonti.length === 0) {
         messaggi.push(
@@ -496,6 +674,15 @@ export function creaRicercaWebTavily(
         query,
         messaggio: messaggi.length > 0 ? messaggi.join(" ") : null,
         durataMs: Date.now() - avvio,
+        consumi: {
+          provider: "tavily",
+          query: query.length,
+          cache: cacheHit,
+          creditiRicerca: crediti,
+          creditiEstrazione: estrazione.crediti,
+          creditiTotali,
+          pagineEstratte: estrazione.estratte,
+        },
       };
     },
   };

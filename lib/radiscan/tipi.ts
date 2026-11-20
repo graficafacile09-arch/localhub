@@ -449,6 +449,16 @@ export interface SintesiFontiWeb {
   confezione: { stato: "non_verificabile"; testo: string };
 }
 
+export interface ConsumoTavily {
+  provider: "tavily";
+  query: number;
+  cache: number;
+  creditiRicerca: number;
+  creditiEstrazione: number;
+  creditiTotali: number;
+  pagineEstratte: number;
+}
+
 export interface RicercaWeb {
   stato: "ok" | "non_disponibile" | "non_eseguita";
   consultataIl: string | null;
@@ -456,8 +466,10 @@ export interface RicercaWeb {
   fonti: FonteWeb[];
   messaggio: string | null;
   durataMs: number;
-  /** Motore effettivamente usato: Google grounding o fallback keyless. */
+  /** Motore effettivamente usato: Tavily, Google grounding o fallback keyless. */
   motore?: string;
+  /** Consumo dichiarato dal provider, quando disponibile. */
+  consumi?: ConsumoTavily | null;
   /** Sintesi A-E calcolata sulle fonti realmente lette. */
   sintesi?: SintesiFontiWeb | null;
 }

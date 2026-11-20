@@ -130,10 +130,28 @@ function fintoFetch({
   risultatiPerQuery = {},
   statusPerQuery = {},
   pagine = PAGINE,
+  estrattoPerUrl = {},
 } = {}) {
   const chiamateTavily = [];
+  const chiamateExtract = [];
   const fetchImpl = async (url, init = {}) => {
     const testoUrl = String(url);
+    if (testoUrl === "https://api.tavily.com/extract") {
+      const corpo = JSON.parse(String(init.body ?? "{}"));
+      const urls = Array.isArray(corpo.urls) ? corpo.urls : [];
+      chiamateExtract.push({ urls, authorization: init.headers?.Authorization });
+      return new Response(
+        JSON.stringify({
+          results: urls.map((voce) => ({
+            url: voce,
+            raw_content: estrattoPerUrl[voce] ?? "",
+          })),
+          failed_results: [],
+          usage: { credits: 1 },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    }
     if (testoUrl === "https://api.tavily.com/search") {
       const corpo = JSON.parse(String(init.body ?? "{}"));
       chiamateTavily.push({
@@ -160,7 +178,7 @@ function fintoFetch({
     }
     return new Response("", { status: 404 });
   };
-  return { fetchImpl, chiamateTavily };
+  return { fetchImpl, chiamateTavily, chiamateExtract };
 }
 
 test("Tavily non configurato: nessuna chiamata e nessun risultato simulato", async () => {
@@ -198,11 +216,13 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.equal(esito.stato, "ok");
   assert.equal(esito.motore, "tavily");
   assert.equal(esito.consultataIl, "2026-11-20");
+  assert.equal(esito.consumi.creditiRicerca, 6);
+  assert.equal(esito.consumi.creditiTotali, 6);
   assert.equal(esito.query.length, 6);
   assert.ok(esito.query.includes("Madeo"));
   assert.ok(esito.query.includes("Filiera Madeo salumi DOP"));
   assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
-  assert.ok(esito.query.some((query) => /certificazioni organismi/i.test(query)));
+  assert.ok(esito.query.some((query) => /ARSAC RINA/i.test(query)));
 
   assert.equal(chiamateTavily.length, 6);
   assert.ok(
@@ -262,6 +282,78 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.equal(sintesi.marchio.stato, "menzionata");
   assert.equal(sintesi.prodotto.stato, "menzionata");
   assert.equal(sintesi.confezione.stato, "non_verificabile");
+});
+
+test("Tavily Extract recupera una pagina bloccata al lettore HTTP", async () => {
+  const pagine = { ...PAGINE };
+  const home = "https://www.filieramadeo.it/";
+  const prodotto =
+    "https://www.madeobbq.com/prodotto/soppressata-di-calabria-d-o-p-dolce/";
+  delete pagine[home];
+  delete pagine[prodotto];
+  const { fetchImpl, chiamateExtract } = fintoFetch({
+    pagine,
+    estrattoPerUrl: {
+      [home]:
+        "Filiera Madeo produce salumi di Calabria DOP, tra cui la Soppressata di Calabria DOP. Madeo è il produttore.",
+      [prodotto]:
+        "Soppressata di Calabria D.O.P. prodotta da Salumificio Madeo S.r.l.",
+    },
+  });
+
+  const esito = await creaRicercaWebTavily({
+    apiKey: "chiave-di-test",
+    fetchImpl,
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  assert.equal(chiamateExtract.length, 1);
+  assert.ok(chiamateExtract[0].urls.includes(home));
+  assert.ok(chiamateExtract[0].urls.includes(prodotto));
+  assert.equal(chiamateExtract[0].authorization, "Bearer chiave-di-test");
+  assert.equal(esito.consumi.creditiEstrazione, 1);
+  assert.equal(esito.consumi.creditiTotali, 7);
+
+  const filiera = esito.fonti.find((fonte) => fonte.url === home);
+  assert.ok(filiera);
+  assert.equal(filiera.lettoIntegralmente, true);
+  assert.match(filiera.estratto ?? "", /Soppressata di Calabria DOP/);
+  assert.match(filiera.relazione, /Tavily Extract/);
+
+  const scheda = esito.fonti.find((fonte) => fonte.url === prodotto);
+  assert.ok(scheda);
+  assert.equal(scheda.lettoIntegralmente, true);
+  assert.match(scheda.estratto ?? "", /Salumificio Madeo/);
+});
+
+test("produttore con ragione sociale: il nome distintivo collega le fonti", async () => {
+  const { fetchImpl } = fintoFetch();
+  const esito = await creaRicercaWebTavily({
+    apiKey: "chiave-di-test",
+    fetchImpl,
+  }).cerca({
+    riconoscimento: riconoscimento({
+      produttore: "Salumificio Madeo S.r.l.",
+    }),
+  });
+  const prova = [
+    {
+      id: "eambrosia:IT0001",
+      tipo: "ufficiale",
+      denominazione: "Soppressata di Calabria",
+      stato: "registrata",
+      schemaQualita: "DOP",
+      url: "https://ec.europa.eu/example",
+    },
+  ];
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento({ produttore: "Salumificio Madeo S.r.l." }),
+    esito.fonti,
+    prova
+  );
+
+  assert.equal(sintesi.denominazione.stato, "registrata");
+  assert.equal(sintesi.produttore.stato, "dichiarata");
+  assert.equal(sintesi.marchio.stato, "menzionata");
 });
 
 test("Tavily: una query fallita non elimina le fonti delle altre", async () => {
