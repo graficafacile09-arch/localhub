@@ -237,17 +237,9 @@ export function estraiEtichetta(
   const discrepanze: Discrepanza[] = [];
 
   const schemaAi = riconoscimento.schemaProposto;
-  if (schemaAi && testo.length > 0 && !certificazioni.includes(schemaAi)) {
-    discrepanze.push({
-      campo: "certificazione",
-      ocr: certificazioni.length > 0 ? certificazioni.join(", ") : "nessuna sigla di qualità",
-      ai: schemaAi,
-      gravita: "media",
-      messaggio:
-        `Il modello visivo propone ${schemaAi}, ma l'OCR non legge quella sigla in etichetta. ` +
-        "La denominazione non è confermata dalla lettura testuale.",
-    });
-  }
+  // L'assenza di una sigla nel testo OCR non è una contraddizione:
+  // il modello visivo può aver riconosciuto il logo grafico. Una vera
+  // discrepanza viene segnalata solo quando l'OCR legge un altro schema.
   if (
     schemaAi &&
     certificazioni.length > 0 &&
