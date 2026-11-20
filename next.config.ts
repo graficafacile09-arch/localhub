@@ -32,6 +32,14 @@ const nextConfig: NextConfig = {
     "/api/radiscan/analisi": [
       "./node_modules/tesseract.js/**/*",
       "./node_modules/tesseract.js-core/**/*",
+      // Dipendenze runtime del worker: il tracing esterno non le segue.
+      "./node_modules/bmp-js/**/*",
+      "./node_modules/node-fetch/**/*",
+      "./node_modules/zlibjs/**/*",
+      "./node_modules/idb-keyval/**/*",
+      "./node_modules/is-url/**/*",
+      "./node_modules/wasm-feature-detect/**/*",
+      "./node_modules/regenerator-runtime/**/*",
     ],
   },
   // Permette al dev server di servire risorse a richieste originate da
