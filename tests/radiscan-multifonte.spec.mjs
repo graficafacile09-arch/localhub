@@ -472,6 +472,75 @@ test("produttore: la denominazione DOP non autentica la confezione", () => {
   assert.match(verifica.sintesi, /confezione/i);
 });
 
+test("produttore: una prova informativa non diventa ufficiale se marcata registrata", () => {
+  const ai = riconoscimento();
+  const { etichetta, discrepanze } = estraiEtichetta(ocr(), ai);
+  const informativa = {
+    id: "ricerca:demo",
+    tipo: "risultato_ricerca",
+    denominazione: "Caciocavallo Silano",
+    schemaQualita: "DOP",
+    ente: "motore di ricerca",
+    titolo: "Risultato trovato",
+    url: "https://example.com/prodotto",
+    riferimentoNormativo: null,
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: "Caciocavallo Silano DOP",
+    consultataIl: "2026-11-20",
+    relazione: "risultato ricerca",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: "Gruppo inventato",
+    sedeGruppo: "Calabria",
+  };
+  const verifica = verificaProduttore({
+    riconoscimento: ai,
+    etichetta,
+    ocr: ocr(),
+    web: null,
+    prove: [informativa],
+    lettura: null,
+    discrepanze,
+  });
+
+  assert.equal(
+    verifica.controlli.find((voce) => voce.id === "denominazione").stato,
+    "non_verificabile"
+  );
+  assert.equal(
+    verifica.controlli.find((voce) => voce.id === "gruppo_riconosciuto").stato,
+    "non_documentato"
+  );
+});
+
+test("produttore: OCR concorde e assenza di discrepanze non equivalgono a verifica", () => {
+  const ai = riconoscimento();
+  const { etichetta, discrepanze } = estraiEtichetta(ocr(), ai);
+  const verifica = verificaProduttore({
+    riconoscimento: ai,
+    etichetta,
+    ocr: ocr(),
+    web: null,
+    prove: [],
+    lettura: null,
+    discrepanze,
+  });
+
+  assert.equal(
+    verifica.controlli.find((voce) => voce.id === "identita_prodotto").stato,
+    "non_verificabile"
+  );
+  assert.equal(
+    verifica.controlli.find((voce) => voce.id === "coerenza_etichetta_fonti").stato,
+    "non_verificabile"
+  );
+  assert.equal(
+    verifica.controlli.find((voce) => voce.id === "incongruenze").stato,
+    "non_verificabile"
+  );
+});
+
 test("produttore: la sede calabrese non dimostra l'origine del prodotto", () => {
   const ai = riconoscimento();
   const { etichetta, discrepanze } = estraiEtichetta(ocr(), ai);
