@@ -382,12 +382,24 @@ export type NaturaFonteWeb =
   | "ufficiale_it"
   | "regionale"
   | "consorzio"
+  | "certificazione"
   | "produttore"
   | "database_prodotti"
   | "informativo"
   | "commerciale";
 
 export type AttendibilitaFonte = "alta" | "media" | "bassa";
+
+/**
+ * Chi parla nella pagina: il produttore stesso, un ente indipendente o una
+ * fonte informativa/commerciale. Serve a non trattare una dichiarazione
+ * aziendale come una verifica indipendente.
+ */
+export type DichiarazioneFonte =
+  | "aziendale"
+  | "indipendente"
+  | "informativa"
+  | "non_determinata";
 
 /** Fonte web con metadati minimi verificabili. Nessun URL è costruito a mano. */
 export interface FonteWeb {
@@ -405,6 +417,36 @@ export interface FonteWeb {
   pagineLette: number | null;
   lettoIntegralmente: boolean;
   relazione: string;
+  /** Dichiarazione aziendale ≠ verifica indipendente. */
+  dichiarazione?: DichiarazioneFonte;
+  /** Pertinenza rispetto a denominazione, prodotto e produttore letti. */
+  rilevanza?: "alta" | "media" | "bassa";
+}
+
+/** Esito separato per ciascuna delle cinque verifiche richieste. */
+export interface SintesiVerificaWeb {
+  stato:
+    | "registrata"
+    | "menzionata"
+    | "dichiarata"
+    | "supportata"
+    | "non_confermata"
+    | "non_verificabile";
+  testo: string;
+  fonti: string[];
+}
+
+export interface SintesiFontiWeb {
+  /** A. Denominazione DOP/IGP registrata. */
+  denominazione: SintesiVerificaWeb;
+  /** B. Produttore collegato alla denominazione. */
+  produttore: SintesiVerificaWeb;
+  /** C. Marchio commerciale. */
+  marchio: SintesiVerificaWeb;
+  /** D. Prodotto specifico. */
+  prodotto: SintesiVerificaWeb;
+  /** E. Autenticità della singola confezione e del lotto. */
+  confezione: { stato: "non_verificabile"; testo: string };
 }
 
 export interface RicercaWeb {
@@ -414,6 +456,10 @@ export interface RicercaWeb {
   fonti: FonteWeb[];
   messaggio: string | null;
   durataMs: number;
+  /** Motore effettivamente usato: Google grounding o fallback keyless. */
+  motore?: string;
+  /** Sintesi A-E calcolata sulle fonti realmente lette. */
+  sintesi?: SintesiFontiWeb | null;
 }
 
 /** Scheda di una banca dati prodotti, distinta da una certificazione. */

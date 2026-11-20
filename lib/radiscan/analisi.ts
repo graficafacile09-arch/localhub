@@ -22,6 +22,7 @@ import {
   type TempiAnalisi,
 } from "./tipi";
 import type { ProviderRicercaWeb } from "./web";
+import { sintetizzaFontiWeb } from "./web";
 import { verificaDenominazione } from "./verifica";
 
 /**
@@ -147,8 +148,7 @@ export async function analizzaProdotto(
     ? dipendenze.ricerca.cerca({ riconoscimento, signal }).catch(() => ricercaNonDisponibile())
     : Promise.resolve(ricercaNonEseguita());
 
-  const webPromise = dipendenze.web
-    ? dipendenze.web.cerca({ riconoscimento, signal }).catch(() => ({
+  const webPromise = dipendenze.web      ? dipendenze.web.cerca({ riconoscimento, signal }).catch(() => ({
         stato: "non_disponibile" as const,
         consultataIl: null,
         query: [],
@@ -156,6 +156,8 @@ export async function analizzaProdotto(
         messaggio:
           "La ricerca web non è stata completata: nessun risultato è stato letto.",
         durataMs: 0,
+        motore: "nessuno",
+        sintesi: null,
       }))
     : Promise.resolve(null);
 
@@ -176,6 +178,12 @@ export async function analizzaProdotto(
   const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
 
   const verifica = verificaDenominazione(riconoscimento, registro, ricerca);
+  // La sintesi A-E viene calcolata dopo la verifica: la denominazione può
+  // usare la prova ufficiale eAmbrosia, mentre le altre voci usano solo le
+  // pagine web realmente lette. La confezione resta sempre separata.
+  if (web) {
+    web.sintesi = sintetizzaFontiWeb(riconoscimento, web.fonti, verifica.prove);
+  }
   const esito = componiEsito({
     riconoscimento,
     verifica,

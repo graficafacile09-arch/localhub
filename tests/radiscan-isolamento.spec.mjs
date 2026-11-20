@@ -62,6 +62,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "schema.ts",
     "tipi.ts",
     "verifica.ts",
+    "web-google.ts",
     "web.ts",
   ]);
 });
@@ -88,13 +89,14 @@ test("isolamento: nessun import dal percorso venditori o da infrastrutture condi
     assert.ok(!/scritturaFile|writeFile|appendFile/.test(sorgente), `${nome} scrive su disco`);
     assert.ok(!/localStorage|sessionStorage/.test(sorgente), `${nome} usa storage`);
     assert.ok(!/AIza[0-9A-Za-z_-]{10,}/.test(sorgente), `${nome} contiene una chiave hardcoded`);
-    // Solo il provider Gemini registra diagnosi sanificate (modello e stato
-    // HTTP), utili a distinguere modello assente, quota e configurazione.
-    if (nome !== "gemini.ts") {
+    // Solo i provider registrano diagnosi sanificate (modello, stato HTTP,
+    // motore), utili a distinguere modello assente, quota e configurazione.
+    // Nessun log contiene chiavi, prompt o immagini.
+    if (!["gemini.ts", "web-google.ts"].includes(nome)) {
       assert.ok(!/\bconsole\./.test(sorgente), `${nome} scrive su console`);
     }
 
-    if (!["gemini.ts", "ricerca.ts", "web.ts", "barcode.ts"].includes(nome)) {
+    if (!["gemini.ts", "ricerca.ts", "web.ts", "web-google.ts", "barcode.ts"].includes(nome)) {
       assert.ok(!/\bfetch\s*\(/.test(sorgente), `${nome} apre una connessione di rete`);
     }
 

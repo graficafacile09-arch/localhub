@@ -4,7 +4,7 @@ import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
 import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
-import { creaRicercaWeb } from "@/lib/radiscan/web";
+import { creaRicercaWebGoogle } from "@/lib/radiscan/web-google";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -63,7 +63,7 @@ export async function POST(request: Request): Promise<Response> {
     creaProvider: () => creaProviderGemini(),
     creaRicerca: () => creaRicercaEAmbrosia(),
     creaOcr: () => creaMotoreOcrTesseract(),
-    creaWeb: () => creaRicercaWeb(),
+    creaWeb: () => creaRicercaWebGoogle(),
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.

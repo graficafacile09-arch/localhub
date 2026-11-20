@@ -268,7 +268,7 @@ test("web: classifica le fonti e legge davvero la pagina istituzionale", async (
     leggiPagineUfficiali: true,
     fetchImpl: async (url) => {
       chiamate.push(String(url));
-      if (String(url).includes("lite.duckduckgo.com")) {
+      if (String(url).includes("duckduckgo.com")) {
         return new Response(paginaRisultati(), {
           status: 200,
           headers: { "content-type": "text/html" },
@@ -302,12 +302,12 @@ test("web: classifica le fonti e legge davvero la pagina istituzionale", async (
 test("web: nomi simili non rendono ufficiali domini contraffatti o consorzi autoproclamati", async () => {
   svuotaCacheWeb();
   const html = `
-    <a href="https://arsac-falso.example/prodotti" class='result-link'>ARSAC — elenco prodotti</a>
-    <td class='result-snippet'>Fonte regionale ufficiale</td>
-    <a href="https://consorzio-finto.example/registro" class='result-link'>Consorzio di tutela demo</a>
-    <td class='result-snippet'>Registro produttori</td>
-    <a href="https://openfoodfacts-falso.example/prodotto" class='result-link'>OpenFoodFacts</a>
-    <td class='result-snippet'>Scheda prodotto</td>`;
+    <a href="https://arsac-falso.example/prodotti" class='result-link'>ARSAC — Caciocavallo Silano DOP</a>
+    <td class='result-snippet'>Elenco prodotti: Caciocavallo Silano DOP</td>
+    <a href="https://consorzio-finto.example/registro" class='result-link'>Consorzio di tutela del Caciocavallo Silano</a>
+    <td class='result-snippet'>Registro produttori del Caciocavallo Silano DOP</td>
+    <a href="https://openfoodfacts-falso.example/prodotto" class='result-link'>OpenFoodFacts — Caciocavallo Silano</a>
+    <td class='result-snippet'>Scheda del Caciocavallo Silano DOP</td>`;
   const esito = await creaRicercaWeb({
     leggiPagineUfficiali: false,
     fetchImpl: async () => new Response(html, { status: 200 }),
@@ -325,8 +325,8 @@ test("web: nomi simili non rendono ufficiali domini contraffatti o consorzi auto
 test("web: ARSAC è regionale solo sul dominio ufficiale esatto", async () => {
   svuotaCacheWeb();
   const html = `
-    <a href="https://www.arsacweb.it/prodotti" class='result-link'>ARSAC — PAT Calabria</a>
-    <td class='result-snippet'>Elenco prodotti tradizionali</td>`;
+    <a href="https://www.arsacweb.it/prodotti" class='result-link'>ARSAC — Caciocavallo Silano DOP</a>
+    <td class='result-snippet'>Elenco prodotti tradizionali: Caciocavallo Silano</td>`;
   const esito = await creaRicercaWeb({
     leggiPagineUfficiali: false,
     fetchImpl: async () => new Response(html, { status: 200 }),
@@ -345,7 +345,7 @@ test("web: la cache evita di ripetere le stesse query", async () => {
   const provider = creaRicercaWeb({
     leggiPagineUfficiali: false,
     fetchImpl: async (url) => {
-      if (String(url).includes("lite.duckduckgo.com")) ricerche += 1;
+      if (String(url).includes("duckduckgo.com")) ricerche += 1;
       return new Response(paginaRisultati(), {
         status: 200,
         headers: { "content-type": "text/html" },

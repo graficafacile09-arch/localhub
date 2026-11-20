@@ -9,6 +9,7 @@ export * from "./ocr";
 export * from "./etichetta";
 export * from "./barcode";
 export * from "./web";
+export * from "./web-google";
 export * from "./produttore";
 export * from "./pdf";
 export * from "./documenti";

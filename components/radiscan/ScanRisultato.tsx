@@ -18,6 +18,8 @@ import type {
   EsitoAnalisi,
   LetturaDocumentale,
   ProvaDocumentale,
+  SintesiFontiWeb,
+  SintesiVerificaWeb,
   ValutazioneProvenienza,
 } from "@/lib/radiscan/tipi";
 import {
@@ -537,6 +539,82 @@ const ETICHETTA_ATTENDIBILITA = {
   bassa: "Attendibilità bassa",
 } as const;
 
+const ETICHETTA_STATO_SINTESI: Record<SintesiVerificaWeb["stato"], string> = {
+  registrata: "Registrata",
+  menzionata: "Menzionata",
+  dichiarata: "Dichiarata dal produttore",
+  supportata: "Supportata da fonti indipendenti",
+  non_confermata: "Non confermata dalle fonti",
+  non_verificabile: "Non verificabile",
+};
+
+const ETICHETTA_DICHIARAZIONE: Record<string, string> = {
+  aziendale: "Dichiarazione aziendale",
+  indipendente: "Fonte indipendente",
+  informativa: "Fonte informativa",
+  non_determinata: "Origine non determinata",
+};
+
+function RigaSintesiWeb({
+  titolo,
+  voce,
+}: {
+  titolo: string;
+  voce: SintesiVerificaWeb | { stato: "non_verificabile"; testo: string };
+}) {
+  const fonti = "fonti" in voce ? voce.fonti : [];
+  const positivo = voce.stato === "registrata" || voce.stato === "supportata";
+  return (
+    <div
+      className={
+        positivo
+          ? "rounded-lg border border-emerald-200 bg-emerald-50 p-3"
+          : voce.stato === "non_confermata" || voce.stato === "non_verificabile"
+            ? "rounded-lg border border-[#e5ded0] bg-[#fffdf7] p-3"
+            : "rounded-lg border border-amber-200 bg-amber-50 p-3"
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-black leading-5 text-[#1b3624]">{titolo}</p>
+        <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#57534e]">
+          {ETICHETTA_STATO_SINTESI[voce.stato]}
+        </span>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-[#57534e]">{voce.testo}</p>
+      {fonti.length > 0 ? (
+        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-semibold">
+          {fonti.map((url, indice) => (
+            <a
+              key={`${url}-${indice}`}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#24462f] underline underline-offset-2"
+            >
+              Fonte {indice + 1}
+            </a>
+          ))}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function BloccoSintesiFonti({ sintesi }: { sintesi: SintesiFontiWeb }) {
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
+        Verifiche separate · non sono la stessa cosa
+      </p>
+      <RigaSintesiWeb titolo="A. Denominazione DOP/IGP registrata" voce={sintesi.denominazione} />
+      <RigaSintesiWeb titolo="B. Produttore collegato alla denominazione" voce={sintesi.produttore} />
+      <RigaSintesiWeb titolo="C. Marchio commerciale" voce={sintesi.marchio} />
+      <RigaSintesiWeb titolo="D. Prodotto specifico" voce={sintesi.prodotto} />
+      <RigaSintesiWeb titolo="E. Autenticità della singola confezione e del lotto" voce={sintesi.confezione} />
+    </div>
+  );
+}
+
 const ETICHETTA_NATURA: Record<string, string> = {
   ufficiale_eu: "Fonte ufficiale UE",
   ufficiale_it: "Fonte ufficiale italiana",
@@ -745,14 +823,19 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-[#24462f]" aria-hidden />
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
-                Ricerca web multifonte ({web.fonti.length})
+                FONTI TROVATE ({web.fonti.length})
               </p>
             </div>
-            <span className="rd-et">{web.stato === "ok" ? "Completata" : "Non disponibile"}</span>
+            <span className="rd-et">
+              {web.stato === "ok"
+                ? `${web.motore === "google_grounding" ? "Google Search" : "Motori web"} · ${web.consultataIl ?? "data non disponibile"}`
+                : "Non disponibile"}
+            </span>
           </div>
           {web.messaggio ? (
             <p className="mt-2 text-xs leading-5 text-[#8a5a3b]">{web.messaggio}</p>
           ) : null}
+          {web.sintesi ? <BloccoSintesiFonti sintesi={web.sintesi} /> : null}
           {web.fonti.length > 0 ? (
             <ul className="mt-3 space-y-2">
               {web.fonti.map((fonte) => (
@@ -762,6 +845,11 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
                     <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a8378]">
                       {ETICHETTA_ATTENDIBILITA[fonte.attendibilita]}
                     </span>
+                    {fonte.dichiarazione ? (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a5a3b]">
+                        {ETICHETTA_DICHIARAZIONE[fonte.dichiarazione] ?? fonte.dichiarazione}
+                      </span>
+                    ) : null}
                     {fonte.lettoIntegralmente ? (
                       <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-emerald-800">
                         Documento letto
@@ -781,7 +869,9 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
                     {fonte.titolo}
                     <ExternalLink className="mt-1 h-3 w-3 shrink-0" aria-hidden />
                   </a>
-                  <p className="mt-0.5 text-xs leading-5 text-[#57534e]">{fonte.ente}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-[#57534e]">
+                    {fonte.ente} · consultata il {fonte.consultataIl}
+                  </p>
                   {fonte.estratto ? (
                     <p className="mt-1 line-clamp-4 text-xs leading-5 text-[#57534e]">
                       {fonte.estratto}

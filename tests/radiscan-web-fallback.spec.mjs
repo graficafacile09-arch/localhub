@@ -51,7 +51,7 @@ test("web: se DuckDuckGo risponde 202 si usa Bing come fallback", async () => {
     leggiPagineUfficiali: false,
     fetchImpl: async (url) => {
       chiamate.push(String(url));
-      if (String(url).includes("lite.duckduckgo.com")) {
+      if (String(url).includes("duckduckgo.com")) {
         return new Response("<html>challenge</html>", { status: 202 });
       }
       return new Response(paginaBing(), {
