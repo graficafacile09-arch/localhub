@@ -145,7 +145,7 @@ function soloTesto(html: string): string {
 }
 
 function hostUgualeOSottoDominio(host: string, dominio: string): boolean {
-  const normalizzato = host.toLowerCase().replace(/\\.$/, "");
+  const normalizzato = host.toLowerCase().replace(/\.$/, "");
   return normalizzato === dominio || normalizzato.endsWith(`.${dominio}`);
 }
 
@@ -154,7 +154,7 @@ function classeNatura(
   titolo: string,
   url: string
 ): { natura: NaturaFonteWeb; attendibilita: AttendibilitaFonte } {
-  const dominio = host.toLowerCase().replace(/\\.$/, "");
+  const dominio = host.toLowerCase().replace(/\.$/, "");
   if (
     dominio === "ec.europa.eu" ||
     hostUgualeOSottoDominio(dominio, "europa.eu") ||
