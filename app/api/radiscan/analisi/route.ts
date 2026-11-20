@@ -61,7 +61,21 @@ export async function POST(request: Request): Promise<Response> {
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
     creaProvider: () => creaProviderGemini(),
-    creaRicerca: () => creaRicercaEAmbrosia(),
+    // La registrazione eAmbrosia resta completa; la lettura degli allegati
+    // è limitata al primo documento e a un budget breve, così non blocca
+    // il risultato rapido. L'eventuale lettura parziale è dichiarata in UI.
+    creaRicerca: () =>
+      creaRicercaEAmbrosia({
+        lettura: {
+          timeoutTotaleMs: 5_000,
+          timeoutDocumentoMs: 4_000,
+          maxDocumenti: 1,
+          maxPagine: 3,
+          maxBytes: 3_000_000,
+          maxCaratteriTotali: 40_000,
+          concorrenza: 1,
+        },
+      }),
     creaOcr: () => creaMotoreOcrTesseract(),
     // Prima motori keyless rapidi; Tavily interviene soltanto se le fonti
     // gratuite non bastano a sostenere l'identificazione.
