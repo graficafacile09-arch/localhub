@@ -497,7 +497,7 @@ test("Tavily: la cache evita di ripetere le ricerche nella stessa finestra", asy
   });
 
   await provider.cerca({ riconoscimento: riconoscimento() });
-  assert.equal(chiamateTavily.length, 6);
+  assert.equal(chiamateTavily.length, 4);
   await provider.cerca({ riconoscimento: riconoscimento() });
   assert.equal(chiamateTavily.length, 4, "la seconda analisi deve usare la cache");
 });
