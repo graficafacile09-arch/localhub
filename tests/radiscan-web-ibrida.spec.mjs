@@ -122,7 +122,13 @@ test("fonti keyless insufficienti: Tavily fast interviene come secondo livello",
     apiKey: "test-key",
     fetchImpl,
     adesso: () => new Date("2026-11-20T10:00:00Z"),
-  }).cerca({ riconoscimento: riconoscimento() });
+  }).cerca({
+    riconoscimento: riconoscimento({
+      prodotto: "Soppressata calabrese",
+      denominazioneProposta: null,
+      schemaProposto: null,
+    }),
+  });
 
   assert.equal(esito.stato, "ok");
   assert.equal(chiamateTavily.length, 4);
