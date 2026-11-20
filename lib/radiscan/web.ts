@@ -909,7 +909,8 @@ export function costruisciQuery(riconoscimento: RiconoscimentoAi): string[] {
   );
   const area = territorio || "Calabria";
   const candidati = [
-    produttore && prodotto ? `${produttore} ${prodotto}` : null,
+    produttore && prodotto ? `${produttore} ${prodotto}` : `${prodotto} produttore ${area}`,
+    `${denominazione ?? prodotto} site:masaf.gov.it OR site:arsacweb.it`,
     produttore ? `${produttore} sito ufficiale prodotti catalogo` : `${prodotto} produttore ${area}`,
     `${prodotto} ${area} filiera produzione origine`,
     produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio produttori`,
