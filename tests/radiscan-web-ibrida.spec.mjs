@@ -73,6 +73,7 @@ test("ricerca keyless sufficiente: Tavily non viene chiamato", async () => {
   assert.ok(esito.fonti.some((fonte) => fonte.dominio === "www.filieramadeo.it"));
   assert.ok(esito.fonti.some((fonte) => fonte.dominio === "www.masaf.gov.it"));
   assert.equal(esito.sintesi.produttore.stato, "dichiarata");
+  assert.equal(esito.sintesi.filieraCalabrese.stato, "supportata");
 });
 
 test("fonti keyless insufficienti: Tavily fast interviene come secondo livello", async () => {
