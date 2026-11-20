@@ -788,6 +788,7 @@ export function creaRicercaWebIbrida(
     maxPagine: Math.min(opzioni.maxPagine ?? 4, 4),
     maxFonti: Math.min(opzioni.maxFonti ?? 12, 12),
     seguiCollegamentiInterni: false,
+    usaWikipedia: false,
   });
   const tavily = creaRicercaWebTavily({
     ...opzioni,
