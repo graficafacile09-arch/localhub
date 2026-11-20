@@ -4,7 +4,7 @@ import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
 import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
-import { creaRicercaWebTavily } from "@/lib/radiscan/web-tavily";
+import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -61,11 +61,25 @@ export async function POST(request: Request): Promise<Response> {
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
     creaProvider: () => creaProviderGemini(),
-    creaRicerca: () => creaRicercaEAmbrosia(),
+    // La registrazione eAmbrosia resta completa; la lettura degli allegati
+    // è limitata al primo documento e a un budget breve, così non blocca
+    // il risultato rapido. L'eventuale lettura parziale è dichiarata in UI.
+    creaRicerca: () =>
+      creaRicercaEAmbrosia({
+        lettura: {
+          timeoutTotaleMs: 5_000,
+          timeoutDocumentoMs: 4_000,
+          maxDocumenti: 1,
+          maxPagine: 3,
+          maxBytes: 3_000_000,
+          maxCaratteriTotali: 40_000,
+          concorrenza: 1,
+        },
+      }),
     creaOcr: () => creaMotoreOcrTesseract(),
-    // Tavily è il provider primario; Google grounding e i motori keyless
-    // restano riserve dichiarate dentro l'adapter.
-    creaWeb: () => creaRicercaWebTavily(),
+    // Prima motori keyless rapidi; Tavily interviene soltanto se le fonti
+    // gratuite non bastano a sostenere l'identificazione.
+    creaWeb: () => creaRicercaWebIbrida(),
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
