@@ -11,7 +11,7 @@ import {
 import { creaRicercaWebGoogle } from "./web-google";
 
 /**
- * RadiciScan — Tavily Search come provider primario indipendente da Gemini.
+ * RadiciScan — Tavily Search come secondo livello indipendente da Gemini.
  *
  * Tavily restituisce URL, titolo, estratto e metadati di risultati realmente
  * trovati sul web. Le pagine vengono poi aperte dal lettore comune: uno
