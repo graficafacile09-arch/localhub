@@ -447,7 +447,9 @@ export interface SintesiFontiWeb {
   marchio: SintesiVerificaWeb;
   /** D. Prodotto specifico. */
   prodotto: SintesiVerificaWeb;
-  /** E. Autenticità della singola confezione e del lotto. */
+  /** E. Legame del prodotto con produzione e filiera calabrese, anche non DOP/IGP. */
+  filieraCalabrese: SintesiVerificaWeb;
+  /** F. Autenticità della singola confezione e del lotto. */
   confezione: { stato: "non_verificabile"; testo: string };
 }
 
