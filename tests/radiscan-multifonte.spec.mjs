@@ -270,6 +270,46 @@ test("web: classifica le fonti e legge davvero la pagina istituzionale", async (
   assert.equal(commerciale.attendibilita, "bassa");
 });
 
+test("web: nomi simili non rendono ufficiali domini contraffatti o consorzi autoproclamati", async () => {
+  svuotaCacheWeb();
+  const html = `
+    <a href="https://arsac-falso.example/prodotti" class='result-link'>ARSAC — elenco prodotti</a>
+    <td class='result-snippet'>Fonte regionale ufficiale</td>
+    <a href="https://consorzio-finto.example/registro" class='result-link'>Consorzio di tutela demo</a>
+    <td class='result-snippet'>Registro produttori</td>
+    <a href="https://openfoodfacts-falso.example/prodotto" class='result-link'>OpenFoodFacts</a>
+    <td class='result-snippet'>Scheda prodotto</td>`;
+  const esito = await creaRicercaWeb({
+    leggiPagineUfficiali: false,
+    fetchImpl: async () => new Response(html, { status: 200 }),
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  assert.ok(esito.fonti.length >= 3);
+  assert.ok(esito.fonti.every((fonte) =>
+    fonte.natura !== "regionale" &&
+    fonte.natura !== "consorzio" &&
+    fonte.natura !== "database_prodotti"
+  ));
+  assert.ok(esito.fonti.every((fonte) => fonte.attendibilita !== "alta"));
+});
+
+test("web: ARSAC è regionale solo sul dominio ufficiale esatto", async () => {
+  svuotaCacheWeb();
+  const html = `
+    <a href="https://www.arsacweb.it/prodotti" class='result-link'>ARSAC — PAT Calabria</a>
+    <td class='result-snippet'>Elenco prodotti tradizionali</td>`;
+  const esito = await creaRicercaWeb({
+    leggiPagineUfficiali: false,
+    fetchImpl: async () => new Response(html, { status: 200 }),
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  const arsac = esito.fonti.find((fonte) => fonte.dominio === "www.arsacweb.it");
+  assert.ok(arsac);
+  assert.equal(arsac.natura, "regionale");
+  assert.equal(arsac.attendibilita, "alta");
+  assert.equal(arsac.lettoIntegralmente, false);
+});
+
 test("web: la cache evita di ripetere le stesse query", async () => {
   svuotaCacheWeb();
   let ricerche = 0;
@@ -473,7 +513,7 @@ test("produttore: la sede calabrese non dimostra l'origine del prodotto", () => 
 
   assert.equal(
     verifica.controlli.find((voce) => voce.id === "legame_calabria").stato,
-    "documentato"
+    "non_documentato"
   );
   assert.match(verifica.sintesi, /non dimostrano/i);
 });
