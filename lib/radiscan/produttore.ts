@@ -109,7 +109,13 @@ export interface OpzioniVerificaProduttore {
 export function verificaProduttore(opzioni: OpzioniVerificaProduttore): VerificaProduttore {
   const { riconoscimento, etichetta, ocr, web, prove, lettura, discrepanze } = opzioni;
 
-  const prova = prove.find((voce) => voce.stato === "registrata") ?? prove[0] ?? null;
+  // Solo una prova esplicitamente ufficiale può attestare lo stato della
+  // denominazione o il gruppo riconosciuto. Un risultato di ricerca o una
+  // scheda informativa non diventa ufficiale perché marcata "registrata".
+  const prova =
+    prove.find((voce) => voce.tipo === "ufficiale" && voce.stato === "registrata") ??
+    prove.find((voce) => voce.tipo === "ufficiale") ??
+    null;
   const testoOcr = ocr?.stato === "ok" ? ocr.testo : "";
   const produttore = etichetta?.produttore.valore ?? riconoscimento.produttore ?? null;
   const stabilimento = etichetta?.stabilimento.valore ?? riconoscimento.stabilimento ?? null;
@@ -123,6 +129,10 @@ export function verificaProduttore(opzioni: OpzioniVerificaProduttore): Verifica
     web,
     (testo) => (produttore ? compatibili(produttore, testo) : false)
   );
+  const evidenzeDisciplinare = evidenzeDocumenti(
+    lettura,
+    (testo) => /disciplinare|zona di produzione|metodo di ottenimento|requisiti/i.test(testo)
+  );
 
   const discrepanzeMedia = discrepanze.filter((voce) => voce.gravita === "media");
 
@@ -134,13 +144,13 @@ export function verificaProduttore(opzioni: OpzioniVerificaProduttore): Verifica
         testoOcr.length === 0
           ? "non_verificabile"
           : compatibili(riconoscimento.prodotto, testoOcr)
-            ? "documentato"
+            ? "non_verificabile"
             : "incoerente",
       dettaglio:
         testoOcr.length === 0
           ? "Nessun testo OCR: l'identità del prodotto resta un'ipotesi del modello visivo."
           : compatibili(riconoscimento.prodotto, testoOcr)
-            ? "Il nome del prodotto riconosciuto compare anche nel testo letto dall'OCR."
+            ? "Il nome riconosciuto compare nell'etichetta letta dall'OCR, ma questo non prova l'identità o l'autenticità del prodotto."
             : "Il nome riconosciuto dal modello non compare nel testo OCR: possibile lettura parziale o ipotesi errata.",
       evidenze: [],
     },
@@ -170,18 +180,13 @@ export function verificaProduttore(opzioni: OpzioniVerificaProduttore): Verifica
     {
       id: "disciplinare",
       etichetta: "Disciplinare e requisiti di produzione",
-      stato: !lettura
-        ? "non_verificabile"
-        : lettura.documenti.some((documento) => documento.stato === "letto")
-          ? "documentato"
-          : "non_documentato",
-      dettaglio: !lettura
-        ? "Nessun documento è stato letto: i requisiti di produzione non sono documentati."
-        : lettura.messaggio,
-      evidenze: evidenzeDocumenti(
-        lettura,
-        (testo) => /disciplinare|zona di produzione|metodo di ottenimento|requisiti/i.test(testo)
-      ),
+      stato: evidenzeDisciplinare.length > 0 ? "documentato" : "non_documentato",
+      dettaglio: evidenzeDisciplinare.length > 0
+        ? "Sono stati letti passaggi pertinenti al disciplinare o ai requisiti di produzione."
+        : !lettura
+          ? "Nessun documento è stato letto: i requisiti di produzione non sono documentati."
+          : "I documenti letti non contengono passaggi pertinenti sufficienti a documentare i requisiti di produzione.",
+      evidenze: evidenzeDisciplinare,
     },
     {
       id: "produttore_etichetta",
@@ -256,12 +261,10 @@ export function verificaProduttore(opzioni: OpzioniVerificaProduttore): Verifica
       stato:
         discrepanzeMedia.length > 0
           ? "incoerente"
-          : discrepanze.length > 0
-            ? "non_verificabile"
-            : "documentato",
+          : "non_verificabile",
       dettaglio:
         discrepanze.length === 0
-          ? "OCR e modello visivo non presentano divergenze registrate."
+          ? "OCR e modello visivo non presentano divergenze registrate, ma la concordanza automatica non costituisce una verifica esterna."
           : `${discrepanze.length} discrepanza/e registrata/e, di cui ${discrepanzeMedia.length} di gravità media. Nessun valore è stato scelto d'ufficio.`,
       evidenze: [],
     },
@@ -271,7 +274,7 @@ export function verificaProduttore(opzioni: OpzioniVerificaProduttore): Verifica
       stato:
         riconoscimento.incongruenzeRilevate.length > 0 || discrepanzeMedia.length > 0
           ? "incoerente"
-          : "documentato",
+          : "non_verificabile",
       dettaglio:
         riconoscimento.incongruenzeRilevate.length + discrepanzeMedia.length === 0
           ? "Nessuna incongruenza segnalata dai controlli automatici."
