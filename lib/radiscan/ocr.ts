@@ -25,7 +25,7 @@ export const LIMITI_OCR = {
   timeoutMs: 38_000,
   maxCaratteri: 16_000,
   lingue: ["ita", "eng"],
-  larghezzaPreprocessamento: 1600,
+  larghezzaPreprocessamento: 2000,
 } as const;
 
 export interface MotoreOcr {
@@ -87,6 +87,7 @@ export function creaMotoreOcrTesseract(): MotoreOcr {
             fit: "inside",
             withoutEnlargement: false,
           })
+          .sharpen({ sigma: 1 })
           .png()
           .toBuffer();
       } catch {
@@ -102,6 +103,13 @@ export function creaMotoreOcrTesseract(): MotoreOcr {
         corePath: `${radice}/node_modules/tesseract.js-core`,
         logger: () => {},
         errorHandler: () => {},
+      });
+
+      // Le etichette distribuiscono testi piccoli fra blocchi, sigilli e fascette:
+      // PSM 11 (sparse text) evita di assumere una sola colonna o un solo blocco.
+      await worker.setParameters({
+        tessedit_pageseg_mode: "11",
+        preserve_interword_spaces: "1",
       });
 
       const annulla = () => {
