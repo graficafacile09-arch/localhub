@@ -138,6 +138,8 @@ export interface OpzioniRicercaWeb {
   maxFonti?: number;
   /** Disattiva la scansione sequenziale dei link interni nel percorso rapido. */
   seguiCollegamentiInterni?: boolean;
+  /** Wikipedia è solo informativa: si può saltare nel percorso a bassa latenza. */
+  usaWikipedia?: boolean;
 }
 
 export interface RichiestaRicercaWeb {
@@ -844,7 +846,8 @@ async function cercaQuery(
   fetchImpl: typeof fetch,
   timeoutMs: number,
   adesso: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  usaWikipedia = true
 ): Promise<{ risultati: RisultatoGrezzo[]; errore: boolean; motore: string | null }> {
   const chiave = `q:${normalizza(query)}`;
   const inMemoria = daCache<RisultatoGrezzo[]>(chiave, adesso);
@@ -877,7 +880,7 @@ async function cercaQuery(
 
   // Ultimo fallback strutturato: Wikipedia risponde anche quando i motori
   // generalisti bloccano gli IP dei data center. Resta una fonte informativa.
-  if (risultati.length === 0) {
+  if (risultati.length === 0 && usaWikipedia) {
     const daWikipedia = await cercaWikipedia(query, fetchImpl, timeoutMs, signal);
     if (daWikipedia.length > 0) {
       risultati = daWikipedia;
@@ -1328,7 +1331,7 @@ export function creaRicercaWeb(opzioni: OpzioniRicercaWeb = {}): ProviderRicerca
       if (!candidati?.length) {
         const esiti = await Promise.all(
           queryCandidates.map((voce) =>
-            cercaQuery(voce, fetchImpl, timeoutQuery, data.getTime(), signal)
+            cercaQuery(voce, fetchImpl, timeoutQuery, data.getTime(), signal, opzioni.usaWikipedia !== false)
           )
         );
         errori = esiti.filter((esito) => esito.errore).length;
