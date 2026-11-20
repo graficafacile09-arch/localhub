@@ -87,7 +87,7 @@ test("gemini: ritenta una sola volta dopo un timeout transitorio del tentativo",
       }
       return new Response(
         JSON.stringify({
-          candidates: [{ content: { parts: [{ text: "{\\"prodotto\\":\\"Caciocavallo Silano\\"}" }] } }],
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ prodotto: "Caciocavallo Silano" }) }] } }],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
       );
