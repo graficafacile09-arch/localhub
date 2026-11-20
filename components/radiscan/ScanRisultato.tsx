@@ -610,7 +610,8 @@ function BloccoSintesiFonti({ sintesi }: { sintesi: SintesiFontiWeb }) {
       <RigaSintesiWeb titolo="B. Produttore collegato alla denominazione" voce={sintesi.produttore} />
       <RigaSintesiWeb titolo="C. Marchio commerciale" voce={sintesi.marchio} />
       <RigaSintesiWeb titolo="D. Prodotto specifico" voce={sintesi.prodotto} />
-      <RigaSintesiWeb titolo="E. Autenticità della singola confezione e del lotto" voce={sintesi.confezione} />
+      <RigaSintesiWeb titolo="E. Filiera calabrese: origine e produzione" voce={sintesi.filieraCalabrese} />
+      <RigaSintesiWeb titolo="F. Autenticità della singola confezione e del lotto" voce={sintesi.confezione} />
     </div>
   );
 }
