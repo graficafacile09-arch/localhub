@@ -46,6 +46,27 @@ const TIMEOUT_QUERY_MS = 6_000;
 const TIMEOUT_PAGINA_MS = 6_000;
 const TTL_CACHE_MS = 10 * 60 * 1000;
 
+const PAROLE_TERRITORIO = new Set([
+  "calabria",
+  "italia",
+  "italiano",
+  "italiana",
+  "regione",
+  "provincia",
+  "comune",
+  "dop",
+  "igp",
+  "stg",
+  "doc",
+  "docg",
+  "igt",
+  "pat",
+  "prodotto",
+  "prodotti",
+  "salume",
+  "salumi",
+]);
+
 const STOPWORD = new Set([
   "della",
   "delle",
@@ -717,6 +738,25 @@ async function cercaWikipedia(
   }
 }
 
+function paroleFortiProdotto(riconoscimento: RiconoscimentoAi): Set<string> {
+  return new Set(
+    [
+      ...tokenizza(riconoscimento.prodotto),
+      ...tokenizza(riconoscimento.denominazioneProposta ?? ""),
+    ].filter((parola) => !PAROLE_TERRITORIO.has(parola))
+  );
+}
+
+function haProdottoInTesto(
+  testo: string,
+  riconoscimento: RiconoscimentoAi
+): boolean {
+  const normalizzato = normalizza(testo);
+  return [...paroleFortiProdotto(riconoscimento)].some((parola) =>
+    normalizzato.includes(parola)
+  );
+}
+
 function pertinenteAlQuery(
   risultato: RisultatoGrezzo | CandidatoWeb,
   query: string,
@@ -725,18 +765,32 @@ function pertinenteAlQuery(
   const testo = normalizza(
     `${risultato.titolo} ${risultato.estratto ?? ""} ${risultato.url}`
   );
-  const paroleQuery = tokenizza(query);
-  if ([...paroleQuery].some((parola) => testo.includes(parola))) return true;
+  const paroleProduttore = tokenizza(riconoscimento.produttore ?? "");
+  const queryNorm = normalizza(query);
+  const host = normalizza(hostDa(risultato.url));
 
-  // Un URL ufficiale può non ripetere il nome commerciale: si accetta se
-  // contiene la denominazione o il prodotto.
-  const attesi = new Set([
-    ...tokenizza(riconoscimento.denominazioneProposta ?? ""),
-    ...tokenizza(riconoscimento.prodotto),
-    ...tokenizza(riconoscimento.produttore ?? ""),
-  ]);
-  const comuni = [...attesi].filter((parola) => testo.includes(parola)).length;
-  return comuni >= Math.min(2, attesi.size);
+  // Il solo territorio non identifica il prodotto: "Calabria" non rende
+  // pertinente una pagina su Curinga o sulla provincia di Cosenza.
+  const haProdotto = haProdottoInTesto(testo, riconoscimento);
+  const haProduttore = [...paroleProduttore].some((parola) =>
+    testo.includes(parola)
+  );
+  const hostDelProduttore = [...paroleProduttore].some((parola) =>
+    host.includes(parola)
+  );
+  const queryChiedeProduttore = [...paroleProduttore].some((parola) =>
+    queryNorm.includes(parola)
+  );
+
+  if (haProdotto) return true;
+
+  // La homepage di un produttore può non ripetere il nome del prodotto nello
+  // snippet: la si ammette e si verifica il contenuto dopo la lettura.
+  if (paroleProduttore.size > 0 && (hostDelProduttore || queryChiedeProduttore && haProduttore)) {
+    return true;
+  }
+
+  return false;
 }
 
 async function cercaQuery(
@@ -1018,7 +1072,22 @@ async function completaFonti(
     });
   }
 
-  return scelte;
+  // Dopo la lettura, una pagina generica (un omonimo, un comune) non resta
+  // una fonte solo perché il produttore era citato nello snippet. Le pagine
+  // non leggibili restano visibili come risultati, senza diventare documenti.
+  return scelte.filter((fonte) => {
+    if (fonte.pagineLette === null && !fonte.lettoIntegralmente) return true;
+    if (
+      fonte.natura === "ufficiale_eu" ||
+      fonte.natura === "ufficiale_it" ||
+      fonte.natura === "regionale" ||
+      fonte.natura === "certificazione" ||
+      fonte.natura === "consorzio"
+    ) {
+      return true;
+    }
+    return haProdottoInTesto(`${fonte.titolo} ${fonte.estratto ?? ""}`, riconoscimento);
+  });
 }
 
 function statoWeb(

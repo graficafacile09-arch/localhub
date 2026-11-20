@@ -175,9 +175,9 @@ test("produttore senza denominazione: nessuna denominazione inventata", async ()
     fetchImpl: fintoFetch({
       elenco: [
         {
-          titolo: "Caseificio Rossi — formaggi",
+          titolo: "Caseificio Rossi — Pecorino",
           url: "https://www.caseificiorossi.it/",
-          estratto: "Caseificio Rossi produce formaggi.",
+          estratto: "Caseificio Rossi produce Pecorino.",
         },
       ],
     }),
@@ -334,6 +334,23 @@ test("motore non disponibile: stato non_disponibile, nessuna fonte inventata", a
   assert.equal(esito.stato, "non_disponibile");
   assert.deepEqual(esito.fonti, []);
   assert.match(esito.messaggio, /non dimostra l'assenza di fonti/i);
+});
+
+test("una pagina generica non diventa una fonte del produttore", async () => {
+  const esito = await creaRicercaWeb({
+    fetchImpl: fintoFetch({
+      elenco: [
+        {
+          titolo: "Curinga - Wikipedia",
+          url: "https://it.wikipedia.org/wiki/Curinga",
+          estratto: "Comune della provincia di Catanzaro, in Calabria.",
+        },
+      ],
+    }),
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  assert.deepEqual(esito.fonti, []);
+  assert.match(esito.messaggio, /non è una prova di assenza/i);
 });
 
 test("pagina non accessibile: la fonte resta un risultato, non un documento letto", async () => {

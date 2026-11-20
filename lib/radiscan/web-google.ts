@@ -108,11 +108,18 @@ function candidatiDaGrounding(
       typeof voce.web?.title === "string" && voce.web.title.trim()
         ? voce.web.title.trim().slice(0, 220)
         : url.hostname;
+    // La query associata ai chunk è neutra rispetto al produttore: Google
+    // può restituire anche una scheda MASAF che non ripete il nome commerciale.
+    // La pertinenza resta verificata sul prodotto/denominazione.
+    const queryNeutra =
+      [riconoscimento.prodotto, riconoscimento.denominazioneProposta]
+        .filter((voce): voce is string => Boolean(voce && voce.trim()))
+        .join(" ") || riconoscimento.prodotto;
     candidati.push({
       titolo,
       url: pulito,
       estratto: null,
-      query: query[0] ?? costruisciQuery(riconoscimento)[0] ?? riconoscimento.prodotto,
+      query: queryNeutra,
     });
     if (candidati.length >= MAX_CANDIDATI) break;
   }
