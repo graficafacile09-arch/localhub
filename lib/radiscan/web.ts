@@ -144,33 +144,44 @@ function soloTesto(html: string): string {
     .trim();
 }
 
+function hostUgualeOSottoDominio(host: string, dominio: string): boolean {
+  const normalizzato = host.toLowerCase().replace(/\\.$/, "");
+  return normalizzato === dominio || normalizzato.endsWith(`.${dominio}`);
+}
+
 function classeNatura(
   host: string,
   titolo: string,
   url: string
 ): { natura: NaturaFonteWeb; attendibilita: AttendibilitaFonte } {
+  const dominio = host.toLowerCase().replace(/\\.$/, "");
   if (
-    host === "ec.europa.eu" ||
-    host.endsWith(".europa.eu") ||
-    host === "eur-lex.europa.eu"
+    dominio === "ec.europa.eu" ||
+    hostUgualeOSottoDominio(dominio, "europa.eu") ||
+    dominio === "eur-lex.europa.eu"
   ) {
     return { natura: "ufficiale_eu", attendibilita: "alta" };
   }
-  if (host.endsWith(".gov.it") || host === "www.masaf.gov.it" || host === "masaf.gov.it") {
+  if (hostUgualeOSottoDominio(dominio, "gov.it")) {
     return { natura: "ufficiale_it", attendibilita: "alta" };
   }
-  if (host === "regione.calabria.it" || host.endsWith(".regione.calabria.it")) {
+  if (hostUgualeOSottoDominio(dominio, "regione.calabria.it")) {
     return { natura: "regionale", attendibilita: "alta" };
   }
-  if (host.includes("arsac")) {
+  // ARSAC: dominio ufficiale esatto. Non basta che il testo dell'host
+  // contenga la stringa "arsac" (es. arsac-falso.example).
+  if (dominio === "arsacweb.it" || dominio === "www.arsacweb.it") {
     return { natura: "regionale", attendibilita: "alta" };
   }
-  if (host.includes("openfoodfacts")) {
+  if (
+    dominio === "openfoodfacts.org" ||
+    hostUgualeOSottoDominio(dominio, "openfoodfacts.org")
+  ) {
     return { natura: "database_prodotti", attendibilita: "media" };
   }
-  if (host.includes("consorzio") || /consorzio di tutela/i.test(titolo)) {
-    return { natura: "consorzio", attendibilita: "media" };
-  }
+  // Il nome o il titolo non dimostrano che un sito appartenga a un
+  // consorzio riconosciuto: la fonte resta informativa finché non esiste
+  // una allowlist verificata di domini consortili.
   if (host.includes("wikipedia") || host.includes("wikidata")) {
     return { natura: "informativo", attendibilita: "media" };
   }
