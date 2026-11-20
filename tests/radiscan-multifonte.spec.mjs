@@ -30,6 +30,7 @@ const {
   leggiAllegati,
   analizzaProdotto,
   creaDettaglioEtichetta,
+  analizzaOutputModello,
   LIMITI_LETTURA,
 } = radiscan;
 
@@ -861,6 +862,27 @@ test("pipeline: se il dettaglio non è generabile invia solo l'originale", async
 
   assert.equal(ricevuto.immagineDettaglioBase64, undefined);
   assert.ok(ricevuto.immagineBase64.length > 0);
+});
+
+test("schema: la dicitura del bollino non diventa la denominazione", () => {
+  const esito = analizzaOutputModello(
+    JSON.stringify({
+      prodotto: "Soppressata di Calabria",
+      denominazione_proposta: "Denominazione di Origine Protetta",
+      schema_proposto: "DOP",
+      confidenza: 80,
+    })
+  );
+
+  assert.equal(esito.ok, true);
+  assert.equal(
+    esito.valore.riconoscimento.denominazioneProposta,
+    "Soppressata di Calabria"
+  );
+  assert.ok(
+    esito.valore.avvisi.some((avviso) => /generica/i.test(avviso)),
+    "la sostituzione deve essere dichiarata"
+  );
 });
 
 test("DOP: badge solo per prova ufficiale registrata ed esatta", async () => {

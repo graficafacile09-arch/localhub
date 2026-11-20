@@ -88,6 +88,31 @@ function elencoTesti(valore: unknown, avvisi: string[], etichetta: string): stri
   return voci;
 }
 
+/** Diciture del bollino, non nomi di denominazione. */
+function denominazioneGenerica(valore: string): boolean {
+  const chiave = valore
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return [
+    "dop",
+    "igp",
+    "stg",
+    "pdo",
+    "pgi",
+    "tsg",
+    "denominazione di origine protetta",
+    "denominazione di origine controllata",
+    "denominazione di origine controllata e garantita",
+    "indicazione geografica protetta",
+    "specialita tradizionale garantita",
+    "prodotto dop",
+    "prodotto igp",
+  ].includes(chiave);
+}
+
 function schemaQualita(valore: unknown, avvisi: string[]): RiconoscimentoAi["schemaProposto"] {
   if (valore === null || valore === undefined) return null;
   if (typeof valore !== "string") {
@@ -141,16 +166,28 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
   const prodotto = testoNormalizzato(payload.prodotto, MAX_TESTO_BREVE);
   if (!prodotto) return { ok: false, motivo: "campo prodotto assente o vuoto" };
 
+  // Il modello a volte scambia la dicitura del bollino per il nome della
+  // denominazione. In quel caso il nome del prodotto è l'unico dato leggibile:
+  // usarlo è più corretto che cercare nel registro "Denominazione di Origine
+  // Protetta". L'avviso rende esplicita la sostituzione.
+  let denominazioneProposta = testoNormalizzato(
+    payload.denominazione_proposta,
+    MAX_TESTO_BREVE
+  );
+  if (denominazioneProposta && denominazioneGenerica(denominazioneProposta)) {
+    avvisi.push(
+      "denominazione_proposta generica: usato il nome del prodotto come denominazione"
+    );
+    denominazioneProposta = prodotto;
+  }
+
   return {
     ok: true,
     valore: {
       riconoscimento: {
         prodotto,
         categoria: testoNormalizzato(payload.categoria, MAX_TESTO),
-        denominazioneProposta: testoNormalizzato(
-          payload.denominazione_proposta,
-          MAX_TESTO_BREVE
-        ),
+        denominazioneProposta,
         territorioProposto: testoNormalizzato(payload.territorio_proposto, MAX_TESTO),
         schemaProposto: schemaQualita(payload.schema_proposto, avvisi),
         indicatoriEtichetta: elencoTesti(
