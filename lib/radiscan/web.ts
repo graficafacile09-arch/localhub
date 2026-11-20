@@ -1157,9 +1157,9 @@ function statoWeb(
 }
 
 /**
- * Sintesi deterministica delle cinque verifiche. Non usa il testo generato
- * dal modello: ogni affermazione deriva da una pagina letta o dalla prova
- * ufficiale eAmbrosia. La confezione resta sempre non verificabile.
+ * Sintesi deterministica delle verifiche. La filiera calabrese è distinta
+ * dalla registrazione DOP/IGP e può essere valutata anche per prodotti non
+ * certificati. La confezione resta sempre non verificabile.
  */
 export function sintetizzaFontiWeb(
   riconoscimento: RiconoscimentoAi,
@@ -1284,11 +1284,97 @@ export function sintetizzaFontiWeb(
           []
         );
 
+  // La filiera calabrese non coincide con DOP/IGP: vale anche per prodotti
+  // ordinari, purché una pagina effettivamente letta colleghi prodotto,
+  // produttore/filiera e territorio o lavorazione in Calabria.
+  const schemaProtetto = /dop|igp|stg/.test(
+    normalizza(`${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`)
+  );
+  const fontiFilieraCalabrese = fonti.filter((fonte) => {
+    const letta =
+      fonte.metodoLettura === "http" || fonte.metodoLettura === "tavily_extract";
+    if (!letta || fonte.rilevanza === "bassa") return false;
+    if (
+      ![
+        "produttore",
+        "ufficiale_eu",
+        "ufficiale_it",
+        "regionale",
+        "certificazione",
+        "consorzio",
+      ].includes(fonte.natura)
+    ) return false;
+
+    const testo = testoFonte(fonte);
+    const territorio = /calabria|cosenza|crotone|catanzaro|vibo valentia|reggio calabria|sila|aspromonte|pollino/.test(testo);
+    if (!territorio) return false;
+
+    const prodottoPresente =
+      (prodotto && copre(testo, prodotto)) ||
+      (denominazione && copre(testo, denominazione));
+    const produttorePresente =
+      paroleProduttore.length > 0 &&
+      paroleProduttore.some((parola) => testo.includes(parola));
+    if (!prodottoPresente && !produttorePresente) return false;
+
+    const produzioneLocale =
+      /prodott|produz|lavoraz|trasform|filiera|coltiv|allev|materie prime|origine|stabilimento|realizzat|ottenut|raccolt/.test(testo);
+    const fonteTerritorialeProtetta =
+      schemaProtetto &&
+      ["ufficiale_eu", "ufficiale_it", "regionale", "certificazione", "consorzio"].includes(
+        fonte.natura
+      ) &&
+      /dop|igp|denominazione/.test(testo);
+    return produzioneLocale || fonteTerritorialeProtetta;
+  });
+
+  const filieraAziendale = fontiFilieraCalabrese.filter(
+    (fonte) => fonte.natura === "produttore" || fonte.dichiarazione === "aziendale"
+  );
+  const filieraIndipendente = fontiFilieraCalabrese.filter(
+    (fonte) =>
+      fonte.dichiarazione === "indipendente" &&
+      fonte.natura !== "produttore"
+  );
+  const dominiIndipendenti = new Set(filieraIndipendente.map((fonte) => fonte.dominio));
+  const filieraCalabreseSintesi: SintesiVerificaWeb =
+    filieraAziendale.length > 0 &&
+    filieraIndipendente.some((fonte) => fonte.dominio !== filieraAziendale[0]?.dominio)
+      ? statoWeb(
+          "supportata",
+          "Il collegamento tra prodotto, produttore e territorio calabrese è sostenuto da fonti aziendali e da almeno una fonte indipendente letta. Non equivale a certificare la singola confezione.",
+          [...filieraAziendale, ...filieraIndipendente]
+        )
+      : dominiIndipendenti.size >= 2
+        ? statoWeb(
+            "supportata",
+            "Il legame tra prodotto e filiera calabrese è riscontrato in più fonti indipendenti lette.",
+            filieraIndipendente
+          )
+        : filieraAziendale.length > 0
+          ? statoWeb(
+              "dichiarata",
+              "Il produttore dichiara un legame tra il prodotto e la produzione/lavorazione in Calabria. Manca ancora un riscontro indipendente sufficiente.",
+              filieraAziendale
+            )
+          : filieraIndipendente.length > 0
+            ? statoWeb(
+                "menzionata",
+                "Una fonte indipendente collega il prodotto alla Calabria, ma non sono emersi riscontri sufficienti per ricostruire la filiera.",
+                filieraIndipendente
+              )
+            : statoWeb(
+                "non_confermata",
+                "Le pagine effettivamente lette non documentano ancora un legame tra questo prodotto e la produzione o filiera calabrese. Non è una prova che il prodotto non sia calabrese.",
+                []
+              );
+
   return {
     denominazione: denominazioneSintesi,
     produttore: produttoreSintesi,
     marchio: marchioSintesi,
     prodotto: prodottoSintesi,
+    filieraCalabrese: filieraCalabreseSintesi,
     confezione: {
       stato: "non_verificabile",
       testo:
