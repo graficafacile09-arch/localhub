@@ -170,7 +170,7 @@ test("etichetta: OCR e modello in disaccordo producono discrepanze, senza scegli
 });
 
 test("etichetta: un logo DOP riconosciuto visivamente non è smentito dall'OCR che non legge la sigla", () => {
-  const testo = "CACIOCAVALLO\\nProdotto da: Caseificio San Lorenzo S.r.l.";
+  const testo = "CACIOCAVALLO\nProdotto da: Caseificio San Lorenzo S.r.l.";
   const ai = riconoscimento({
     indicatoriEtichetta: ["Logo grafico DOP UE rosso e giallo riconosciuto visivamente"],
     certificazioni: ["DOP (logo grafico UE riconosciuto visivamente)"],
