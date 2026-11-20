@@ -1,6 +1,14 @@
+import {
+  leggiAllegati,
+  letturaNonTentata,
+  urlAllegatoEAmbrosia,
+  type OpzioniLettura,
+} from "./documenti";
 import { isUrlProvaUfficiale, type SchemaQualita } from "./fonti";
 import type {
+  AllegatoEAmbrosia,
   EsitoRicercaDocumentale,
+  LetturaDocumentale,
   ProvaDocumentale,
   ProviderRicercaDocumentale,
   RiconoscimentoAi,
@@ -56,12 +64,20 @@ interface RigaEAmbrosia {
   } | null;
   publications?: unknown;
   removedFlag?: unknown;
+  /** Link al disciplinare (documento unico), `uri` = id allegato. */
+  singleDocument?: unknown;
+  /** Riepiloghi multilingue, `uri` = id allegato. */
+  summarySheets?: unknown;
+  producerGroupName?: unknown;
+  producerGroupAdress?: unknown;
 }
 
 export interface OpzioniRicercaEAmbrosia {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   adesso?: () => Date;
+  /** Lettura degli allegati: `false` la disattiva e lo dichiara. */
+  lettura?: OpzioniLettura | false;
 }
 
 function nonVuoto(valore: unknown): string | null {
@@ -116,6 +132,67 @@ function urlPubblicazione(valore: unknown): string | null {
   }
   const url = nonVuoto((valore as PubblicazioneEAmbrosia).uri);
   return url && isUrlProvaUfficiale(url) ? url : null;
+}
+
+function identificativoAllegato(valore: unknown): string | null {
+  const testo = nonVuoto(valore);
+  if (!testo) return null;
+  if (/^[0-9]{1,12}$/.test(testo)) return testo;
+  const trovato = /\/attachments\/([0-9]{1,12})\/?$/.exec(testo);
+  return trovato ? trovato[1] : null;
+}
+
+function linkAllegato(valore: unknown): { id: string; titolo: string } | null {
+  if (!valore || typeof valore !== "object" || Array.isArray(valore)) return null;
+  const link = valore as PubblicazioneEAmbrosia;
+  const id = identificativoAllegato(link.uri);
+  if (!id) return null;
+  return { id, titolo: nonVuoto(link.text) ?? `${id}.pdf` };
+}
+
+/**
+ * Allegati realmente dichiarati dalla scheda, con l'URL ufficiale costruito
+ * sull'identificativo. I riepiloghi sono nove: si conservano l'italiano e,
+ * solo in mancanza, l'inglese, per non sprecare budget della route.
+ */
+function allegatiDaRiga(riga: RigaEAmbrosia): AllegatoEAmbrosia[] {
+  const allegati: AllegatoEAmbrosia[] = [];
+  const visti = new Set<string>();
+
+  const aggiungi = (
+    link: { id: string; titolo: string },
+    tipo: AllegatoEAmbrosia["tipo"]
+  ) => {
+    if (visti.has(link.id)) return;
+    const url = urlAllegatoEAmbrosia(link.id);
+    if (!url) return;
+    visti.add(link.id);
+    allegati.push({ id: link.id, titolo: link.titolo, url, tipo });
+  };
+
+  const disciplinare = linkAllegato(riga.singleDocument);
+  if (disciplinare) aggiungi(disciplinare, "disciplinare");
+
+  const riepiloghi = Array.isArray(riga.summarySheets)
+    ? riga.summarySheets
+        .map((voce) => linkAllegato(voce))
+        .filter((voce): voce is { id: string; titolo: string } => voce !== null)
+    : [];
+  // L'italiano è preferito; un riepilogo inglese resta come riserva perché
+  // alcuni id italiani pubblicati nella scheda rispondono 404 (verificato su
+  // Caciocavallo Silano). La lettura tenta al massimo due documenti.
+  const italiano = riepiloghi.filter((voce) => /_IT([._]|$)/i.test(voce.titolo));
+  const inglese = riepiloghi.filter((voce) => /_EN([._]|$)/i.test(voce.titolo));
+  const preferiti = [
+    ...italiano.slice(0, 1),
+    ...inglese.slice(0, 1),
+    ...(italiano.length === 0 && inglese.length === 0 ? riepiloghi.slice(0, 1) : []),
+  ];
+  for (const voce of preferiti) {
+    aggiungi(voce, "riepilogo");
+  }
+
+  return allegati;
 }
 
 function scegliDocumento(
@@ -271,6 +348,9 @@ function mappaProva(
     documentoUrl: documento.documentoUrl,
     estratto,
     consultataIl,
+    allegati: allegatiDaRiga(riga),
+    gruppoProduttori: nonVuoto(riga.producerGroupName),
+    sedeGruppo: nonVuoto(riga.producerGroupAdress),
     relazione: esatta
       ? `Corrispondenza esatta con la denominazione letta; scheda ufficiale ${id}.`
       : `Denominazione affine restituita dal registro per la ricerca "${denominazione || prodotto}".`,
@@ -292,6 +372,7 @@ export function ricercaNonEseguita(
     query: [],
     prove: [],
     messaggio,
+    lettura: null,
   };
 }
 
@@ -307,6 +388,7 @@ export function ricercaNonDisponibile(
     query,
     prove: [],
     messaggio,
+    lettura: null,
   };
 }
 
@@ -441,16 +523,54 @@ export function creaRicercaEAmbrosia(
           );
         }
 
+        const proveFinali = prove.slice(0, MAX_PROVE);
+
+        // Lettura documentale: solo sulla prova pertinente, con budget
+        // separato. Senza allegati si dichiara `non_tentata`, non "letta".
+        let lettura: LetturaDocumentale | null = null;
+        if (opzioni.lettura !== false) {
+          const provaDaLeggere =
+            proveFinali.find((prova) => prova.stato === "registrata") ??
+            proveFinali[0] ??
+            null;
+
+          if (!provaDaLeggere || provaDaLeggere.allegati.length === 0) {
+            lettura = letturaNonTentata(undefined, consultataIl);
+          } else {
+            try {
+              lettura = await leggiAllegati(provaDaLeggere.allegati, {
+                // Lo stesso transport della ricerca: nei test il finto
+                // `fetchImpl` deve valere anche per gli allegati.
+                fetchImpl,
+                ...(opzioni.lettura ?? {}),
+                signal: controller.signal,
+              });
+            } catch {
+              lettura = {
+                stato: "non_disponibile",
+                documenti: [],
+                pagineLette: 0,
+                pagineTotali: null,
+                consultataIl,
+                messaggio:
+                  "La lettura degli allegati eAmbrosia non è stata completata: nessun documento è stato letto.",
+                notaPagine: null,
+              };
+            }
+          }
+        }
+
         return {
           stato: "ok",
           fonte: "eAmbrosia",
           consultataIl,
           query,
-          prove: prove.slice(0, MAX_PROVE),
+          prove: proveFinali,
           messaggio:
             errori > 0
               ? "Alcune varianti della ricerca non hanno risposto; i documenti mostrati sono quelli recuperati."
               : null,
+          lettura,
         };
       } catch {
         return ricercaNonDisponibile(messaggioErroreRete(), consultataIl, query);

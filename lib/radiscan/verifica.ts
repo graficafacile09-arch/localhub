@@ -1,3 +1,4 @@
+import { valutaProvenienza } from "./filiera";
 import {
   fonteDocumentata,
   isUrlFonteUfficiale,
@@ -7,6 +8,7 @@ import {
 import type {
   EsitoRicercaDocumentale,
   FontePubblica,
+  LetturaDocumentale,
   ProvaDocumentale,
   RiconoscimentoAi,
   VerificaDocumentale,
@@ -45,6 +47,7 @@ const RICERCA_NON_ESEGUITA: EsitoRicercaDocumentale = {
   query: [],
   prove: [],
   messaggio: "Ricerca documentale non eseguita.",
+  lettura: null,
 };
 
 /** Minuscole, senza diacritici, punteggiatura ridotta a spazi. */
@@ -211,6 +214,8 @@ function esisteCoerenzaSenzaDenominazione(
   return null;
 }
 
+type VerificaBase = Omit<VerificaDocumentale, "provenienza">;
+
 function nonVerificato(
   livello: VerificaDocumentale["livello"],
   esito: VerificaDocumentale["esito"],
@@ -218,7 +223,7 @@ function nonVerificato(
   fonte: FonteUfficiale | null = null,
   prove: ProvaDocumentale[] = [],
   ricerca: EsitoRicercaDocumentale = RICERCA_NON_ESEGUITA
-): VerificaDocumentale {
+): VerificaBase {
   return {
     esito,
     livello,
@@ -277,12 +282,17 @@ function motivazioneRiscontroParziale(
  * Verifica una denominazione proposta contro il registro curato e le prove
  * ufficiali recuperate online. Restituisce sempre una motivazione leggibile
  * e non usa mai dati del modello come se fossero fonte.
+ *
+ * NOTA: la lettura dei documenti non può mai alzare il livello. Anche un
+ * disciplinare letto per intero resta `riscontro_parziale` finché la scheda
+ * non entra nel registro curato: i documenti provano la denominazione, non
+ * la confezione fotografata.
  */
-export function verificaDenominazione(
+function verificaBase(
   riconoscimento: RiconoscimentoAi,
   registro: readonly FonteUfficiale[],
   ricerca: EsitoRicercaDocumentale = RICERCA_NON_ESEGUITA
-): VerificaDocumentale {
+): VerificaBase {
   const proposta = riconoscimento.denominazioneProposta?.trim() ?? "";
   const prove = ricerca.prove.filter((prova) => prova.tipo === "ufficiale");
 
@@ -472,4 +482,41 @@ export function verificaDenominazione(
     [],
     ricerca
   );
+}
+
+/**
+ * Aggiunge la lettura documentale alla motivazione senza mai dichiararla
+ * completa se non lo è: il messaggio della lettura riporta pagine lette,
+ * allegati non scaricati e assenza di OCR.
+ */
+function notaLettura(lettura: LetturaDocumentale | null): string {
+  if (!lettura || lettura.stato === "non_tentata") return "";
+  return ` Lettura documentale — ${lettura.messaggio}`;
+}
+
+/**
+ * Punto di ingresso della verifica: livello e motivazione restano quelli
+ * della verifica documentale, mentre `provenienza` distingue esplicitamente
+ * denominazione, territorio, filiera e confezione fotografata.
+ */
+export function verificaDenominazione(
+  riconoscimento: RiconoscimentoAi,
+  registro: readonly FonteUfficiale[],
+  ricerca: EsitoRicercaDocumentale = RICERCA_NON_ESEGUITA
+): VerificaDocumentale {
+  const base = verificaBase(riconoscimento, registro, ricerca);
+  const proposta = riconoscimento.denominazioneProposta?.trim() ?? "";
+  const provaRiferimento =
+    base.prove.find(
+      (prova) => proposta !== "" && denominazioniEquivalenti(prova.denominazione, proposta)
+    ) ??
+    base.prove[0] ??
+    null;
+  const lettura = ricerca.lettura ?? null;
+
+  return {
+    ...base,
+    motivazione: `${base.motivazione}${notaLettura(lettura)}`,
+    provenienza: valutaProvenienza(riconoscimento, provaRiferimento, lettura),
+  };
 }

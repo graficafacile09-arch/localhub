@@ -56,6 +56,7 @@ export function componiEsito(input: {
     query: [],
     prove: [],
     messaggio: "Ricerca documentale non eseguita.",
+    lettura: null,
   };
   const denominazioneVerificata = verificato
     ? (verifica.denominazioneVerificata ?? null)
