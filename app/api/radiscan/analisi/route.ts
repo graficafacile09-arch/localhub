@@ -2,9 +2,7 @@ import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
-import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
-import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -65,18 +63,9 @@ export async function POST(request: Request): Promise<Response> {
     // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
     // dal percorso sincrono per non trattenere il riconoscimento.
     creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
-    // OCR e ricerca web tornano come verifiche ausiliarie: partono in parallelo
-    // al riconoscimento e non determinano da sole il successo dell'analisi.
-    creaOcr: () => creaMotoreOcrTesseract(),
-    creaWeb: () =>
-      creaRicercaWebIbrida({
-        maxQuery: 2,
-        maxPagine: 3,
-        maxFonti: 8,
-        timeoutQueryMs: 3_500,
-        timeoutPaginaMs: 3_500,
-        timeoutRicercaMs: 5_000,
-      }),
+    // Percorso rapido: niente OCR/Tavily/Google Search nella richiesta.
+    // Restano il motore vision condiviso con Aggiungi prodotti e la verifica
+    // documentale ufficiale eAmbrosia, necessaria per il livello verificato.
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
