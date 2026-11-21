@@ -15,12 +15,14 @@ export function creaProviderVisionProdotti(): ProviderRadiciScan {
       const immagini: VisionImage[] = [{
         buffer: Buffer.from(immagineBase64, "base64"),
         filename: nomeFileDaMime(mimeType),
+        role: "primary",
       }];
 
       if (immagineDettaglioBase64) {
         immagini.push({
           buffer: Buffer.from(immagineDettaglioBase64, "base64"),
           filename: "etichetta-dettaglio.jpg",
+          role: "detail",
         });
       }
 
