@@ -6,6 +6,7 @@ export interface VisionProvider {
   analyze(
     images: VisionImage[],
     context?: VisionContext,
-    promptOverride?: string
+    promptOverride?: string,
+    signal?: AbortSignal
   ): Promise<ProviderResult>;
 }
