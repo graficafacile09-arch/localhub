@@ -1,6 +1,6 @@
 import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
-import { creaProviderGemini } from "@/lib/radiscan/gemini";
+import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
 import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
@@ -60,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
         // compatibile con la forma minima usata da RadiciScan.
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
-    creaProvider: () => creaProviderGemini(),
+    creaProvider: () => creaProviderVisionProdotti(),
     // La ricerca eAmbrosia resta nel percorso principale: è la verifica ufficiale
     // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
     // dal percorso sincrono per non trattenere il riconoscimento.
