@@ -139,13 +139,26 @@ export async function analizzaProdotto(
     (riconoscimento.codiceBarre ?? "").trim() ||
     null;
 
-  // Fase documentale e web in parallelo: nessuna attesa inutile.
+  // L'OCR è già partito in parallelo al modello visivo. Recuperiamo ora
+  // i campi leggibili prima della ricerca web, così marchio e produttore
+  // sulla confezione diventano termini reali delle query Internet.
+  const ocr = await ocrPromise;
+  const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
+  const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
+  const produttoreDaEtichetta =
+    etichetta.produttore.valore ?? etichetta.nomeCommerciale.valore;
+  const riconoscimentoRicerca: typeof riconoscimento = produttoreDaEtichetta
+    ? { ...riconoscimento, produttore: produttoreDaEtichetta }
+    : riconoscimento;
+
+  // La ricerca documentale e quella web partono insieme. La ricerca web
+  // usa anche il nome/marchio letto dall'OCR, non soltanto l'ipotesi visiva.
   const documentiAvvio = Date.now();
   const ricercaPromise: Promise<EsitoRicercaDocumentale> = dipendenze.ricerca
     ? dipendenze.ricerca.cerca({ riconoscimento, signal }).catch(() => ricercaNonDisponibile())
     : Promise.resolve(ricercaNonEseguita());
 
-  const webPromise = dipendenze.web      ? dipendenze.web.cerca({ riconoscimento, signal }).catch(() => ({
+  const webPromise = dipendenze.web      ? dipendenze.web.cerca({ riconoscimento: riconoscimentoRicerca, signal }).catch(() => ({
         stato: "non_disponibile" as const,
         consultataIl: null,
         query: [],
@@ -171,13 +184,6 @@ export async function analizzaProdotto(
     barcodePromise,
   ]);
   const documentiMs = Date.now() - documentiAvvio;
-
-  // OCR continua in parallelo a registro, ricerca web e barcode: non blocca
-  // l'avvio delle verifiche quando il modello visivo ha già identificato il prodotto.
-  const ocr = await ocrPromise;
-  const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
-
-  const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
 
   const verifica = verificaDenominazione(riconoscimento, registro, ricerca);
   // La sintesi A-E viene calcolata dopo la verifica: la denominazione può
