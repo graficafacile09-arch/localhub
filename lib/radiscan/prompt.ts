@@ -12,7 +12,7 @@
 // 2.4.1: la denominazione proposta non può essere la dicitura generica del
 // marchio; il dettaglio ingrandito resta un supporto facoltativo.
 // La versione invalida la cache precedente.
-export const VERSIONE_PROMPT = "radiscan-2.4.1";
+export const VERSIONE_PROMPT = "radiscan-2.4.2";
 
 const RIGHE = [
   "Sei RadiciScan, un servizio che aiuta a riconoscere prodotti agroalimentari e a leggere le informazioni visibili in etichetta.",
