@@ -196,7 +196,7 @@ test("fonti UE in inglese: PDO è equivalente a DOP nella sintesi", () => {
     []
   );
   assert.equal(sintesi.denominazione.stato, "menzionata");
-  assert.ok(sintesi.denominazione.fonti.some((fonte) => fonte.id === "web:pdo"));
+  assert.ok(sintesi.denominazione.fonti.includes("web:pdo"));
 });
 
 test("produttore senza denominazione: nessuna denominazione inventata", async () => {
