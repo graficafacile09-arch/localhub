@@ -22,7 +22,7 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODELLO_PREDEFINITO = "gemini-2.5-flash";
 /** Modello vision già usato con successo dal progetto: fallback obbligatorio. */
 const MODELLO_FALLBACK = "gemini-flash-lite-latest";
-const TIMEOUT_PREDEFINITO_MS = 35_000;
+const TIMEOUT_PREDEFINITO_MS = 12_000;
 const MAX_OUTPUT_TOKENS = 1200;
 /**
  * Deve restare allineato a `TIMEOUT_ANALISI_MS` di `handler.ts` (55 s).
@@ -404,7 +404,7 @@ export function creaProviderGemini(
       let ultimoErrore: ErroreTentativo | null = null;
 
       for (const modello of modelli) {
-        for (let tentativo = 1; tentativo <= 2; tentativo += 1) {
+        for (let tentativo = 1; tentativo <= 1; tentativo += 1) {
           const residuo = scadenzaRoute - Date.now();
           if (residuo <= 0 || signal?.aborted) {
             if (ultimoErrore) throw ultimoErrore.errore;
