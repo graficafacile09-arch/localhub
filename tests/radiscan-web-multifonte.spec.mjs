@@ -336,6 +336,23 @@ test("motore non disponibile: stato non_disponibile, nessuna fonte inventata", a
   assert.match(esito.messaggio, /non dimostra l'assenza di fonti/i);
 });
 
+test("una corrispondenza su una sola parola non promuove una pagina a fonte del prodotto", async () => {
+  const esito = await creaRicercaWeb({
+    leggiPagineUfficiali: false,
+    fetchImpl: fintoFetch({
+      elenco: [
+        {
+          titolo: "Soppressata artigianale di un comune calabrese",
+          url: "https://www.esempio.it/prodotti",
+          estratto: "Prodotti tipici locali della Calabria.",
+        },
+      ],
+    }),
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  assert.deepEqual(esito.fonti, []);
+});
+
 test("una pagina generica non diventa una fonte del produttore", async () => {
   const esito = await creaRicercaWeb({
     fetchImpl: fintoFetch({
