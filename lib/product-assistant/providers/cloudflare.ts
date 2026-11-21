@@ -39,9 +39,10 @@ export class CloudflareProvider implements VisionProvider {
 
   async analyze(
     images: VisionImage[],
-    context?: VisionContext
+    context?: VisionContext,
+    promptOverride?: string
   ): Promise<ProviderResult> {
-    const prompt = buildVisionPrompt(context);
+    const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
 
     const content: CloudflareMessage["content"] = [{ type: "text", text: prompt }];
@@ -192,6 +193,7 @@ export class CloudflareProvider implements VisionProvider {
 
       return {
         suggestion,
+        rawText: responseText,
         model: this.model,
         latencyMs,
         tokenCount,
