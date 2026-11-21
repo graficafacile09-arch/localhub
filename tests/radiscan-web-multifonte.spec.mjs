@@ -201,7 +201,7 @@ test("fonti UE in inglese: PDO è equivalente a DOP nella sintesi", () => {
     []
   );
   assert.equal(sintesi.denominazione.stato, "menzionata");
-  assert.ok(sintesi.denominazione.fonti.includes("web:pdo"));
+  assert.ok(sintesi.denominazione.fonti.includes(fonti[0].url));
 });
 
 test("una fonte commerciale pertinente produce un riscontro DOP online positivo", () => {
@@ -236,7 +236,7 @@ test("una fonte commerciale pertinente produce un riscontro DOP online positivo"
   );
   assert.equal(sintesi.denominazione.stato, "menzionata");
   assert.match(sintesi.denominazione.testo, /riscontro online positivo/i);
-  assert.ok(sintesi.denominazione.fonti.includes("web:negozio"));
+  assert.ok(sintesi.denominazione.fonti.includes(fonti[0].url));
 });
 
 test("produttore senza denominazione: nessuna denominazione inventata", async () => {

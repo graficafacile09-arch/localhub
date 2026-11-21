@@ -1,4 +1,8 @@
 import { estraiTestoPdf } from "./pdf";
+import {
+  chiaveDenominazionePerVerifica,
+  denominazioniEquivalenti,
+} from "./verifica";
 import type {
   AttendibilitaFonte,
   DichiarazioneFonte,
@@ -211,6 +215,44 @@ function copre(testo: string, frase: string): boolean {
  * ("Salumificio Madeo S.r.l."): per collegare le fonti serve il nome
  * distintivo, non l'intera etichetta legale.
  */
+function senzaSiglaQualita(valore: string): string {
+  return normalizza(valore)
+    .replace(/\b(?:d\s*o\s*p|p\s*d\s*o|i\s*g\s*p|p\s*g\s*i|s\s*t\s*g|t\s*s\s*g)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Verifica la presenza del nome specifico, non di una categoria generica
+ * accompagnata dal territorio. Per un nome composto da una sola parola
+ * distintiva ("Soppressata di Calabria") serve la sequenza completa; per i
+ * nomi con almeno due parole distintive è ammessa la copertura delle stesse.
+ */
+function nomeSpecificoPresente(testo: string, nome: string): boolean {
+  const nomeNormalizzato = senzaSiglaQualita(nome);
+  if (nomeNormalizzato.length < 4) return false;
+
+  const testoNormalizzato = senzaSiglaQualita(testo);
+  if (testoNormalizzato.includes(nomeNormalizzato)) return true;
+
+  const attese = [
+    ...new Set(
+      nomeNormalizzato
+        .split(" ")
+        .filter((parola) => parola.length >= 3 && !STOPWORD.has(parola))
+    ),
+  ];
+  const distintive = attese.filter(
+    (parola) => !PAROLE_TERRITORIO.has(parola)
+  );
+  if (distintive.length < 2) return false;
+
+  const presenti = distintive.filter((parola) =>
+    testoNormalizzato.includes(parola)
+  ).length;
+  return presenti / distintive.length >= 0.7;
+}
+
 function paroleDistintiveProduttore(produttore: string): string[] {
   const tutte = [...tokenizza(produttore)];
   const distintive = tutte.filter((parola) => !PAROLE_SOCIETARIE.has(parola));
@@ -783,8 +825,9 @@ function haProdottoInTesto(
   const prodotto = riconoscimento.prodotto.trim();
   const denominazione = riconoscimento.denominazioneProposta?.trim() ?? "";
   return (
-    (prodotto.length >= 4 && copre(testoNormalizzato, prodotto)) ||
-    (denominazione.length >= 4 && copre(testoNormalizzato, denominazione))
+    (prodotto.length >= 4 && nomeSpecificoPresente(testoNormalizzato, prodotto)) ||
+    (denominazione.length >= 4 &&
+      nomeSpecificoPresente(testoNormalizzato, denominazione))
   );
 }
 
@@ -1171,12 +1214,9 @@ export function sintetizzaFontiWeb(
   const testoFonte = (fonte: FonteWeb) =>
     normalizza(`${fonte.titolo} ${fonte.estratto ?? ""} ${fonte.url}`);
 
+  const chiaveDenominazione = chiaveDenominazionePerVerifica(riconoscimento);
+
   // I registri e le fonti UE usano PDO/PGI/TSG: equivalgono a DOP/IGP/STG.
-  const senzaSiglaQualita = (valore: string) =>
-    normalizza(valore)
-      .replace(/\b(dop|pdo|igp|pgi|stg|tsg)\b/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
   const schemaRichiesto = normalizza(
     `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
   );
@@ -1191,11 +1231,11 @@ export function sintetizzaFontiWeb(
     return /registrat|denominazione|geographical indication|quality scheme/.test(t);
   };
   const fontiDenominazione = fonti.filter((fonte) => {
-    if (!denominazione) return false;
+    if (!chiaveDenominazione) return false;
     const testo = testoFonte(fonte);
-    const nomeBase = senzaSiglaQualita(denominazione);
+    const nomeBase = senzaSiglaQualita(chiaveDenominazione);
     return nomeBase.length >= 4 &&
-      copre(senzaSiglaQualita(testo), nomeBase) &&
+      nomeSpecificoPresente(testo, nomeBase) &&
       schemaPresenteNellaFonte(testo);
   });
   const fontiProdotto = fonti.filter((fonte) => copre(testoFonte(fonte), prodotto));
@@ -1225,21 +1265,24 @@ export function sintetizzaFontiWeb(
     (voce) =>
       voce.tipo === "ufficiale" &&
       voce.stato === "registrata" &&
-      (!denominazione ||
-        copre(normalizza(voce.denominazione), denominazione) ||
-        copre(normalizza(denominazione), voce.denominazione))
+      (chiaveDenominazione !== "" &&
+        denominazioniEquivalenti(voce.denominazione, chiaveDenominazione))
   );
 
   const denominazioneSintesi: SintesiVerificaWeb = prova
     ? statoWeb(
         "registrata",
-        `Denominazione registrata nel registro ufficiale eAmbrosia (${prova.denominazione}). La registrazione riguarda la denominazione, non la confezione.`,
+        denominazione
+          ? `Denominazione registrata nel registro ufficiale eAmbrosia (${prova.denominazione}). La registrazione riguarda la denominazione, non la confezione.`
+          : `Il nome prodotto specifico "${prodotto}" coincide con la denominazione registrata "${prova.denominazione}" nel registro ufficiale eAmbrosia. La denominazione non è stata letta in etichetta: il riscontro riguarda il nome del prodotto e non certifica la confezione.`,
         [prova, ...fontiDenominazione]
       )
     : fontiDenominazione.length > 0
       ? statoWeb(
           "menzionata",
-          "Riscontro online positivo: una o più pagine pertinenti associano questa denominazione allo schema DOP/IGP indicato. Le fonti sono consultabili qui sotto. La conferma nel registro UE è un controllo distinto e non annulla questo riscontro.",
+          denominazione
+            ? "Riscontro online positivo: una o più pagine pertinenti associano questa denominazione allo schema DOP/IGP indicato. Le fonti sono consultabili qui sotto. La conferma nel registro UE è un controllo distinto e non annulla questo riscontro."
+            : `Riscontro online positivo sul nome prodotto specifico "${prodotto}": una o più pagine pertinenti lo associano a uno schema DOP/IGP. La denominazione non è stata letta in etichetta e il riscontro non è una certificazione ufficiale; la conferma nel registro UE resta un controllo distinto.`,
           fontiDenominazione
         )
       : statoWeb(

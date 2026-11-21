@@ -108,36 +108,45 @@ function valutaTerritorio(
     };
   }
 
-  const evidenze: EvidenzaProvenienza[] = [];
-  const segnaleSede = segnaleCalabria(prova.sedeGruppo);
-  if (segnaleSede && prova.sedeGruppo) {
-    evidenze.push({
-      fonte: `Scheda eAmbrosia ${prova.id} — sede del gruppo riconosciuto`,
-      url: prova.url,
-      pagina: null,
-      estratto: prova.sedeGruppo.replace(/\s+/g, " ").trim().slice(0, 200),
-    });
-  }
-  evidenze.push(...evidenzeDaDocumenti(lettura));
+  const evidenzeTerritoriali = evidenzeDaDocumenti(lettura);
 
-  if (evidenze.length > 0) {
+  // La sede amministrativa del gruppo è un dato della scheda, non l'area di
+  // produzione: resta visibile come informazione separata, ma non sostiene
+  // lo stato `documentato`.
+  const sedeAmministrativa: EvidenzaProvenienza | null = prova.sedeGruppo
+    ? {
+        fonte: `Scheda eAmbrosia ${prova.id} — sede amministrativa del gruppo riconosciuto (non area di produzione)`,
+        url: prova.url,
+        pagina: null,
+        estratto: prova.sedeGruppo.replace(/\s+/g, " ").trim().slice(0, 200),
+      }
+    : null;
+
+  if (evidenzeTerritoriali.length > 0) {
     return {
       stato: "documentato",
-      evidenze: evidenze.slice(0, MAX_EVIDENZE),
+      evidenze: [
+        ...(sedeAmministrativa ? [sedeAmministrativa] : []),
+        ...evidenzeTerritoriali,
+      ].slice(0, MAX_EVIDENZE),
       motivo:
-        "La Calabria è citata in una fonte ufficiale consultata (scheda del registro o documento allegato letto). Riguarda la zona di produzione della denominazione, non la singola confezione.",
+        "La Calabria è citata in un documento ufficiale letto: è un'evidenza documentale distinta dalla sede amministrativa del gruppo e non autentica la singola confezione.",
     };
   }
 
   const indicato = riconoscimento.territorioProposto;
   return {
     stato: "non_documentato",
-    evidenze: [],
+    evidenze: sedeAmministrativa ? [sedeAmministrativa] : [],
     motivo:
-      `Né la scheda eAmbrosia ${prova.id} né i documenti letti indicano la Calabria` +
+      "Nessun documento ufficiale letto indica la Calabria come area di produzione" +
       (indicato
         ? `; il territorio letto in etichetta ("${indicato}") non è una fonte documentale.`
-        : "; il nome del prodotto non è prova di provenienza."),
+        : "; il nome del prodotto non è prova di provenienza.") +
+      " La prova disponibile non contiene un'area di produzione ufficiale confrontabile." +
+      (sedeAmministrativa
+        ? " La sede amministrativa del gruppo non è l'area di produzione della denominazione e non viene usata come prova territoriale."
+        : ""),
   };
 }
 

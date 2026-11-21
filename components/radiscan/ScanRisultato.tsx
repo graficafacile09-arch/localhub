@@ -943,8 +943,13 @@ export default function ScanRisultato({
   cache: boolean;
   onReset: () => void;
 }) {
+  const riconoscimento = esito.riconoscimento;
   const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
-  const dopUfficialmenteRegistrata = dopRiconosciuta(prove);
+  const denominazioneLetta = Boolean(
+    riconoscimento.denominazioneProposta?.trim()
+  );
+  const dopUfficialmenteRegistrata =
+    denominazioneLetta && dopRiconosciuta(prove);
   // Una DOP esatta e attiva nel registro UE è un riconoscimento positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
@@ -965,14 +970,14 @@ export default function ScanRisultato({
       }
     : riscontroOnlineDop
       ? {
-          titolo: "DOP con riscontri online",
-          descrizione:
-            "Sono state trovate fonti online pertinenti che riportano questa denominazione come DOP. È un riscontro positivo sulla presenza della denominazione nelle fonti; la conferma del registro ufficiale e l'autenticità della singola confezione restano controlli separati.",
+          titolo: "DOP/IGP con riscontri online",
+          descrizione: denominazioneLetta
+            ? "Sono state trovate fonti online pertinenti che riportano questa denominazione come DOP/IGP. È un riscontro positivo sulla presenza della denominazione nelle fonti; la conferma del registro ufficiale e l'autenticità della singola confezione restano controlli separati."
+            : `Le fonti online pertinenti associano il nome prodotto specifico "${riconoscimento.prodotto}" a una denominazione DOP/IGP. La denominazione non è stata letta in etichetta: il riscontro riguarda il nome del prodotto, non una certificazione ufficiale. La conferma del registro e l'autenticità della singola confezione restano controlli separati.`,
         }
       : ETICHETTE_GRUPPO[gruppo];
   const Icona = stile.icona;
 
-  const riconoscimento = esito.riconoscimento;
   const indicatore = Array.isArray(riconoscimento.indicatoriEtichetta)
     ? riconoscimento.indicatoriEtichetta
     : [];
