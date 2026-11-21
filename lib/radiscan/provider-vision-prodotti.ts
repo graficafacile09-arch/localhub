@@ -1,6 +1,7 @@
 import type { VisionImage } from "../product-assistant/types";
 import { analyzeImagesWithPrompt } from "../product-assistant/vision-service";
 import type { MimeAmmesso, ProviderRadiciScan } from "./tipi";
+import { analizzaOutputModello } from "./schema";
 
 /**
  * Adattatore RadiciScan verso la stessa catena vision di Aggiungi prodotti.
@@ -26,7 +27,7 @@ export function creaProviderVisionProdotti(): ProviderRadiciScan {
         });
       }
 
-      const risultato = await analyzeImagesWithPrompt(immagini, prompt, signal);
+      const risultato = await analyzeImagesWithPrompt(immagini, prompt, signal, (testo) => analizzaOutputModello(testo).ok);
       return {
         testo: risultato.rawText,
         modello: risultato.model,
