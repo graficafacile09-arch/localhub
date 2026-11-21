@@ -2,7 +2,9 @@ import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
+import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
+import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -63,9 +65,18 @@ export async function POST(request: Request): Promise<Response> {
     // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
     // dal percorso sincrono per non trattenere il riconoscimento.
     creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
-    // OCR e ricerca web sono esclusi dal percorso iniziale: non devono
-    // ritardare il riconoscimento né diventare requisiti di successo.
-    // I moduli restano intatti per un'eventuale fase successiva separata.
+    // OCR e ricerca web tornano come verifiche ausiliarie: partono in parallelo
+    // al riconoscimento e non determinano da sole il successo dell'analisi.
+    creaOcr: () => creaMotoreOcrTesseract(),
+    creaWeb: () =>
+      creaRicercaWebIbrida({
+        maxQuery: 2,
+        maxPagine: 3,
+        maxFonti: 8,
+        timeoutQueryMs: 3_500,
+        timeoutPaginaMs: 3_500,
+        timeoutRicercaMs: 5_000,
+      }),
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
