@@ -139,13 +139,41 @@ export async function analizzaProdotto(
     (riconoscimento.codiceBarre ?? "").trim() ||
     null;
 
-  // Fase documentale e web in parallelo: nessuna attesa inutile.
+  // L'OCR è già partito in parallelo al modello visivo. Recuperiamo ora
+  // i campi leggibili prima della ricerca web, così marchio e produttore
+  // sulla confezione diventano termini reali delle query Internet.
+  // Attendi l'OCR solo per una finestra breve: se il worker è già caldo
+  // sfruttiamo subito il testo; se è lento, la ricerca web parte comunque.
+  let timerAttesaOcr: ReturnType<typeof setTimeout> | undefined;
+  const ocrPerRicerca = await Promise.race([
+    ocrPromise,
+    new Promise<null>((resolve) => {
+      timerAttesaOcr = setTimeout(() => resolve(null), 1_200);
+    }),
+  ]);
+  if (timerAttesaOcr) clearTimeout(timerAttesaOcr);
+  const etichettaPerRicerca = estraiEtichetta(ocrPerRicerca, riconoscimento).etichetta;
+  const nomeOcr = etichettaPerRicerca.nomeCommerciale.valore;
+  const nomeOcrDistinto =
+    nomeOcr &&
+    nomeOcr.toLocaleLowerCase("it").replace(/[^a-z0-9]/g, "") !==
+      riconoscimento.prodotto.toLocaleLowerCase("it").replace(/[^a-z0-9]/g, "")
+      ? nomeOcr
+      : null;
+  const produttoreDaEtichetta =
+    etichettaPerRicerca.produttore.valore ?? nomeOcrDistinto ?? riconoscimento.produttore;
+  const riconoscimentoRicerca: typeof riconoscimento = produttoreDaEtichetta
+    ? { ...riconoscimento, produttore: produttoreDaEtichetta }
+    : riconoscimento;
+
+  // La ricerca documentale e quella web partono insieme. La ricerca web
+  // usa anche il nome/marchio letto dall'OCR, non soltanto l'ipotesi visiva.
   const documentiAvvio = Date.now();
   const ricercaPromise: Promise<EsitoRicercaDocumentale> = dipendenze.ricerca
     ? dipendenze.ricerca.cerca({ riconoscimento, signal }).catch(() => ricercaNonDisponibile())
     : Promise.resolve(ricercaNonEseguita());
 
-  const webPromise = dipendenze.web      ? dipendenze.web.cerca({ riconoscimento, signal }).catch(() => ({
+  const webPromise = dipendenze.web      ? dipendenze.web.cerca({ riconoscimento: riconoscimentoRicerca, signal }).catch(() => ({
         stato: "non_disponibile" as const,
         consultataIl: null,
         query: [],
@@ -172,11 +200,10 @@ export async function analizzaProdotto(
   ]);
   const documentiMs = Date.now() - documentiAvvio;
 
-  // OCR continua in parallelo a registro, ricerca web e barcode: non blocca
-  // l'avvio delle verifiche quando il modello visivo ha già identificato il prodotto.
-  const ocr = await ocrPromise;
+  // L'OCR completo resta disponibile per il referto anche se non è arrivato
+  // nella finestra breve usata per costruire le query.
+  const ocr = ocrPerRicerca ?? await ocrPromise;
   const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
-
   const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
 
   const verifica = verificaDenominazione(riconoscimento, registro, ricerca);
