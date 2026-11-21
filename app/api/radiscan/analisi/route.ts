@@ -2,9 +2,7 @@ import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
-import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
-import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -27,8 +25,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// OCR + modello + documenti + web: il budget interno è 55 s.
-export const maxDuration = 60;
+// Percorso rapido: riconoscimento visivo + verifica sul registro ufficiale.
+export const maxDuration = 30;
 
 async function utenteCorrente(): Promise<{ id: string } | null> {
   const supabase = await createServerSupabaseClient();
@@ -61,33 +59,13 @@ export async function POST(request: Request): Promise<Response> {
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
     creaProvider: () => creaProviderGemini(),
-    // La registrazione eAmbrosia resta completa; la lettura degli allegati
-    // è limitata al primo documento e a un budget breve, così non blocca
-    // il risultato rapido. L'eventuale lettura parziale è dichiarata in UI.
-    creaRicerca: () =>
-      creaRicercaEAmbrosia({
-        lettura: {
-          timeoutTotaleMs: 5_000,
-          timeoutDocumentoMs: 4_000,
-          maxDocumenti: 1,
-          maxPagine: 3,
-          maxBytes: 3_000_000,
-          maxCaratteriTotali: 40_000,
-          concorrenza: 1,
-        },
-      }),
-    creaOcr: () => creaMotoreOcrTesseract(),
-    // Prima motori keyless rapidi; Tavily interviene soltanto se le fonti
-    // gratuite non bastano a sostenere l'identificazione.
-    creaWeb: () =>
-      creaRicercaWebIbrida({
-        maxQuery: 2,
-        maxPagine: 3,
-        maxFonti: 8,
-        timeoutQueryMs: 3_500,
-        timeoutPaginaMs: 3_500,
-        timeoutRicercaMs: 5_000,
-      }),
+    // La ricerca eAmbrosia resta nel percorso principale: è la verifica ufficiale
+    // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
+    // dal percorso sincrono per non trattenere il riconoscimento.
+    creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
+    // OCR e ricerca web sono esclusi dal percorso iniziale: non devono
+    // ritardare il riconoscimento né diventare requisiti di successo.
+    // I moduli restano intatti per un'eventuale fase successiva separata.
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
