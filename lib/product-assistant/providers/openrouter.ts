@@ -33,9 +33,10 @@ export class OpenRouterProvider implements VisionProvider {
 
   async analyze(
     images: VisionImage[],
-    context?: VisionContext
+    context?: VisionContext,
+    promptOverride?: string
   ): Promise<ProviderResult> {
-    const prompt = buildVisionPrompt(context);
+    const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
 
     const content: OpenRouterMessage["content"] = [{ type: "text", text: prompt }];
@@ -161,6 +162,7 @@ export class OpenRouterProvider implements VisionProvider {
 
       return {
         suggestion,
+        rawText: responseText,
         model: this.model,
         latencyMs,
         tokenCount,
