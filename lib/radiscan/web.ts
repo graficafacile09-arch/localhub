@@ -1174,29 +1174,52 @@ export function sintetizzaFontiWeb(
   // I registri e le fonti UE usano PDO/PGI/TSG: equivalgono a DOP/IGP/STG.
   const senzaSiglaQualita = (valore: string) =>
     normalizza(valore)
-      .replace(/\b(dop|pdo|igp|pgi|stg|tsg)\b/g, " ")
-      .replace(/\s+/g, " ")
+      .replace(/\\b(dop|pdo|igp|pgi|stg|tsg)\\b/g, " ")
+      .replace(/\\s+/g, " ")
       .trim();
   const schemaRichiesto = normalizza(
     `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
   );
   const schemaPresenteNellaFonte = (testo: string) => {
     const t = normalizza(testo);
-    if (/\b(dop|pdo)\b|protected designation of origin/.test(t))
-      return /\b(dop|pdo)\b|protected designation of origin/.test(schemaRichiesto);
-    if (/\b(igp|pgi)\b|protected geographical indication/.test(t))
-      return /\b(igp|pgi)\b|protected geographical indication/.test(schemaRichiesto);
-    if (/\b(stg|tsg)\b|traditional speciality guaranteed/.test(t))
-      return /\b(stg|tsg)\b|traditional speciality guaranteed/.test(schemaRichiesto);
+    if (/\\b(dop|pdo)\\b|protected designation of origin/.test(t))
+      return /\\b(dop|pdo)\\b|protected designation of origin/.test(schemaRichiesto);
+    if (/\\b(igp|pgi)\\b|protected geographical indication/.test(t))
+      return /\\b(igp|pgi)\\b|protected geographical indication/.test(schemaRichiesto);
+    if (/\\b(stg|tsg)\\b|traditional speciality guaranteed/.test(t))
+      return /\\b(stg|tsg)\\b|traditional speciality guaranteed/.test(schemaRichiesto);
     return /registrat|denominazione|geographical indication|quality scheme/.test(t);
   };
+
+  // Il modello può leggere correttamente il prodotto ma omettere o variare
+  // denominazione_proposta tra due scansioni della stessa confezione.
+  // In quel caso il nome specifico del prodotto è una chiave alternativa,
+  // ma solo se contiene almeno due parole distintive e la fonte cita anche
+  // lo schema di qualità effettivamente proposto. Non basta un nome generico.
+  const candidatiDenominazione = [
+    denominazione,
+    riconoscimento.schemaProposto && tokenizza(prodotto).size >= 2
+      ? prodotto
+      : null,
+  ].filter((voce, indice, elenco): voce is string =>
+    Boolean(voce) && elenco.findIndex((altro) =>
+      altro && normalizza(altro) === normalizza(voce)
+    ) === indice
+  );
   const fontiDenominazione = fonti.filter((fonte) => {
-    if (!denominazione) return false;
+    if (candidatiDenominazione.length === 0) return false;
     const testo = testoFonte(fonte);
-    const nomeBase = senzaSiglaQualita(denominazione);
-    return nomeBase.length >= 4 &&
-      copre(senzaSiglaQualita(testo), nomeBase) &&
-      schemaPresenteNellaFonte(testo);
+    return (
+      schemaPresenteNellaFonte(testo) &&
+      candidatiDenominazione.some((candidato) => {
+        const nomeBase = senzaSiglaQualita(candidato);
+        return (
+          nomeBase.length >= 4 &&
+          tokenizza(nomeBase).size >= 2 &&
+          copre(senzaSiglaQualita(testo), nomeBase)
+        );
+      })
+    );
   });
   const fontiProdotto = fonti.filter((fonte) => copre(testoFonte(fonte), prodotto));
   const paroleProduttore = produttore
