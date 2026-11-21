@@ -182,5 +182,38 @@ export async function analyzeImages(
       "Nessun provider AI configurato. Per abilitare il riconoscimento prodotti, segui le istruzioni in .env.example.",
   };
 }
+/**
+ * Esegue la stessa catena Gemma -> OpenRouter di Aggiungi prodotti,
+ * senza cache commerciale e senza trasformare l'output nello schema prodotto.
+ * Il prompt è fornito dalla pipeline chiamante (es. RadiciScan).
+ */
+export async function analyzeImagesWithPrompt(
+  images: VisionImage[],
+  prompt: string
+): Promise<{ rawText: string; model: string; provider: string }> {
+  if (images.length === 0) throw new Error("Nessuna immagine fornita per l'analisi.");
+  let lastError: unknown = null;
 
+  for (const entry of PROVIDER_CHAIN) {
+    const provider = entry.build();
+    if (!provider) continue;
+    try {
+      const result = await provider.analyze(images, undefined, prompt);
+      if (!result.rawText?.trim()) {
+        throw new ProviderError(
+          "AI_PROVIDER_UNKNOWN_ERROR",
+          `${entry.name}: risposta testuale vuota.`,
+          result.httpStatus
+        );
+      }
+      return { rawText: result.rawText, model: result.model, provider: entry.name };
+    } catch (error) {
+      lastError = error;
+      console.warn(`[radiscan][vision] provider=${entry.name} esito=errore`);
+    }
+  }
+
+  if (lastError instanceof Error) throw lastError;
+  throw new Error("Nessun provider vision configurato o disponibile.");
+}
 
