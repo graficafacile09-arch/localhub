@@ -948,9 +948,14 @@ export default function ScanRisultato({
   // Una DOP esatta e attiva nel registro UE è un riconoscimento positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
+  const riscontroOnlineDop =
+    !dopUfficialmenteRegistrata &&
+    esito.web?.sintesi?.denominazione.stato === "menzionata";
   const gruppo = dopUfficialmenteRegistrata
     ? "verificato"
-    : gruppoDaLivello(esito.livello);
+    : riscontroOnlineDop
+      ? "non_documentato"
+      : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
   const etichetta = dopUfficialmenteRegistrata
     ? {
@@ -958,7 +963,13 @@ export default function ScanRisultato({
         descrizione:
           "La corrispondenza esatta risulta registrata nel registro ufficiale dell'Unione europea. La documentazione accessoria può essere incompleta: il riconoscimento della denominazione non autentica la singola confezione, il lotto o il produttore.",
       }
-    : ETICHETTE_GRUPPO[gruppo];
+    : riscontroOnlineDop
+      ? {
+          titolo: "DOP con riscontri online",
+          descrizione:
+            "Sono state trovate fonti online pertinenti che riportano questa denominazione come DOP. È un riscontro positivo sulla presenza della denominazione nelle fonti; la conferma del registro ufficiale e l'autenticità della singola confezione restano controlli separati.",
+        }
+      : ETICHETTE_GRUPPO[gruppo];
   const Icona = stile.icona;
 
   const riconoscimento = esito.riconoscimento;
