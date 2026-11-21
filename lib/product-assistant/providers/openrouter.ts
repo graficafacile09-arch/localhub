@@ -56,13 +56,14 @@ export class OpenRouterProvider implements VisionProvider {
     let httpStatus: number | string = "unknown";
     let responseText = "";
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
+    let annullaSegnale: (() => void) | undefined;
 
     try {
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
-      const annulla = () => controller.abort();
-      signal?.addEventListener("abort", annulla, { once: true });
+      annullaSegnale = () => controller.abort();
+      signal?.addEventListener("abort", annullaSegnale, { once: true });
       if (signal?.aborted) controller.abort();
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -83,7 +84,7 @@ export class OpenRouterProvider implements VisionProvider {
       });
 
       clearTimeout(timeoutId);
-      signal?.removeEventListener("abort", annulla);
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
 
       httpStatus = response.status;
 
@@ -174,6 +175,7 @@ export class OpenRouterProvider implements VisionProvider {
         httpStatus,
       };
     } catch (caught: unknown) {
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
