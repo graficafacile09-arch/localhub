@@ -1236,21 +1236,16 @@ export function sintetizzaFontiWeb(
         `Denominazione registrata nel registro ufficiale eAmbrosia (${prova.denominazione}). La registrazione riguarda la denominazione, non la confezione.`,
         [prova, ...fontiDenominazione]
       )
-    : fontiDenominazione.some(
-          (fonte) =>
-            fonte.natura === "ufficiale_eu" ||
-            fonte.natura === "ufficiale_it" ||
-            fonte.natura === "regionale"
-        )
+    : fontiDenominazione.length > 0
       ? statoWeb(
           "menzionata",
-          "La denominazione è citata da una fonte istituzionale letta, ma la registrazione non è stata confermata dal registro ufficiale in questa analisi.",
+          "Riscontro online positivo: una o più pagine pertinenti associano questa denominazione allo schema DOP/IGP indicato. Le fonti sono consultabili qui sotto. La conferma nel registro UE è un controllo distinto e non annulla questo riscontro.",
           fontiDenominazione
         )
       : statoWeb(
           "non_confermata",
-          "Le fonti lette non confermano la registrazione della denominazione. L'assenza di riscontro non dimostra che la denominazione non esista.",
-          fontiDenominazione
+          "Nelle pagine recuperate non è emersa una citazione pertinente della denominazione. Questo non dimostra che la denominazione non esista.",
+          []
         );
 
   const produttoreSintesi: SintesiVerificaWeb =
