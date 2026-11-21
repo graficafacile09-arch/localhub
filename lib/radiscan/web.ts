@@ -36,14 +36,14 @@ const HOST_DDG = "html.duckduckgo.com";
 const HOST_BING = "www.bing.com";
 const MAX_RISPOSTA_RICERCA = 600_000;
 const MAX_PAGINA = 500_000;
-const MAX_QUERY = 8;
-const MAX_RISULTATI_QUERY = 7;
-const MAX_FONTI = 16;
-const MAX_PAGINE = 8;
+const MAX_QUERY = 6;
+const MAX_RISULTATI_QUERY = 6;
+const MAX_FONTI = 12;
+const MAX_PAGINE = 5;
 const MAX_PAGINE_DOMINIO = 2;
 const MAX_CARATTERI_PAGINA = 6_000;
-const TIMEOUT_QUERY_MS = 6_000;
-const TIMEOUT_PAGINA_MS = 6_000;
+const TIMEOUT_QUERY_MS = 4_500;
+const TIMEOUT_PAGINA_MS = 4_500;
 const TTL_CACHE_MS = 10 * 60 * 1000;
 
 const PAROLE_TERRITORIO = new Set([
@@ -1171,12 +1171,33 @@ export function sintetizzaFontiWeb(
   const testoFonte = (fonte: FonteWeb) =>
     normalizza(`${fonte.titolo} ${fonte.estratto ?? ""} ${fonte.url}`);
 
-  const fontiDenominazione = fonti.filter(
-    (fonte) =>
-      denominazione &&
-      copre(testoFonte(fonte), denominazione) &&
-      /dop|igp|stg|registrat|denominazione/i.test(testoFonte(fonte))
+  // I registri e le fonti UE usano PDO/PGI/TSG: equivalgono a DOP/IGP/STG.
+  const senzaSiglaQualita = (valore: string) =>
+    normalizza(valore)
+      .replace(/\b(dop|pdo|igp|pgi|stg|tsg)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const schemaRichiesto = normalizza(
+    `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
   );
+  const schemaPresenteNellaFonte = (testo: string) => {
+    const t = normalizza(testo);
+    if (/\b(dop|pdo)\b|protected designation of origin/.test(t))
+      return /\b(dop|pdo)\b|protected designation of origin/.test(schemaRichiesto);
+    if (/\b(igp|pgi)\b|protected geographical indication/.test(t))
+      return /\b(igp|pgi)\b|protected geographical indication/.test(schemaRichiesto);
+    if (/\b(stg|tsg)\b|traditional speciality guaranteed/.test(t))
+      return /\b(stg|tsg)\b|traditional speciality guaranteed/.test(schemaRichiesto);
+    return /registrat|denominazione|geographical indication|quality scheme/.test(t);
+  };
+  const fontiDenominazione = fonti.filter((fonte) => {
+    if (!denominazione) return false;
+    const testo = testoFonte(fonte);
+    const nomeBase = senzaSiglaQualita(denominazione);
+    return nomeBase.length >= 4 &&
+      copre(senzaSiglaQualita(testo), nomeBase) &&
+      schemaPresenteNellaFonte(testo);
+  });
   const fontiProdotto = fonti.filter((fonte) => copre(testoFonte(fonte), prodotto));
   const paroleProduttore = produttore
     ? paroleDistintiveProduttore(produttore)
@@ -1285,7 +1306,7 @@ export function sintetizzaFontiWeb(
   // La filiera calabrese non coincide con DOP/IGP: vale anche per prodotti
   // ordinari, purché una pagina effettivamente letta colleghi prodotto,
   // produttore/filiera e territorio o lavorazione in Calabria.
-  const schemaProtetto = /dop|igp|stg/.test(
+  const schemaProtetto = /dop|pdo|igp|pgi|stg|tsg/.test(
     normalizza(`${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`)
   );
   const fontiFilieraCalabrese = fonti.filter((fonte) => {
@@ -1322,7 +1343,7 @@ export function sintetizzaFontiWeb(
       ["ufficiale_eu", "ufficiale_it", "regionale", "certificazione", "consorzio"].includes(
         fonte.natura
       ) &&
-      /dop|igp|denominazione/.test(testo);
+      /dop|pdo|igp|pgi|stg|tsg|denominazione|geographical indication/.test(testo);
     return produzioneLocale || fonteTerritorialeProtetta;
   });
 
