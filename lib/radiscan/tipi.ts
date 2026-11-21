@@ -517,6 +517,9 @@ export interface VerificaProduttore {
 
 /** Tempi reali misurati, non stime. */
 export interface TempiAnalisi {
+  /** Ridimensionamento/ricodifica prima della chiamata visiva. */
+  preprocessamentoMs?: number;
+  /** Solo la chiamata al modello visivo, senza preprocessing. */
   identificazioneMs: number;
   ocrMs: number;
   documentiMs: number;

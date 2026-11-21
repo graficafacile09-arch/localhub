@@ -47,7 +47,9 @@ import type { ProviderRicercaWeb } from "./web";
  * - senza `RADISCAN_CACHE_SECRET` la cache è disattivata, non l'analisi.
  */
 
-const TIMEOUT_ANALISI_MS = 55_000;
+/** Deve restare sotto il `maxDuration` della route (30 s): un timeout interno
+ * più lungo verrebbe ucciso dalla piattaforma senza risposta JSON. */
+const TIMEOUT_ANALISI_MS = 20_000;
 const SALE_MINIMO = 16;
 
 export interface DipendenzeHandler {

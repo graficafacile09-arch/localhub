@@ -55,6 +55,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "pdf.ts",
     "produttore.ts",
     "prompt.ts",
+    "provider-vision-prodotti.ts",
     "quote.ts",
     "repository.ts",
     "ricerca.ts",
@@ -84,6 +85,12 @@ test("isolamento: nessun import dal percorso venditori o da infrastrutture condi
   for (const nome of FILES) {
     const sorgente = readFileSync(`${CARTELLA}/${nome}`, "utf8");
     for (const [regola, etichetta] of vietati) {
+      // Unico punto di contatto ammesso con il percorso venditori: l'adattatore
+      // che riusa la catena vision di Aggiungi prodotti. Nessun altro modulo
+      // RadiciScan può importarla, e l'adattatore non usa la sua cache.
+      if (etichetta === "product-assistant" && nome === "provider-vision-prodotti.ts") {
+        continue;
+      }
       assert.ok(!regola.test(sorgente), `${nome} importa ${etichetta}`);
     }
     assert.ok(!/\brequire\s*\(/.test(sorgente), `${nome} usa require`);

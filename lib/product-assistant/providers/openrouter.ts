@@ -1,6 +1,6 @@
 import { buildVisionPrompt } from "../prompts";
 import type { VisionContext, VisionImage } from "../types";
-import type { VisionProvider } from "./base";
+import type { OpzioniChiamataProvider, VisionProvider } from "./base";
 import {
   AI_PROVIDER_NETWORK_ERROR,
   AI_PROVIDER_QUOTA_EXCEEDED,
@@ -35,7 +35,8 @@ export class OpenRouterProvider implements VisionProvider {
     images: VisionImage[],
     context?: VisionContext,
     promptOverride?: string,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    opzioni?: OpzioniChiamataProvider
   ): Promise<ProviderResult> {
     const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
@@ -61,7 +62,8 @@ export class OpenRouterProvider implements VisionProvider {
     try {
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutMs = opzioni?.timeoutMs ?? 60000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       annullaSegnale = () => controller.abort();
       signal?.addEventListener("abort", annullaSegnale, { once: true });
       if (signal?.aborted) controller.abort();
@@ -77,7 +79,7 @@ export class OpenRouterProvider implements VisionProvider {
         body: JSON.stringify({
           model: this.model,
           messages,
-          max_tokens: 2000,
+          max_tokens: opzioni?.maxOutputTokens ?? 2000,
           temperature: 0.1,
         }),
         signal: controller.signal,
@@ -185,7 +187,7 @@ export class OpenRouterProvider implements VisionProvider {
       if (caught instanceof DOMException && caught.name === "AbortError") {
         throw new ProviderError(
           AI_PROVIDER_TIMEOUT,
-          "OpenRouter: timeout richiesta (60s).",
+          `OpenRouter: timeout richiesta (${opzioni?.timeoutMs ?? 60000}ms).`,
           "timeout"
         );
       }
