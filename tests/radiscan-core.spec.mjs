@@ -444,11 +444,11 @@ test("cache: esiti scaduti o di prompt precedenti non vengono riusati", () => {
 
 // ─── Quote ─────────────────────────────────────────────────────────────────
 
-test("quote: limiti non negoziabili 3/15 e 10/60", () => {
-  assert.deepEqual(limitiQuota("anonimo"), { minuto: 3, giorno: 15 });
-  assert.deepEqual(limitiQuota("autenticato"), { minuto: 10, giorno: 60 });
-  assert.equal(LIMITI_QUOTA.anonimo.giorno, 15);
-  assert.equal(LIMITI_QUOTA.autenticato.giorno, 60);
+test("quote: limiti allineati alla RPC 10/100 e 30/300", () => {
+  assert.deepEqual(limitiQuota("anonimo"), { minuto: 10, giorno: 100 });
+  assert.deepEqual(limitiQuota("autenticato"), { minuto: 30, giorno: 300 });
+  assert.equal(LIMITI_QUOTA.anonimo.giorno, 100);
+  assert.equal(LIMITI_QUOTA.autenticato.giorno, 300);
   assert.throws(() => limitiQuota("amministratore"));
 });
 
@@ -476,14 +476,14 @@ test("quote: chiavi anonime e autenticate rispettano 16-128 caratteri", () => {
 
 test("quote: risposta RPC valida, negata e malformata", () => {
   const consentita = interpretaRigaQuota(
-    [{ allowed: true, retry_after: 0, reason: null, usati_oggi: 2, limite_giorno: 15, limite_minuto: 3 }],
+    [{ allowed: true, retry_after: 0, reason: null, usati_oggi: 2, limite_giorno: 100, limite_minuto: 10 }],
     "anonimo"
   );
   assert.equal(consentita.consentita, true);
   assert.equal(consentita.usatiOggi, 2);
 
   const negata = interpretaRigaQuota(
-    [{ allowed: false, retry_after: 42, reason: "Limite al minuto.", usati_oggi: 3, limite_giorno: 15, limite_minuto: 3 }],
+    [{ allowed: false, retry_after: 42, reason: "Limite al minuto.", usati_oggi: 3, limite_giorno: 100, limite_minuto: 10 }],
     "anonimo"
   );
   assert.equal(negata.consentita, false);
@@ -499,7 +499,7 @@ test("quote: risposta RPC valida, negata e malformata", () => {
   assert.throws(
     () =>
       interpretaRigaQuota(
-        [{ allowed: true, usati_oggi: 0, limite_giorno: 60, limite_minuto: 10 }],
+        [{ allowed: true, usati_oggi: 0, limite_giorno: 300, limite_minuto: 30 }],
         "anonimo"
       ),
     (errore) => errore.codice === "RADICSCAN_QUOTA_CONFIGURAZIONE"
@@ -517,8 +517,8 @@ test("quote: consumaQuota chiama la RPC 2A e fallisce chiuso", async () => {
           retry_after: 0,
           reason: null,
           usati_oggi: 5,
-          limite_giorno: 15,
-          limite_minuto: 3,
+          limite_giorno: 100,
+          limite_minuto: 10,
         },
       ],
       error: null,
