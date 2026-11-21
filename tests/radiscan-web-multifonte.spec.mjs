@@ -170,6 +170,35 @@ test("Madeo: query separate, pagine ufficiali e produttore lette, sintesi A-E", 
   assert.equal(esito.sintesi.confezione.stato, "non_verificabile");
 });
 
+test("fonti UE in inglese: PDO è equivalente a DOP nella sintesi", () => {
+  const fonti = [{
+    id: "web:pdo",
+    titolo: "European Commission — Pecorino Crotonese PDO",
+    ente: "ec.europa.eu",
+    url: "https://ec.europa.eu/example/pecorino-crotonese-pdo",
+    dominio: "ec.europa.eu",
+    natura: "ufficiale_eu",
+    attendibilita: "alta",
+    consultataIl: "2026-11-21",
+    dataDocumento: null,
+    estratto: "Pecorino Crotonese is a Protected Designation of Origin (PDO).",
+    riferimentoNormativo: null,
+    pagineLette: 1,
+    lettoIntegralmente: true,
+    metodoLettura: "http",
+    relazione: "Pagina istituzionale letta.",
+    dichiarazione: "indipendente",
+    rilevanza: "alta",
+  }];
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento(),
+    fonti,
+    []
+  );
+  assert.equal(sintesi.denominazione.stato, "menzionata");
+  assert.ok(sintesi.denominazione.fonti.some((fonte) => fonte.id === "web:pdo"));
+});
+
 test("produttore senza denominazione: nessuna denominazione inventata", async () => {
   const esito = await creaRicercaWeb({
     fetchImpl: fintoFetch({
