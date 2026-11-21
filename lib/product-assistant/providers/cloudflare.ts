@@ -40,7 +40,8 @@ export class CloudflareProvider implements VisionProvider {
   async analyze(
     images: VisionImage[],
     context?: VisionContext,
-    promptOverride?: string
+    promptOverride?: string,
+    signal?: AbortSignal
   ): Promise<ProviderResult> {
     const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
@@ -69,6 +70,9 @@ export class CloudflareProvider implements VisionProvider {
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const annulla = () => controller.abort();
+      signal?.addEventListener("abort", annulla, { once: true });
+      if (signal?.aborted) controller.abort();
 
       const response = await fetch(url, {
         method: "POST",
@@ -87,6 +91,7 @@ export class CloudflareProvider implements VisionProvider {
       });
 
       clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", annulla);
 
       httpStatus = response.status;
 
@@ -200,6 +205,7 @@ export class CloudflareProvider implements VisionProvider {
         httpStatus,
       };
     } catch (caught: unknown) {
+      signal?.removeEventListener("abort", annulla);
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
