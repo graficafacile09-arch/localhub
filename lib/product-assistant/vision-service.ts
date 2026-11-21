@@ -204,7 +204,7 @@ export async function analyzeImagesWithPrompt(
       if (!result.rawText?.trim() || (validateRawText && !validateRawText(result.rawText))) {
         throw new ProviderError(
           "AI_PROVIDER_UNKNOWN_ERROR",
-          `${entry.name}: risposta testuale vuota.`,
+          `${entry.name}: risposta vuota o non conforme allo schema richiesto.`,
           result.httpStatus
         );
       }
