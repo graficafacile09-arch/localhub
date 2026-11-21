@@ -19,10 +19,10 @@ import type { OcrRisultato } from "./tipi";
  */
 
 export const LIMITI_OCR = {
-  // Su Vercel la prima chiamata scarica i modelli linguistici in /tmp: 18 s
-  // non bastavano (misurato 18,0 s di timeout in Preview). 38 s lasciano
-  // margine restando sotto il budget di 55 s della route.
-  timeoutMs: 38_000,
+  // L'OCR è un supporto alla lettura, non deve tenere bloccata la risposta
+  // per il download a freddo dei modelli Tesseract. Se non è pronto in 7 s,
+  // l'analisi prosegue dichiarando l'OCR non disponibile.
+  timeoutMs: 7_000,
   maxCaratteri: 16_000,
   lingue: ["ita", "eng"],
   larghezzaPreprocessamento: 2000,
