@@ -145,8 +145,15 @@ export async function analizzaProdotto(
   const ocr = await ocrPromise;
   const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
   const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
+  const nomeOcr = etichetta.nomeCommerciale.valore;
+  const nomeOcrDistinto =
+    nomeOcr &&
+    nomeOcr.toLocaleLowerCase("it").replace(/[^a-z0-9]/g, "") !==
+      riconoscimento.prodotto.toLocaleLowerCase("it").replace(/[^a-z0-9]/g, "")
+      ? nomeOcr
+      : null;
   const produttoreDaEtichetta =
-    etichetta.produttore.valore ?? etichetta.nomeCommerciale.valore;
+    etichetta.produttore.valore ?? nomeOcrDistinto ?? riconoscimento.produttore;
   const riconoscimentoRicerca: typeof riconoscimento = produttoreDaEtichetta
     ? { ...riconoscimento, produttore: produttoreDaEtichetta }
     : riconoscimento;
