@@ -190,7 +190,8 @@ export async function analyzeImages(
 export async function analyzeImagesWithPrompt(
   images: VisionImage[],
   prompt: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  validateRawText?: (text: string) => boolean
 ): Promise<{ rawText: string; model: string; provider: string }> {
   if (images.length === 0) throw new Error("Nessuna immagine fornita per l'analisi.");
   let lastError: unknown = null;
@@ -200,7 +201,7 @@ export async function analyzeImagesWithPrompt(
     if (!provider) continue;
     try {
       const result = await provider.analyze(images, undefined, prompt, signal);
-      if (!result.rawText?.trim()) {
+      if (!result.rawText?.trim() || (validateRawText && !validateRawText(result.rawText))) {
         throw new ProviderError(
           "AI_PROVIDER_UNKNOWN_ERROR",
           `${entry.name}: risposta testuale vuota.`,
