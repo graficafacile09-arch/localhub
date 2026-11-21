@@ -191,7 +191,12 @@ test("fonti UE in inglese: PDO è equivalente a DOP nella sintesi", () => {
     rilevanza: "alta",
   }];
   const sintesi = sintetizzaFontiWeb(
-    riconoscimento(),
+    riconoscimento({
+      prodotto: "Pecorino Crotonese",
+      denominazioneProposta: "Pecorino Crotonese DOP",
+      schemaProposto: "DOP",
+      produttore: null,
+    }),
     fonti,
     []
   );
