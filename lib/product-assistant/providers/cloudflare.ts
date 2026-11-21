@@ -79,7 +79,7 @@ export class CloudflareProvider implements VisionProvider {
         body: JSON.stringify({
           model: CLOUDFLARE_MODEL,
           messages,
-          max_completion_tokens: 300,
+          max_completion_tokens: promptOverride ? 1400 : 300,
           temperature: 0.1,
           chat_template_kwargs: { enable_thinking: false },
         }),
