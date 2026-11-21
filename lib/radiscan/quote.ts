@@ -15,8 +15,8 @@ import { CODICI_ERRORE, ErroreRadiciScan, erroreQuotaNonDisponibile } from "./er
  */
 
 export const LIMITI_QUOTA = {
-  anonimo: { minuto: 3, giorno: 15 },
-  autenticato: { minuto: 10, giorno: 60 },
+  anonimo: { minuto: 10, giorno: 100 },
+  autenticato: { minuto: 30, giorno: 300 },
 } as const;
 
 export type ModalitaQuota = keyof typeof LIMITI_QUOTA;
