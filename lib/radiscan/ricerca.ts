@@ -41,7 +41,7 @@ const HOST_API = "webgate.ec.europa.eu";
 // eAmbrosia può essere lento: 8 s sono il budget massimo della ricerca
 // iniziale. Un timeout resta distinto da una risposta vuota e non viene
 // presentato come prova dell'assenza di una denominazione.
-const TIMEOUT_PREDEFINITO_MS = 8_000;
+const TIMEOUT_PREDEFINITO_MS = 2_800;
 const MAX_RISPOSTA_BYTES = 1_500_000;
 const MAX_QUERY = 4;
 const MAX_PROVE = 6;
