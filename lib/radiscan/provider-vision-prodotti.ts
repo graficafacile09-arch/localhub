@@ -11,7 +11,7 @@ export function creaProviderVisionProdotti(): ProviderRadiciScan {
   return {
     nome: "vision-prodotti",
     modello: "@cf/google/gemma-4-26b-a4b-it -> qwen/qwen2.5-vl-72b-instruct",
-    async genera({ prompt, immagineBase64, mimeType, immagineDettaglioBase64 }) {
+    async genera({ prompt, immagineBase64, mimeType, immagineDettaglioBase64, signal }) {
       const immagini: VisionImage[] = [{
         buffer: Buffer.from(immagineBase64, "base64"),
         filename: nomeFileDaMime(mimeType),
@@ -26,7 +26,7 @@ export function creaProviderVisionProdotti(): ProviderRadiciScan {
         });
       }
 
-      const risultato = await analyzeImagesWithPrompt(immagini, prompt);
+      const risultato = await analyzeImagesWithPrompt(immagini, prompt, signal);
       return {
         testo: risultato.rawText,
         modello: risultato.model,
