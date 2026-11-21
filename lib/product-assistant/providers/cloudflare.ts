@@ -1,6 +1,6 @@
 import { buildVisionPrompt } from "../prompts";
 import type { VisionContext, VisionImage } from "../types";
-import type { VisionProvider } from "./base";
+import type { OpzioniChiamataProvider, VisionProvider } from "./base";
 import {
   AI_PROVIDER_NETWORK_ERROR,
   AI_PROVIDER_QUOTA_EXCEEDED,
@@ -39,9 +39,12 @@ export class CloudflareProvider implements VisionProvider {
 
   async analyze(
     images: VisionImage[],
-    context?: VisionContext
+    context?: VisionContext,
+    promptOverride?: string,
+    signal?: AbortSignal,
+    opzioni?: OpzioniChiamataProvider
   ): Promise<ProviderResult> {
-    const prompt = buildVisionPrompt(context);
+    const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
 
     const content: CloudflareMessage["content"] = [{ type: "text", text: prompt }];
@@ -63,11 +66,16 @@ export class CloudflareProvider implements VisionProvider {
     let httpStatus: number | string = "unknown";
     let responseText = "";
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
+    let annullaSegnale: (() => void) | undefined;
 
     try {
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutMs = opzioni?.timeoutMs ?? 60000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      annullaSegnale = () => controller.abort();
+      signal?.addEventListener("abort", annullaSegnale, { once: true });
+      if (signal?.aborted) controller.abort();
 
       const response = await fetch(url, {
         method: "POST",
@@ -78,7 +86,7 @@ export class CloudflareProvider implements VisionProvider {
         body: JSON.stringify({
           model: CLOUDFLARE_MODEL,
           messages,
-          max_completion_tokens: 300,
+          max_completion_tokens: opzioni?.maxOutputTokens ?? (promptOverride ? 1400 : 300),
           temperature: 0.1,
           chat_template_kwargs: { enable_thinking: false },
         }),
@@ -86,6 +94,7 @@ export class CloudflareProvider implements VisionProvider {
       });
 
       clearTimeout(timeoutId);
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
 
       httpStatus = response.status;
 
@@ -192,12 +201,14 @@ export class CloudflareProvider implements VisionProvider {
 
       return {
         suggestion,
+        rawText: responseText,
         model: this.model,
         latencyMs,
         tokenCount,
         httpStatus,
       };
     } catch (caught: unknown) {
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
@@ -207,7 +218,7 @@ export class CloudflareProvider implements VisionProvider {
       if (caught instanceof DOMException && caught.name === "AbortError") {
         throw new ProviderError(
           AI_PROVIDER_TIMEOUT,
-          "Cloudflare: timeout richiesta (60s).",
+          `Cloudflare: timeout richiesta (${opzioni?.timeoutMs ?? 60000}ms).`,
           "timeout"
         );
       }

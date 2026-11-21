@@ -1,10 +1,8 @@
 import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
-import { creaProviderGemini } from "@/lib/radiscan/gemini";
+import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
-import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
-import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -28,6 +26,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Percorso rapido: riconoscimento visivo + verifica sul registro ufficiale.
+// Il timeout interno dell'handler è 20 s, così una richiesta lenta chiude con
+// 504 JSON prima che la piattaforma uccida la funzione a 30 s.
 export const maxDuration = 30;
 
 async function utenteCorrente(): Promise<{ id: string } | null> {
@@ -60,23 +60,14 @@ export async function POST(request: Request): Promise<Response> {
         // compatibile con la forma minima usata da RadiciScan.
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
-    creaProvider: () => creaProviderGemini(),
+    creaProvider: () => creaProviderVisionProdotti(),
     // La ricerca eAmbrosia resta nel percorso principale: è la verifica ufficiale
     // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
     // dal percorso sincrono per non trattenere il riconoscimento.
     creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
-    // OCR e ricerca web tornano come verifiche ausiliarie: partono in parallelo
-    // al riconoscimento e non determinano da sole il successo dell'analisi.
-    creaOcr: () => creaMotoreOcrTesseract(),
-    creaWeb: () =>
-      creaRicercaWebIbrida({
-        maxQuery: 2,
-        maxPagine: 3,
-        maxFonti: 8,
-        timeoutQueryMs: 3_500,
-        timeoutPaginaMs: 3_500,
-        timeoutRicercaMs: 5_000,
-      }),
+    // Percorso rapido: niente OCR/Tavily/Google Search nella richiesta.
+    // Restano il motore vision condiviso con Aggiungi prodotti e la verifica
+    // documentale ufficiale eAmbrosia, necessaria per il livello verificato.
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.

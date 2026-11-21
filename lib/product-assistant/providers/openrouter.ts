@@ -1,6 +1,6 @@
 import { buildVisionPrompt } from "../prompts";
 import type { VisionContext, VisionImage } from "../types";
-import type { VisionProvider } from "./base";
+import type { OpzioniChiamataProvider, VisionProvider } from "./base";
 import {
   AI_PROVIDER_NETWORK_ERROR,
   AI_PROVIDER_QUOTA_EXCEEDED,
@@ -33,9 +33,12 @@ export class OpenRouterProvider implements VisionProvider {
 
   async analyze(
     images: VisionImage[],
-    context?: VisionContext
+    context?: VisionContext,
+    promptOverride?: string,
+    signal?: AbortSignal,
+    opzioni?: OpzioniChiamataProvider
   ): Promise<ProviderResult> {
-    const prompt = buildVisionPrompt(context);
+    const prompt = promptOverride ?? buildVisionPrompt(context);
     const startTime = Date.now();
 
     const content: OpenRouterMessage["content"] = [{ type: "text", text: prompt }];
@@ -54,11 +57,16 @@ export class OpenRouterProvider implements VisionProvider {
     let httpStatus: number | string = "unknown";
     let responseText = "";
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
+    let annullaSegnale: (() => void) | undefined;
 
     try {
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutMs = opzioni?.timeoutMs ?? 60000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      annullaSegnale = () => controller.abort();
+      signal?.addEventListener("abort", annullaSegnale, { once: true });
+      if (signal?.aborted) controller.abort();
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -71,13 +79,14 @@ export class OpenRouterProvider implements VisionProvider {
         body: JSON.stringify({
           model: this.model,
           messages,
-          max_tokens: 2000,
+          max_tokens: opzioni?.maxOutputTokens ?? 2000,
           temperature: 0.1,
         }),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
 
       httpStatus = response.status;
 
@@ -161,12 +170,14 @@ export class OpenRouterProvider implements VisionProvider {
 
       return {
         suggestion,
+        rawText: responseText,
         model: this.model,
         latencyMs,
         tokenCount,
         httpStatus,
       };
     } catch (caught: unknown) {
+      if (annullaSegnale) signal?.removeEventListener("abort", annullaSegnale);
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
@@ -176,7 +187,7 @@ export class OpenRouterProvider implements VisionProvider {
       if (caught instanceof DOMException && caught.name === "AbortError") {
         throw new ProviderError(
           AI_PROVIDER_TIMEOUT,
-          "OpenRouter: timeout richiesta (60s).",
+          `OpenRouter: timeout richiesta (${opzioni?.timeoutMs ?? 60000}ms).`,
           "timeout"
         );
       }

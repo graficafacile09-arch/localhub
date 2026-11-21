@@ -923,6 +923,7 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#e5ded0] bg-white px-4 py-3 text-[11px] font-semibold text-[#6b6459]">
           <Clock className="h-3.5 w-3.5" aria-hidden />
           <span>Tempi reali:</span>
+          <span>visione {((tempi.preprocessamentoMs ?? 0) / 1000).toFixed(1)} s</span>
           <span>identificazione {(tempi.identificazioneMs / 1000).toFixed(1)} s</span>
           <span>OCR {(tempi.ocrMs / 1000).toFixed(1)} s</span>
           <span>documenti {(tempi.documentiMs / 1000).toFixed(1)} s</span>

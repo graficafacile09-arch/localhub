@@ -1198,7 +1198,9 @@ test("route file: solo cablaggio, nessun import proibito", () => {
   assert.match(sorgente, /export const dynamic = "force-dynamic"/);
   assert.match(sorgente, /createServerSupabaseClient/);
   assert.match(sorgente, /createAdminSupabaseClient/);
-  assert.match(sorgente, /creaProviderGemini/);
+  assert.match(sorgente, /creaProviderVisionProdotti/);
+  assert.ok(!sorgente.includes("creaProviderGemini"), "RadiciScan non usa Gemini");
+  assert.ok(!sorgente.includes("web-tavily"), "il percorso rapido non usa Tavily");
   assert.match(sorgente, /process\.env\.RADISCAN_QUOTA_SALT/);
   assert.match(sorgente, /process\.env\.RADISCAN_CACHE_SECRET/);
   assert.ok(!sorgente.includes("GEMINI_API_KEY"), "la chiave non deve comparire nella route");

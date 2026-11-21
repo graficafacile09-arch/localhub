@@ -1,4 +1,4 @@
-import { creaDettaglioEtichetta } from "./dettaglio";
+import { preparaImmagineVisione } from "./dettaglio";
 import { estraiEtichetta } from "./etichetta";
 import { erroreInput, erroreSchema } from "./errori";
 import type { FonteUfficiale } from "./fonti";
@@ -28,12 +28,14 @@ import { verificaDenominazione } from "./verifica";
 /**
  * RadiciScan — pipeline multi-metodo.
  *
- * Fasi indipendenti, eseguite in parallelo quando possibile:
- *   1. modello visivo + OCR (in parallelo, stessa immagine);
- *   2. registro eAmbrosia (con lettura documentale) + ricerca web + banca
- *      dati prodotti, in parallelo;
- *   3. estrazione etichetta, controllo incrociato e verifica;
- *   4. composizione dell'esito con tempi reali.
+ * Percorso rapido (quello usato dalla route):
+ *   1. preprocessing 1024 px / JPEG 80, come Aggiungi prodotti;
+ *   2. modello visivo (Gemma 4 Cloudflare) su una sola immagine;
+ *   3. verifica documentale ufficiale eAmbrosia;
+ *   4. composizione dell'esito con i tempi reali di ogni fase.
+ *
+ * Fasi indipendenti restano eseguite in parallelo quando esistono:
+ * OCR (facoltativo) e modello visivo partono insieme.
  *
  * Nessuna fase può alzare il livello oltre quello della verifica documentale.
  * Una divergenza OCR/modello di gravità media abbassa un eventuale
@@ -110,18 +112,18 @@ export async function analizzaProdotto(
       })
     : Promise.resolve(null);
 
-  // Il dettaglio ingrandito è facoltativo: `null` significa che Sharp non è
-  // disponibile o che l'immagine non è ritagliabile. In quel caso si invia
-  // solo l'originale, senza interrompere l'analisi.
-  const immagineDettaglioBase64 =
-    (await creaDettaglioEtichetta(base64)) ?? undefined;
+  // Preprocessing del percorso che funziona: lato massimo 1024 px, JPEG 80,
+  // auto-orientamento EXIF, una sola immagine. Il dettaglio ingrandito non
+  // viene più prodotto: raddoppiava il payload e ritardava la chiamata.
+  const prepAvvio = Date.now();
+  const immagineVisione = await preparaImmagineVisione(base64, mime);
+  const preprocessamentoMs = Date.now() - prepAvvio;
 
   const aiAvvio = Date.now();
   const rispostaAi = await provider.genera({
     prompt: buildPromptRadiciScan(),
-    immagineBase64: base64,
-    mimeType: mime,
-    immagineDettaglioBase64,
+    immagineBase64: immagineVisione.base64,
+    mimeType: immagineVisione.mime,
     signal,
   });
   const testo = rispostaAi.testo;
@@ -245,6 +247,7 @@ export async function analizzaProdotto(
   }
 
   const tempi: TempiAnalisi = {
+    preprocessamentoMs,
     identificazioneMs,
     ocrMs,
     documentiMs,

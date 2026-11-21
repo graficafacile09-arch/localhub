@@ -2,16 +2,23 @@ import { SCHEMI_QUALITA } from "./fonti";
 import type { RiconoscimentoAi } from "./tipi";
 
 /**
- * RadiciScan — schema rigoroso dell'output del modello.
+ * RadiciScan — schema dell'output del modello.
  *
- * Nessuna libreria di validazione: le dipendenze sono già quelle del
- * progetto. Il parser è volutamente severo sui tipi e tollerante solo dove
- * il modello può essere impreciso (enum sconosciuti, numeri fuori scala):
- * in quei casi il campo diventa null e viene registrato un avviso.
+ * Il parser è tollerante sulla *forma* e rigoroso sul *significato*:
+ * - accetta JSON racchiuso in Markdown, testo prima o dopo, BOM, chiavi in
+ *   camelCase o con spazi, campi facoltativi mancanti o null, numeri scritti
+ *   come stringhe, elenchi scritti come stringa separata da virgole;
+ * - ripara un JSON troncato chiudendo stringhe e parentesi già aperte, senza
+ *   inventare alcun valore;
+ * - rifiuta un output senza nome prodotto, perché senza prodotto non c'è
+ *   riconoscimento;
+ * - non accetta schemi di qualità fuori elenco e non usa mai il modello come
+ *   fonte: le fonti proposte vengono ignorate e segnalate.
  *
- * Le fonti proposte dal modello non esistono in questo schema: RadiciScan
- * usa esclusivamente il registro ufficiale. Un eventuale campo `fonti` o
- * `url` nell'output viene ignorato e segnalato.
+ * Sicurezza invariata: `denominazione_proposta` generica viene sostituita dal
+ * nome prodotto (con avviso), `schema_proposto` resta un enum chiuso,
+ * `certificazioni` resta ciò che il modello dichiara di aver letto o
+ * riconosciuto, mai una certificazione aggiunta dal codice.
  */
 
 const MAX_TESTO = 200;
@@ -19,37 +26,83 @@ const MAX_TESTO_BREVE = 120;
 const MAX_VOCI = 8;
 const MAX_VOCE = 160;
 
-/**
- * Estrazione JSON autonoma di RadiciScan.
- *
- * Replica il comportamento atteso dal modello (oggetto nudo, fence markdown
- * o testo attorno all'oggetto) senza dipendere dal parser del percorso
- * venditori: RadiciScan resta isolato dalle funzionalità Vision.
- */
-function estraiTestoJson(testo: string): string {
-  const ritagliato = testo.trim();
-  try {
-    JSON.parse(ritagliato);
-    return ritagliato;
-  } catch {
-    // prosegue con il ritaglio tra la prima graffa e l'ultima
-  }
-  const inizio = ritagliato.indexOf("{");
-  const fine = ritagliato.lastIndexOf("}");
-  if (inizio !== -1 && fine > inizio) {
-    return ritagliato.slice(inizio, fine + 1);
-  }
-  return ritagliato;
+/** Chiave confrontabile: minuscola, senza accenti, spazi o underscore. */
+function normalizzaChiave(chiave: string): string {
+  return chiave
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
-type EsitoJson = { ok: true; value: unknown } | { ok: false };
+/**
+ * Chiude stringhe e parentesi rimaste aperte in un JSON troncato.
+ * Non aggiunge campi né valori: rende soltanto parsabile ciò che il modello
+ * ha già scritto. Restituisce `null` se il testo non è un oggetto.
+ */
+function riparaJsonTroncato(testo: string): string | null {
+  const inizio = testo.indexOf("{");
+  if (inizio === -1) return null;
 
-function analizzaJson(testo: string): EsitoJson {
-  try {
-    return { ok: true, value: JSON.parse(estraiTestoJson(testo)) };
-  } catch {
-    return { ok: false };
+  const frammento = testo.slice(inizio);
+  let inStringa = false;
+  let escape = false;
+  const pila: string[] = [];
+
+  for (const carattere of frammento) {
+    if (inStringa) {
+      if (escape) {
+        escape = false;
+      } else if (carattere === "\\") {
+        escape = true;
+      } else if (carattere === '"') {
+        inStringa = false;
+      }
+      continue;
+    }
+    if (carattere === '"') {
+      inStringa = true;
+    } else if (carattere === "{" || carattere === "[") {
+      pila.push(carattere);
+    } else if (carattere === "}" || carattere === "]") {
+      pila.pop();
+    }
   }
+
+  let riparato = frammento;
+  if (inStringa) riparato += '"';
+  // Una virgola o i due punti finali non sono validi prima della chiusura.
+  riparato = riparato.replace(/[,:\s]+$/, "");
+  for (let indice = pila.length - 1; indice >= 0; indice -= 1) {
+    riparato += pila[indice] === "{" ? "}" : "]";
+  }
+  return riparato;
+}
+
+function candidatiJson(testo: string): string[] {
+  const ritagliato = testo.replace(/^\uFEFF/, "").trim();
+  const senzaFence = ritagliato.replace(/```(?:json)?/gi, "").trim();
+  const inizio = senzaFence.indexOf("{");
+  const fine = senzaFence.lastIndexOf("}");
+  const oggetto =
+    inizio !== -1 && fine > inizio
+      ? senzaFence.slice(inizio, fine + 1)
+      : senzaFence;
+  const riparato = riparaJsonTroncato(senzaFence);
+
+  const candidati = [ritagliato, senzaFence, oggetto, riparato ?? ""];
+  return [...new Set(candidati.filter((candidato) => candidato.trim() !== ""))];
+}
+
+function analizzaJson(testo: string): { ok: true; value: unknown } | { ok: false } {
+  for (const candidato of candidatiJson(testo)) {
+    try {
+      return { ok: true, value: JSON.parse(candidato) };
+    } catch {
+      // si prova il candidato successivo
+    }
+  }
+  return { ok: false };
 }
 
 export interface OutputModelloValido {
@@ -62,6 +115,9 @@ export type EsitoSchema =
   | { ok: false; motivo: string };
 
 function testoNormalizzato(valore: unknown, max: number): string | null {
+  if (typeof valore === "number" && Number.isFinite(valore)) {
+    return String(valore);
+  }
   if (typeof valore !== "string") return null;
   const pulito = valore
     .replace(/[\u0000-\u001f\u007f]/g, " ")
@@ -71,21 +127,29 @@ function testoNormalizzato(valore: unknown, max: number): string | null {
   return pulito.length > max ? pulito.slice(0, max).trim() : pulito;
 }
 
+/** Elenco di stringhe: array, oppure stringa separata da virgole/punti e virgola. */
 function elencoTesti(valore: unknown, avvisi: string[], etichetta: string): string[] {
   if (valore === null || valore === undefined) return [];
-  if (!Array.isArray(valore)) {
+
+  let voci: unknown[];
+  if (Array.isArray(valore)) {
+    voci = valore;
+  } else if (typeof valore === "string") {
+    voci = valore.split(/[,;\n]/);
+  } else {
     avvisi.push(`${etichetta}: atteso un elenco, valore ignorato`);
     return [];
   }
-  const voci: string[] = [];
-  for (const voce of valore.slice(0, MAX_VOCI)) {
+
+  const risultato: string[] = [];
+  for (const voce of voci.slice(0, MAX_VOCI)) {
     const testo = testoNormalizzato(voce, MAX_VOCE);
-    if (testo) voci.push(testo);
+    if (testo) risultato.push(testo);
   }
-  if (valore.length > MAX_VOCI) {
+  if (voci.length > MAX_VOCI) {
     avvisi.push(`${etichetta}: limite di ${MAX_VOCI} voci applicato`);
   }
-  return voci;
+  return risultato;
 }
 
 /** Diciture del bollino, non nomi di denominazione. */
@@ -113,7 +177,10 @@ function denominazioneGenerica(valore: string): boolean {
   ].includes(chiave);
 }
 
-function schemaQualita(valore: unknown, avvisi: string[]): RiconoscimentoAi["schemaProposto"] {
+function schemaQualita(
+  valore: unknown,
+  avvisi: string[]
+): RiconoscimentoAi["schemaProposto"] {
   if (valore === null || valore === undefined) return null;
   if (typeof valore !== "string") {
     avvisi.push("schema_proposto: tipo non valido, valore ignorato");
@@ -128,14 +195,27 @@ function schemaQualita(valore: unknown, avvisi: string[]): RiconoscimentoAi["sch
   return normalizzato as RiconoscimentoAi["schemaProposto"];
 }
 
+/** Confidenza: accetta 85, "85", "85%". Fuori scala viene riportata a 0-100. */
 function confidenza(valore: unknown, avvisi: string[]): number {
-  if (typeof valore !== "number" || !Number.isFinite(valore)) {
+  let numero: number;
+  if (typeof valore === "number") {
+    numero = valore;
+  } else if (typeof valore === "string" && valore.trim() !== "") {
+    const estratto = Number(valore.replace(/[^0-9.,-]/g, "").replace(",", "."));
+    numero = estratto;
+  } else {
     if (valore !== null && valore !== undefined) {
       avvisi.push("confidenza: valore non numerico, impostata a 0");
     }
     return 0;
   }
-  const arrotondata = Math.round(valore);
+
+  if (!Number.isFinite(numero)) {
+    avvisi.push("confidenza: valore non numerico, impostata a 0");
+    return 0;
+  }
+
+  const arrotondata = Math.round(numero);
   if (arrotondata < 0 || arrotondata > 100) {
     avvisi.push("confidenza: fuori intervallo, riportata a 0-100");
   }
@@ -159,11 +239,30 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
   const payload = valore as Record<string, unknown>;
   const avvisi: string[] = [];
 
-  if ("fonti" in payload || "fonti_proposte" in payload || "url" in payload) {
+  // Le chiavi vengono confrontate ignorando maiuscole, underscore e accenti:
+  // il modello scrive indifferentemente `denominazione_proposta` o
+  // `denominazioneProposta`.
+  const campi = new Map<string, unknown>();
+  for (const [chiave, contenuto] of Object.entries(payload)) {
+    const normalizzata = normalizzaChiave(chiave);
+    if (!campi.has(normalizzata)) campi.set(normalizzata, contenuto);
+  }
+  const leggi = (...nomi: string[]): unknown => {
+    for (const nome of nomi) {
+      const trovato = campi.get(normalizzaChiave(nome));
+      if (trovato !== undefined) return trovato;
+    }
+    return undefined;
+  };
+
+  if (campi.has("fonti") || campi.has("fontiproposte") || campi.has("url")) {
     avvisi.push("fonti proposte dal modello ignorate: si usa solo il registro ufficiale");
   }
 
-  const prodotto = testoNormalizzato(payload.prodotto, MAX_TESTO_BREVE);
+  const prodotto = testoNormalizzato(
+    leggi("prodotto", "nome", "nome_prodotto", "product_name", "product"),
+    MAX_TESTO_BREVE
+  );
   if (!prodotto) return { ok: false, motivo: "campo prodotto assente o vuoto" };
 
   // Il modello a volte scambia la dicitura del bollino per il nome della
@@ -171,7 +270,7 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
   // usarlo è più corretto che cercare nel registro "Denominazione di Origine
   // Protetta". L'avviso rende esplicita la sostituzione.
   let denominazioneProposta = testoNormalizzato(
-    payload.denominazione_proposta,
+    leggi("denominazione_proposta", "denominazione", "denominazione_prodotta"),
     MAX_TESTO_BREVE
   );
   if (denominazioneProposta && denominazioneGenerica(denominazioneProposta)) {
@@ -181,43 +280,50 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
     denominazioneProposta = prodotto;
   }
 
+  const codiceBarreGrezzo = testoNormalizzato(
+    leggi("codice_barre", "codicebarre", "codice_ean", "ean", "barcode"),
+    20
+  );
+
   return {
     ok: true,
     valore: {
       riconoscimento: {
         prodotto,
-        categoria: testoNormalizzato(payload.categoria, MAX_TESTO),
+        categoria: testoNormalizzato(leggi("categoria", "category"), MAX_TESTO),
         denominazioneProposta,
-        territorioProposto: testoNormalizzato(payload.territorio_proposto, MAX_TESTO),
-        schemaProposto: schemaQualita(payload.schema_proposto, avvisi),
+        territorioProposto: testoNormalizzato(
+          leggi("territorio_proposto", "territorio", "zona_produzione", "zona"),
+          MAX_TESTO
+        ),
+        schemaProposto: schemaQualita(leggi("schema_proposto", "schema", "qualita"), avvisi),
         indicatoriEtichetta: elencoTesti(
-          payload.indicatori_etichetta,
+          leggi("indicatori_etichetta", "indicatori", "indicatori_grafici"),
           avvisi,
           "indicatori_etichetta"
         ),
-        confidenza: confidenza(payload.confidenza, avvisi),
-        note: testoNormalizzato(payload.note, MAX_TESTO),
+        confidenza: confidenza(leggi("confidenza", "confidence", "affidabilita"), avvisi),
+        note: testoNormalizzato(leggi("note", "notes", "osservazioni"), MAX_TESTO),
         incongruenzeRilevate: elencoTesti(
-          payload.incongruenze_rilevate,
+          leggi("incongruenze_rilevate", "incongruenze", "anomalie"),
           avvisi,
           "incongruenze_rilevate"
         ),
-        produttore: testoNormalizzato(payload.produttore, MAX_TESTO_BREVE),
-        stabilimento: testoNormalizzato(payload.stabilimento, MAX_TESTO_BREVE),
-        indirizzo: testoNormalizzato(payload.indirizzo, MAX_TESTO),
-        lotto: testoNormalizzato(payload.lotto, 40),
+        produttore: testoNormalizzato(leggi("produttore", "producer"), MAX_TESTO_BREVE),
+        stabilimento: testoNormalizzato(leggi("stabilimento", "plant"), MAX_TESTO_BREVE),
+        indirizzo: testoNormalizzato(leggi("indirizzo", "address"), MAX_TESTO),
+        lotto: testoNormalizzato(leggi("lotto", "batch", "lot"), 40),
         codiceBarre: (() => {
-          const codice = testoNormalizzato(payload.codice_barre, 20);
-          if (!codice) return null;
-          const cifre = codice.replace(/[\s-]/g, "");
+          if (!codiceBarreGrezzo) return null;
+          const cifre = codiceBarreGrezzo.replace(/[\s-]/g, "");
           if (!/^\d{8,14}$/.test(cifre)) {
             avvisi.push("codice_barre: valore non numerico o lunghezza non valida, ignorato");
             return null;
           }
           return cifre;
         })(),
-        ingredienti: elencoTesti(payload.ingredienti, avvisi, "ingredienti"),
-        certificazioni: elencoTesti(payload.certificazioni, avvisi, "certificazioni"),
+        ingredienti: elencoTesti(leggi("ingredienti"), avvisi, "ingredienti"),
+        certificazioni: elencoTesti(leggi("certificazioni"), avvisi, "certificazioni"),
       },
       avvisi,
     },

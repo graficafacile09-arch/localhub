@@ -183,4 +183,80 @@ export async function analyzeImages(
   };
 }
 
+// ─── Variante con prompt esplicito (RadiciScan) ──────────────────────────────
 
+export interface OpzioniVisionPrompt {
+  /** Budget del primo tentativo (Gemma). */
+  timeoutMs?: number;
+  /** Budget di ogni tentativo di fallback. */
+  fallbackTimeoutMs?: number;
+  /** Token di output richiesti al provider. */
+  maxOutputTokens?: number;
+  /** Catena alternativa, usata dai test per evitare la rete. */
+  catena?: ReadonlyArray<ProviderEntry>;
+}
+
+export const TIMEOUT_VISION_PROMPT_MS = 15_000;
+export const TIMEOUT_VISION_PROMPT_FALLBACK_MS = 7_000;
+
+/**
+ * Esegue la stessa catena Gemma -> OpenRouter di Aggiungi prodotti, senza
+ * cache commerciale e senza trasformare l'output nello schema prodotto.
+ *
+ * Il fallback scatta **solo** quando il provider fallisce davvero (HTTP, rete,
+ * timeout, risposta vuota). Un testo ben formato ma non conforme allo schema
+ * non provoca una seconda chiamata: viene restituito al chiamante, che lo
+ * valida con un parser tollerante. È così che si evitano le attese di 55-60 s
+ * per un errore correggibile localmente.
+ */
+export async function analyzeImagesWithPrompt(
+  images: VisionImage[],
+  prompt: string,
+  signal?: AbortSignal,
+  opzioni: OpzioniVisionPrompt = {}
+): Promise<{ rawText: string; model: string; provider: string }> {
+  if (images.length === 0) throw new Error("Nessuna immagine fornita per l'analisi.");
+
+  const catena = opzioni.catena ?? PROVIDER_CHAIN;
+  const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_VISION_PROMPT_MS;
+  const fallbackTimeoutMs =
+    opzioni.fallbackTimeoutMs ?? TIMEOUT_VISION_PROMPT_FALLBACK_MS;
+
+  let ultimoErrore: unknown = null;
+  let tentativi = 0;
+
+  for (const entry of catena) {
+    const provider = entry.build();
+    if (!provider) continue;
+
+    const budget = tentativi === 0 ? timeoutMs : fallbackTimeoutMs;
+    tentativi += 1;
+
+    try {
+      const result = await provider.analyze(images, undefined, prompt, signal, {
+        timeoutMs: budget,
+        maxOutputTokens: opzioni.maxOutputTokens,
+      });
+
+      if (!result.rawText?.trim()) {
+        throw new ProviderError(
+          "AI_PROVIDER_UNKNOWN_ERROR",
+          `${entry.name}: risposta vuota.`,
+          result.httpStatus
+        );
+      }
+
+      return { rawText: result.rawText, model: result.model, provider: entry.name };
+    } catch (error) {
+      ultimoErrore = error;
+      const codice =
+        error instanceof ProviderError ? error.code : "UNKNOWN";
+      console.warn(
+        `[radiscan][vision] provider=${entry.name} esito=errore codice=${codice} budget=${budget}ms`
+      );
+    }
+  }
+
+  if (ultimoErrore instanceof Error) throw ultimoErrore;
+  throw new Error("Nessun provider vision configurato o disponibile.");
+}
