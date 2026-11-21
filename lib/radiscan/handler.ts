@@ -16,6 +16,7 @@ import type { MotoreOcr } from "./ocr";
 import {
   creaChiaveQuotaAnonima,
   creaChiaveQuotaAutenticata,
+  descriviEccezioneQuota,
   type EsitoQuota,
   type ModalitaQuota,
 } from "./quote";
@@ -241,7 +242,12 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     let quota: EsitoQuota;
     try {
       quota = await repository.consumaQuota(chiaveQuota, modalita);
-    } catch {
+    } catch (causa) {
+      console.error("[radiscan][quota]", {
+        fase: "handler_quota_catch",
+        modalita,
+        ...descriviEccezioneQuota(causa),
+      });
       return errore(503, "QUOTA_NON_DISPONIBILE", "Non riesco a verificare la quota. Riprova tra poco.");
     }
 
