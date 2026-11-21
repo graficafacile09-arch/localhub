@@ -204,6 +204,41 @@ test("fonti UE in inglese: PDO è equivalente a DOP nella sintesi", () => {
   assert.ok(sintesi.denominazione.fonti.includes("web:pdo"));
 });
 
+test("una fonte commerciale pertinente produce un riscontro DOP online positivo", () => {
+  const fonti = [{
+    id: "web:negozio",
+    titolo: "Pecorino Crotonese DOP — scheda prodotto",
+    ente: "negozio-esempio.it",
+    url: "https://negozio-esempio.it/pecorino-crotonese-dop",
+    dominio: "negozio-esempio.it",
+    natura: "commerciale",
+    attendibilita: "bassa",
+    consultataIl: "2026-11-21",
+    dataDocumento: null,
+    estratto: "Pecorino Crotonese DOP, formaggio a denominazione di origine protetta.",
+    riferimentoNormativo: null,
+    pagineLette: 1,
+    lettoIntegralmente: true,
+    metodoLettura: "http",
+    relazione: "Pagina prodotto letta.",
+    dichiarazione: "informativa",
+    rilevanza: "alta",
+  }];
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento({
+      prodotto: "Pecorino Crotonese",
+      denominazioneProposta: "Pecorino Crotonese DOP",
+      schemaProposto: "DOP",
+      produttore: null,
+    }),
+    fonti,
+    []
+  );
+  assert.equal(sintesi.denominazione.stato, "menzionata");
+  assert.match(sintesi.denominazione.testo, /riscontro online positivo/i);
+  assert.ok(sintesi.denominazione.fonti.includes("web:negozio"));
+});
+
 test("produttore senza denominazione: nessuna denominazione inventata", async () => {
   const esito = await creaRicercaWeb({
     fetchImpl: fintoFetch({
