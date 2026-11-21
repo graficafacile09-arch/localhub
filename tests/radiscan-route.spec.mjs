@@ -119,8 +119,8 @@ function creaRepositoryFinto(over = {}) {
     async consumaQuota(chiave, modalita) {
       chiamate.quote.push({ chiave, modalita });
       return modalita === "anonimo"
-        ? { consentita: true, usatiOggi: 1, limiteGiorno: 15, limiteMinuto: 3 }
-        : { consentita: true, usatiOggi: 1, limiteGiorno: 60, limiteMinuto: 10 };
+        ? { consentita: true, usatiOggi: 1, limiteGiorno: 100, limiteMinuto: 10 }
+        : { consentita: true, usatiOggi: 1, limiteGiorno: 300, limiteMinuto: 30 };
     },
     ...over,
   };
@@ -369,7 +369,7 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
       quote.push({ chiave, modalita });
       return {
         consentita: false,
-        motivo: "Hai raggiunto il limite di 3 analisi al minuto. Riprova tra poco.",
+        motivo: "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco.",
         riprovaTraSecondi: 42,
         usatiOggi: 3,
         limiteGiorno: 15,
@@ -959,8 +959,8 @@ function clientFinto({ registro = [], cache = null } = {}) {
             retry_after: 0,
             reason: null,
             usati_oggi: 0,
-            limite_giorno: 15,
-            limite_minuto: 3,
+            limite_giorno: 100,
+            limite_minuto: 10,
           },
         ],
         error: null,
