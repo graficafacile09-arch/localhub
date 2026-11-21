@@ -772,15 +772,6 @@ async function cercaWikipedia(
   }
 }
 
-function paroleFortiProdotto(riconoscimento: RiconoscimentoAi): Set<string> {
-  return new Set(
-    [
-      ...tokenizza(riconoscimento.prodotto),
-      ...tokenizza(riconoscimento.denominazioneProposta ?? ""),
-    ].filter((parola) => !PAROLE_TERRITORIO.has(parola))
-  );
-}
-
 function haProdottoInTesto(
   testo: string,
   riconoscimento: RiconoscimentoAi
