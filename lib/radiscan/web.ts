@@ -779,11 +779,12 @@ function haProdottoInTesto(
   // Una singola parola comune (es. "salume", "pecorino" o un toponimo)
   // non basta a rendere pertinente una pagina. Richiediamo copertura
   // sostanziale del nome prodotto o della denominazione proposta.
+  const testoNormalizzato = normalizza(testo);
   const prodotto = riconoscimento.prodotto.trim();
   const denominazione = riconoscimento.denominazioneProposta?.trim() ?? "";
   return (
-    (prodotto.length >= 4 && copre(testo, prodotto)) ||
-    (denominazione.length >= 4 && copre(testo, denominazione))
+    (prodotto.length >= 4 && copre(testoNormalizzato, prodotto)) ||
+    (denominazione.length >= 4 && copre(testoNormalizzato, denominazione))
   );
 }
 
