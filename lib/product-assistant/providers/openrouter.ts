@@ -174,7 +174,6 @@ export class OpenRouterProvider implements VisionProvider {
         httpStatus,
       };
     } catch (caught: unknown) {
-      signal?.removeEventListener("abort", annulla);
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
