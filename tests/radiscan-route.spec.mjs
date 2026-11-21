@@ -372,8 +372,8 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
         motivo: "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco.",
         riprovaTraSecondi: 42,
         usatiOggi: 3,
-        limiteGiorno: 15,
-        limiteMinuto: 3,
+        limiteGiorno: 100,
+        limiteMinuto: 10,
       };
     },
   });
