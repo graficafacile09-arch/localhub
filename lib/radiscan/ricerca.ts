@@ -38,9 +38,10 @@ import {
 const BASE_URL =
   "https://webgate.ec.europa.eu/eambrosia-api/api/v1/geographical-indications";
 const HOST_API = "webgate.ec.europa.eu";
-// eAmbrosia può impiegare ~8 s a rispondere anche a una singola ricerca:
-// 12 s lasciano margine senza superare il budget di 40 s della route.
-const TIMEOUT_PREDEFINITO_MS = 12_000;
+// eAmbrosia può essere lento: 8 s sono il budget massimo della ricerca
+// iniziale. Un timeout resta distinto da una risposta vuota e non viene
+// presentato come prova dell'assenza di una denominazione.
+const TIMEOUT_PREDEFINITO_MS = 8_000;
 const MAX_RISPOSTA_BYTES = 1_500_000;
 const MAX_QUERY = 4;
 const MAX_PROVE = 6;
