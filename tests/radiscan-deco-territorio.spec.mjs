@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+await import("./support/hook-radiscan.mjs");
 
 const { classificaTerritorioDichiarato } = await import("../lib/radiscan/filiera.ts");
 const { decoRiconosciuta } = await import("../components/radiscan/logica.ts");
