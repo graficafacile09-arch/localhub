@@ -3,9 +3,10 @@
  *
  * Verifica, senza rete e senza provider reali:
  *  - preprocessing 1024 px / JPEG 80 e auto-orientamento;
- *  - vista intera + dettaglio ad alta risoluzione quando disponibile;
- *  - fallback sul secondo modello anche quando il primo output non rispetta lo schema;
- *  - fallback attivato soltanto su un errore reale del provider;
+ *  - una sola immagine, come nel flusso Aggiungi prodotti;
+ *  - RadiciScan usa esclusivamente Cloudflare/Gemma 4, senza provider secondari;
+ *  - il servizio condiviso conserva il fallback per Aggiungi prodotti, ma
+ *    RadiciScan può disattivarlo esplicitamente;
  *  - schema tollerante sulla forma, rigoroso sul significato.
  *
  * Comando:
@@ -183,6 +184,35 @@ test("vision: senza validatore il testo viene restituito al chiamante", async ()
   assert.equal(risultato.rawText, "ecco il prodotto: Soppressata");
 });
 
+test("vision: primaryOnly non chiama OpenRouter se lo schema non è valido", async () => {
+  let secondiChiamati = 0;
+  const risultato = await vision.analyzeImagesWithPrompt(
+    [{ buffer: Buffer.from([1, 2, 3]), filename: "a.jpg", role: "primary" }],
+    "prompt",
+    undefined,
+    {
+      primaryOnly: true,
+      validateRawText: () => false,
+      catena: [
+        providerFinto("Cloudflare", () => ({
+          rawText: "risposta non valida",
+          model: "gemma-4",
+          latencyMs: 10,
+          httpStatus: 200,
+        })),
+        providerFinto("OpenRouter", () => {
+          secondiChiamati += 1;
+          return { rawText: '{"prodotto":"X"}', model: "qwen", latencyMs: 10, httpStatus: 200 };
+        }),
+      ],
+    }
+  );
+
+  assert.equal(secondiChiamati, 0);
+  assert.equal(risultato.provider, "Cloudflare");
+  assert.equal(risultato.rawText, "risposta non valida");
+});
+
 test("vision: uno schema non valido attiva il fallback e accetta la risposta valida", async () => {
   let secondiChiamati = 0;
   const risultato = await vision.analyzeImagesWithPrompt(
@@ -263,7 +293,7 @@ test("vision: una risposta vuota è un errore del provider, non un parsing da co
 
 // ─── Adattatore RadiciScan ───────────────────────────────────────────────
 
-test("adattatore: vista intera + dettaglio e fallback schema", async () => {
+test("adattatore: usa una sola immagine e soltanto il provider primario", async () => {
   let catturato = null;
   const provider = providerVision.creaProviderVisionProdotti({
     analizza: async (immagini, prompt, signal, opzioni) => {
@@ -276,18 +306,16 @@ test("adattatore: vista intera + dettaglio e fallback schema", async () => {
     prompt: "prompt-radiscan",
     immagineBase64: "AQID",
     mimeType: "image/jpeg",
-    immagineDettaglioBase64: "DETTAGLIO",
   });
 
-  assert.equal(catturato.immagini.length, 2);
+  assert.equal(catturato.immagini.length, 1);
   assert.equal(catturato.immagini[0].role, "primary");
-  assert.equal(catturato.immagini[1].role, "detail");
-  assert.equal(catturato.immagini[1].filename, "radiscan-dettaglio.jpg");
-  assert.equal(typeof catturato.opzioni.validateRawText, "function");
+  assert.equal(catturato.immagini[0].filename, "radiscan.jpg");
+  assert.equal(catturato.opzioni.primaryOnly, true);
+  assert.equal(catturato.opzioni.validateRawText, undefined);
   assert.equal(catturato.prompt, "prompt-radiscan");
   assert.equal(catturato.opzioni.maxOutputTokens, 700);
-  assert.equal(catturato.opzioni.timeoutMs, 15_000);
-  assert.equal(catturato.opzioni.fallbackTimeoutMs, 7_000);
+  assert.equal(catturato.opzioni.timeoutMs, 12_000);
   assert.equal(esito.modello, "gemma-4");
 });
 
