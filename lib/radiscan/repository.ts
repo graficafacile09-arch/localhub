@@ -28,6 +28,7 @@ export interface RigaAnalisi {
   durataMs: number | null;
   esitoTecnico: "ok" | "errore" | "quota" | "timeout";
   codiceErrore: string | null;
+  sessioneAnonimaHash: string | null;
 }
 
 export interface RepositoryRadiciScan {
