@@ -955,19 +955,19 @@ export default function ScanRisultato({
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
   const riscontroOnlineDop =
-    !dopUfficialmenteRegistrata &&
+    !denominazioneUeRegistrata &&
     esito.web?.sintesi?.denominazione.stato === "menzionata";
   const identificazioneCompletata =
     esito.livello === "non_verificato" &&
     typeof riconoscimento.prodotto === "string" &&
     riconoscimento.prodotto.trim().length > 0;
-  const gruppo = dopUfficialmenteRegistrata
+  const gruppo = denominazioneUeRegistrata
     ? "verificato"
     : riscontroOnlineDop
       ? "non_documentato"
       : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
-  const etichetta = dopUfficialmenteRegistrata
+  const etichetta = denominazioneUeRegistrata
     ? {
         titolo: "Denominazione ufficialmente registrata",
         descrizione:
