@@ -17,6 +17,7 @@ import type {
 import {
   denominazioniEquivalenti,
   normalizzaDenominazione,
+  normalizzaTesto,
   variantiParola,
 } from "./verifica";
 
@@ -41,7 +42,8 @@ const HOST_API = "webgate.ec.europa.eu";
 // eAmbrosia può essere lento: 8 s sono il budget massimo della ricerca
 // iniziale. Un timeout resta distinto da una risposta vuota e non viene
 // presentato come prova dell'assenza di una denominazione.
-const TIMEOUT_PREDEFINITO_MS = 2_800;
+// Misurato sul registro reale: ogni chiamata `namelike` impiega circa 7 s.
+const TIMEOUT_PREDEFINITO_MS = 9_000;
 const MAX_RISPOSTA_BYTES = 1_500_000;
 const MAX_QUERY = 4;
 const MAX_PROVE = 6;
@@ -241,6 +243,20 @@ export function variantiRicerca(riconoscimento: RiconoscimentoAi): string[] {
     const pulita = normalizzaDenominazione(base ?? "");
     if (pulita.length < 4) continue;
     query.add(pulita);
+
+    // Il registro indicizza il nome distintivo ("Senise", "Cosenza"), non la
+    // frase completa: la parte dopo " di " è la variante che restituisce le schede.
+    const distintiva = /\sdi\s(.+)$/.exec(pulita);
+    // Una sola regione ("Calabria") è condivisa da molte denominazioni e
+    // riporta schede estranee: non viene interrogata da sola.
+    const DISTINTIVA_GENERICA = new Set(["calabria", "italia", "sicilia"]);
+    if (
+      distintiva &&
+      distintiva[1].length >= 4 &&
+      !DISTINTIVA_GENERICA.has(normalizzaTesto(distintiva[1]))
+    ) {
+      query.add(distintiva[1]);
+    }
 
     // La parola da variare non è sempre l'ultima: in "Peperone di Senise"
     // è la testa. Si prova una variazione per parola, senza generare

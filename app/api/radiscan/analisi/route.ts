@@ -77,7 +77,9 @@ export async function POST(request: Request): Promise<Response> {
     // restano consultabili dal link ufficiale ma non rallentano la scansione.
     creaRicerca: () =>
       creaRicercaEAmbrosia({
-        timeoutMs: 4_200,
+        // Le chiamate `namelike` impiegano circa 7 s: 9 s lasciano margine
+        // senza superare i 18 s dell'handler con la lettura documentale.
+        timeoutMs: 9_000,
         lettura: {
           timeoutTotaleMs: 6_500,
           timeoutDocumentoMs: 5_500,
