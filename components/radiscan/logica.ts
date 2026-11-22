@@ -120,14 +120,13 @@ export function èCipollaBiancaCastrovillari(...campi: Array<string | null | und
     .filter((campo): campo is string => typeof campo === "string")
     .join(" ")
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
-  return /\\bcipolla bianca (?:di )?castrovillari\\b/.test(testo);
+  return /\bcipolla bianca (?:di )?castrovillari\b/.test(testo);
 }
-
 /** Rileva la sigla DE.CO. in campi estratti, senza attribuirle valore certificativo. */
 export function decoRilevata(
   schemaProposto: string | null,
