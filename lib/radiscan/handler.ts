@@ -49,7 +49,7 @@ import type { ProviderRicercaWeb } from "./web";
 
 /** Deve restare sotto il `maxDuration` della route (30 s): un timeout interno
  * più lungo verrebbe ucciso dalla piattaforma senza risposta JSON. */
-const TIMEOUT_ANALISI_MS = 20_000;
+const TIMEOUT_ANALISI_MS = 26_000;
 const SALE_MINIMO = 16;
 
 export interface DipendenzeHandler {
