@@ -23,7 +23,7 @@ import type {
   ValutazioneProvenienza,
 } from "@/lib/radiscan/tipi";
 import {
-  dopRiconosciuta,
+  denominazioneUfficialmenteRegistrata,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
@@ -949,9 +949,9 @@ export default function ScanRisultato({
   const denominazioneLetta = Boolean(
     riconoscimento.denominazioneProposta?.trim()
   );
-  const dopUfficialmenteRegistrata =
-    denominazioneLetta && dopRiconosciuta(prove);
-  // Una DOP esatta e attiva nel registro UE è un riconoscimento positivo,
+  const denominazioneUeRegistrata =
+    denominazioneLetta && denominazioneUfficialmenteRegistrata(prove);
+  // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
   const riscontroOnlineDop =
@@ -969,9 +969,9 @@ export default function ScanRisultato({
   const stile = STILE[gruppo];
   const etichetta = dopUfficialmenteRegistrata
     ? {
-        titolo: "DOP riconosciuta",
+        titolo: "Denominazione ufficialmente registrata",
         descrizione:
-          "La corrispondenza esatta risulta registrata nel registro ufficiale dell'Unione europea. La documentazione accessoria può essere incompleta: il riconoscimento della denominazione non autentica la singola confezione, il lotto o il produttore.",
+          "La corrispondenza esatta risulta registrata in eAmbrosia, il registro ufficiale dell'Unione europea. La documentazione accessoria può essere incompleta: il riconoscimento della denominazione non autentica la singola confezione, il lotto o il produttore.",
       }
     : riscontroOnlineDop
       ? {
