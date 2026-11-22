@@ -330,7 +330,12 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
       let provider: ProviderRadiciScan;
       try {
         provider = dipendenze.creaProvider();
-      } catch {
+      } catch (causa) {
+        // Diagnostica sicura: solo tipo e codice interno, mai messaggi o valori.
+        console.error("[radiscan][diag] creaProvider fallito", {
+          tipo: causa instanceof Error ? causa.name : typeof causa,
+          codice: (causa as { codice?: unknown })?.codice ?? null,
+        });
         return errore(503, "ANALISI_NON_DISPONIBILE", "Servizio di analisi non disponibile.");
       }
 

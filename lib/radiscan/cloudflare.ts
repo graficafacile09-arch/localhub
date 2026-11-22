@@ -98,6 +98,18 @@ export function creaProviderCloudflare(
 
         const testoGrezzo = await risposta.text();
         if (!risposta.ok) {
+          // Diagnostica sicura: stato HTTP e codice Cloudflare numerico, mai il corpo.
+          let codiceCloudflare: number | null = null;
+          try {
+            const e = (JSON.parse(testoGrezzo) as { errors?: Array<{ code?: unknown }> }).errors?.[0]?.code;
+            codiceCloudflare = typeof e === "number" ? e : null;
+          } catch {
+            codiceCloudflare = null;
+          }
+          console.error("[radiscan][diag] Cloudflare HTTP errore", {
+            status: risposta.status,
+            codiceCloudflare,
+          });
           throw new ErroreRadiciScan(
             CODICI_ERRORE.PROVIDER_MODELLO,
             `Cloudflare: HTTP ${risposta.status}.`
