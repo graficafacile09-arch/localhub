@@ -9,6 +9,7 @@ import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
+import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -74,9 +75,10 @@ export async function POST(request: Request): Promise<Response> {
     // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
     // dal percorso sincrono per non trattenere il riconoscimento.
     creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
-    // Percorso rapido: niente OCR/Tavily/Google Search nella richiesta.
-    // Restano il motore vision condiviso con Aggiungi prodotti e la verifica
-    // documentale ufficiale eAmbrosia, necessaria per il livello verificato.
+    creaWeb: () => creaRicercaWebIbrida(),
+    // Ricerca web multifonte in parallelo a eAmbrosia: prima motori gratuiti,
+    // Tavily solo se configurato e se i risultati gratuiti non bastano.
+    // Il riconoscimento visivo resta indipendente e invariato.
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
