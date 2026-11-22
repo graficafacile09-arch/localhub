@@ -44,7 +44,10 @@ export interface OpzioniVisionRadiciScan {
   /** Iniezione per i test: evita chiamate di rete. */
   catena?: ReadonlyArray<ProviderEntry>;
   timeoutMs?: number;
+  fallbackTimeoutMs?: number;
   maxOutputTokens?: number;
+  primaryOnly?: boolean;
+  validateRawText?: (rawText: string) => boolean;
 }
 
 export async function analyzeRadiciScanImages(
@@ -57,7 +60,6 @@ export async function analyzeRadiciScanImages(
     throw new Error("Nessuna immagine fornita per l'analisi.");
   }
 
-  const catena = opzioni.catena ?? PROVIDER_CHAIN;
   const catenaCompleta = opzioni.catena ?? PROVIDER_CHAIN;
   const catenaEffettiva = opzioni.primaryOnly ? catenaCompleta.slice(0, 1) : catenaCompleta;
   // La route RadiciScan ha un timeout complessivo di 18 s: entrambi i tentativi
