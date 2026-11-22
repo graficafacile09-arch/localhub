@@ -94,11 +94,79 @@ function evidenzeDaDocumenti(lettura: LetturaDocumentale | null): EvidenzaProven
   return evidenze;
 }
 
+const COMUNI_POLLINO_LUCANO = [
+  "calvera", "carbone", "castelluccio inferiore", "castelluccio superiore",
+  "castelsaraceno", "castronuovo sant andrea", "castronuovo di sant andrea",
+  "cersosimo", "chiaromonte", "episcopia", "fardella",
+  "francavilla in sinni", "latronico", "lauria", "noepoli", "rotonda",
+  "san costantino albanese", "san giorgio lucano", "san paolo albanese",
+  "san severino lucano", "senise", "teana", "terranova di pollino",
+  "valsinni", "viggi anello", "vigianello", "viggianello",
+] as const;
+
+const REGIONI_NON_CALABRIA = [
+  "abruzzo", "basilicata", "campania", "emilia romagna", "friuli venezia giulia",
+  "lazio", "liguria", "lombardia", "marche", "molise", "piemonte", "puglia",
+  "sardegna", "sicilia", "toscana", "trentino alto adige", "umbria",
+  "valle d aosta", "veneto",
+] as const;
+
+function contieneLuogo(testo: string, luogo: string): boolean {
+  return new RegExp(`(^| )${luogo.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function valutaTerritorio(
+")}( |$)`).test(testo);
+}
+
+/**
+ * Classifica soltanto il territorio esplicitamente proposto dalla lettura
+ * dell'etichetta. Non usa il nome commerciale del prodotto come provenienza.
+ */
+function classificaTerritorioDichiarato(testo: string | null | undefined):
+  | { tipo: "pollino_lucano"; comune: string }
+  | { tipo: "fuori_calabria"; luogo: string }
+  | null {
+  if (!testo?.trim()) return null;
+  const normalizzato = normalizza(testo);
+
+  const comunePollino = COMUNI_POLLINO_LUCANO.find((comune) =>
+    contieneLuogo(normalizzato, normalizza(comune))
+  );
+  if (comunePollino) return { tipo: "pollino_lucano", comune: comunePollino };
+
+  const regione = REGIONI_NON_CALABRIA.find((nome) =>
+    contieneLuogo(normalizzato, normalizza(nome))
+  );
+  if (regione) return { tipo: "fuori_calabria", luogo: regione };
+
+  // Province lucane: utile quando l'etichetta riporta solo la sigla.
+  if (/(^| )(pz|mt)( |$)/.test(normalizzato)) {
+    return { tipo: "fuori_calabria", luogo: normalizzato };
+  }
+  return null;
+}
+
 function valutaTerritorio(
   prova: ProvaDocumentale | null,
   lettura: LetturaDocumentale | null,
   riconoscimento: RiconoscimentoAi
 ): ValutazioneProvenienza["territorio"] {
+  const territorio = classificaTerritorioDichiarato(riconoscimento.territorioProposto);
+  if (territorio?.tipo === "pollino_lucano") {
+    return {
+      stato: "non_documentato",
+      evidenze: [],
+      motivo:
+        `Territorio indicato: ${territorio.comune}, nel versante lucano del Parco Nazionale del Pollino. È compreso nell'area territoriale ammessa da RadiciScan, pur trovandosi amministrativamente in Basilicata e non in Calabria.`,
+    };
+  }
+  if (territorio?.tipo === "fuori_calabria") {
+    return {
+      stato: "non_documentato",
+      evidenze: [],
+      motivo:
+        `Non è un prodotto di filiera calabrese. L'etichetta indica un territorio esterno alla Calabria (${riconoscimento.territorioProposto}); il Pollino lucano è l'eccezione territoriale ammessa.`,
+    };
+  }
+
   if (!prova) {
     return {
       stato: "non_verificabile",
