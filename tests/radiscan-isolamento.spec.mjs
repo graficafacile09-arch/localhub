@@ -39,6 +39,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "analisi.ts",
     "barcode.ts",
     "cache.ts",
+    "cloudflare.ts",
     "dettaglio.ts",
     "documenti.ts",
     "errori.ts",
