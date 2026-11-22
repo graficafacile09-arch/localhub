@@ -118,7 +118,7 @@ export function decoRilevata(
 ): boolean {
   if (schemaProposto?.toUpperCase() === "DECO") return true;
   return [...indicatori, ...certificazioni].some((valore) =>
-    /\\bde\\s*\\.?\\s*co\\.?\\b/i.test(valore)
+    /\bde\s*\.?\s*co\.?\b/i.test(valore)
   );
 }
 
