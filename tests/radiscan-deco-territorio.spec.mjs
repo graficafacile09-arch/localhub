@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 await import("./support/hook-radiscan.mjs");
 
 const { classificaTerritorioDichiarato } = await import("../lib/radiscan/filiera.ts");
+const { verificaDenominazione } = await import("../lib/radiscan/verifica.ts");
 const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
 
 test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
@@ -67,4 +68,111 @@ test("la Cipolla Bianca di Castrovillari resta DE.CO. e non viene promossa a DOP
   assert.equal(èCipollaBiancaCastrovillari("cipolla bianca Castrovillari - prodotto tipico"), true);
   assert.equal(èCipollaBiancaCastrovillari("Cipolla Bianca di Tropea"), false);
   assert.equal(èCipollaBiancaCastrovillari("Cipolla bianca"), false);
+});
+
+
+test("eAmbrosia: denominazione esatta e registrata confermata anche con PDF parziale", () => {
+  const riconoscimento = {
+    prodotto: "Pecorino Crotonese",
+    categoria: "formaggio",
+    denominazioneProposta: "Pecorino Crotonese",
+    territorioProposto: "Crotone, Calabria",
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 90,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const prova = {
+    id: "eambrosia:test-1",
+    tipo: "ufficiale",
+    denominazione: "Pecorino Crotonese",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "Pecorino Crotonese (DOP)",
+    url: "https://example.test/eambrosia",
+    riferimentoNormativo: "Regolamento UE di registrazione",
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: null,
+    consultataIl: "2026-11-22",
+    relazione: "Corrispondenza esatta con la denominazione letta",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+  };
+  const ricerca = {
+    stato: "ok",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-22",
+    query: ["pecorino crotonese"],
+    prove: [prova],
+    messaggio: null,
+    lettura: {
+      stato: "parziale",
+      documenti: [],
+      pagineLette: 1,
+      pagineTotali: 8,
+      consultataIl: "2026-11-22",
+      messaggio: "1 pagina letta su 8; lettura incompleta.",
+      notaPagine: null,
+    },
+  };
+
+  const esito = verificaDenominazione(riconoscimento, [], ricerca);
+  assert.equal(esito.esito, "confermata");
+  assert.equal(esito.livello, "verificato");
+  assert.equal(esito.denominazioneVerificata, "Pecorino Crotonese");
+  assert.match(esito.motivazione, /registrata nel registro ufficiale eAmbrosia/);
+  assert.match(esito.motivazione, /lettura incompleta/i);
+  assert.match(esito.motivazione, /non l'autenticità della singola confezione/);
+});
+
+test("eAmbrosia non promuove denominazioni affini o non ancora registrate", () => {
+  const base = {
+    prodotto: "Pecorino Crotonese",
+    categoria: "formaggio",
+    denominazioneProposta: "Pecorino Crotonese",
+    territorioProposto: null,
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 90,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const makeProof = (overrides = {}) => ({
+    id: "eambrosia:test-2",
+    tipo: "ufficiale",
+    denominazione: "Pecorino Crotonese",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "Pecorino Crotonese (DOP)",
+    url: "https://example.test/eambrosia",
+    riferimentoNormativo: null,
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: null,
+    consultataIl: "2026-11-22",
+    relazione: "Corrispondenza esatta",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+    ...overrides,
+  });
+  const verify = (proof) => verificaDenominazione(base, [], {
+    stato: "ok",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-22",
+    query: ["pecorino crotonese"],
+    prove: [proof],
+    messaggio: null,
+    lettura: null,
+  });
+
+  assert.notEqual(verify(makeProof({ denominazione: "Pecorino di Crotone" })).livello, "verificato");
+  assert.notEqual(verify(makeProof({ stato: "pubblicata" })).livello, "verificato");
+  assert.notEqual(verify(makeProof({ stato: "in_domanda" })).livello, "verificato");
+  assert.notEqual(verify(makeProof({ stato: "rimossa" })).livello, "verificato");
 });
