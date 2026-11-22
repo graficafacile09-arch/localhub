@@ -137,7 +137,7 @@ export function classificaTerritorioDichiarato(testo: string | null | undefined)
   if (regione) return { tipo: "fuori_calabria", luogo: regione };
 
   // Province lucane: utile quando l'etichetta riporta solo la sigla.
-  if (/(^| )(pz|mt)( |$)/.test(normalizzato)) {
+  if (/(^| )(pz|mt|potenza|matera)( |$)/.test(normalizzato)) {
     return { tipo: "fuori_calabria", luogo: normalizzato };
   }
   return null;
