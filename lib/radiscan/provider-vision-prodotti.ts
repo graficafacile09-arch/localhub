@@ -1,4 +1,5 @@
 import type { VisionImage } from "../product-assistant/types";
+import { analizzaOutputModello } from "./schema";
 import {
   analyzeRadiciScanImages,
   type OpzioniVisionRadiciScan,
@@ -18,6 +19,8 @@ export interface OpzioniProviderVisionProdotti {
   analizza?: typeof analyzeRadiciScanImages;
   timeoutMs?: number;
   maxTokenOutput?: number;
+  fallbackTimeoutMs?: number;
+  primaryOnly?: boolean;
   catena?: OpzioniVisionRadiciScan["catena"];
 }
 
@@ -42,7 +45,10 @@ export function creaProviderVisionProdotti(
       const opzioniChiamata: OpzioniVisionRadiciScan = {
         timeoutMs: opzioni.timeoutMs,
         maxOutputTokens: opzioni.maxTokenOutput,
+        fallbackTimeoutMs: opzioni.fallbackTimeoutMs,
+        primaryOnly: opzioni.primaryOnly,
         catena: opzioni.catena,
+        validateRawText: (testo) => analizzaOutputModello(testo).ok,
       };
 
       const risultato = await analizza(

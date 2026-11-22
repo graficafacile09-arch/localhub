@@ -58,17 +58,27 @@ export async function analyzeRadiciScanImages(
   }
 
   const catena = opzioni.catena ?? PROVIDER_CHAIN;
-  const timeoutMs = opzioni.timeoutMs ?? 60_000;
+  const catenaCompleta = opzioni.catena ?? PROVIDER_CHAIN;
+  const catenaEffettiva = opzioni.primaryOnly ? catenaCompleta.slice(0, 1) : catenaCompleta;
+  // La route RadiciScan ha un timeout complessivo di 18 s: entrambi i tentativi
+  // devono rientrare nel budget, senza attendere i 60 s standard.
+  const timeoutMs = opzioni.timeoutMs ?? 12_000;
+  const fallbackTimeoutMs = opzioni.fallbackTimeoutMs ?? 5_000;
   const maxOutputTokens = opzioni.maxOutputTokens ?? 1_400;
   let ultimoErrore: unknown = null;
+  let ultimoTestoNonValido: { rawText: string; model: string; provider: string } | null = null;
+  let tentativi = 0;
 
-  for (const entry of catena) {
+  for (const entry of catenaEffettiva) {
     const provider = entry.build();
     if (!provider) continue;
 
+    const budget = tentativi === 0 ? timeoutMs : fallbackTimeoutMs;
+    tentativi += 1;
+
     try {
       const result = await provider.analyze(images, undefined, prompt, signal, {
-        timeoutMs,
+        timeoutMs: budget,
         maxOutputTokens,
       });
 
@@ -80,20 +90,22 @@ export async function analyzeRadiciScanImages(
         );
       }
 
-      return {
-        rawText: result.rawText,
-        model: result.model,
-        provider: entry.name,
-      };
+      if (opzioni.validateRawText && !opzioni.validateRawText(result.rawText)) {
+        ultimoTestoNonValido = { rawText: result.rawText, model: result.model, provider: entry.name };
+        console.warn(`[radiscan][vision-copia] provider=${entry.name} esito=schema_non_valido budget=${budget}ms`);
+        continue;
+      }
+      return { rawText: result.rawText, model: result.model, provider: entry.name };
     } catch (error) {
       ultimoErrore = error;
       const codice = error instanceof ProviderError ? error.code : "UNKNOWN";
       console.warn(
-        `[radiscan][vision-duplicata] provider=${entry.name} esito=errore codice=${codice}`
+        `[radiscan][vision-copia] provider=${entry.name} esito=errore codice=${codice} budget=${budget}ms`
       );
     }
   }
 
+  if (ultimoTestoNonValido) return ultimoTestoNonValido;
   if (ultimoErrore instanceof Error) throw ultimoErrore;
   throw new Error("Nessun provider vision configurato o disponibile.");
 }
