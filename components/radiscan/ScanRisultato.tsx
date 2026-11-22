@@ -24,6 +24,7 @@ import type {
 } from "@/lib/radiscan/tipi";
 import {
   denominazioneUfficialmenteRegistrata,
+  decoRiconosciuta,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
@@ -951,6 +952,8 @@ export default function ScanRisultato({
   );
   const denominazioneUeRegistrata =
     denominazioneLetta && denominazioneUfficialmenteRegistrata(prove);
+  const marchioDecoRiconosciuto =
+    denominazioneLetta && decoRiconosciuta(prove);
   // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
@@ -961,13 +964,19 @@ export default function ScanRisultato({
     esito.livello === "non_verificato" &&
     typeof riconoscimento.prodotto === "string" &&
     riconoscimento.prodotto.trim().length > 0;
-  const gruppo = denominazioneUeRegistrata
+  const gruppo = denominazioneUeRegistrata || marchioDecoRiconosciuto
     ? "verificato"
     : riscontroOnlineDop
       ? "non_documentato"
       : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
-  const etichetta = denominazioneUeRegistrata
+  const etichetta = marchioDecoRiconosciuto
+    ? {
+        titolo: "Marchio comunale DE.CO. riscontrato",
+        descrizione:
+          "La denominazione DE.CO. corrisponde a una fonte ufficiale comunale consultata. La DE.CO. attesta il legame identitario con il territorio: non è una certificazione di qualità e non autentica la singola confezione, il lotto o il produttore.",
+      }
+    : denominazioneUeRegistrata
     ? {
         titolo: "Denominazione ufficialmente registrata",
         descrizione:
