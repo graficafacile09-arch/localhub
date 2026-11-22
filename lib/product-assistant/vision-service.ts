@@ -194,6 +194,8 @@ export interface OpzioniVisionPrompt {
   maxOutputTokens?: number;
   /** Catena alternativa, usata dai test per evitare la rete. */
   catena?: ReadonlyArray<ProviderEntry>;
+  /** Usa soltanto il provider principale, senza tentare provider alternativi. */
+  primaryOnly?: boolean;
   /** Validazione specifica del chiamante: se fallisce si prova il fallback. */
   validateRawText?: (text: string) => boolean;
 }
@@ -219,7 +221,8 @@ export async function analyzeImagesWithPrompt(
 ): Promise<{ rawText: string; model: string; provider: string }> {
   if (images.length === 0) throw new Error("Nessuna immagine fornita per l'analisi.");
 
-  const catena = opzioni.catena ?? PROVIDER_CHAIN;
+  const catenaCompleta = opzioni.catena ?? PROVIDER_CHAIN;
+  const catena = opzioni.primaryOnly ? catenaCompleta.slice(0, 1) : catenaCompleta;
   const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_VISION_PROMPT_MS;
   const fallbackTimeoutMs =
     opzioni.fallbackTimeoutMs ?? TIMEOUT_VISION_PROMPT_FALLBACK_MS;

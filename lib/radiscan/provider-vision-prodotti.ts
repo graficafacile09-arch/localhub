@@ -4,30 +4,24 @@ import {
   type OpzioniVisionPrompt,
 } from "../product-assistant/vision-service";
 import type { MimeAmmesso, ProviderRadiciScan } from "./tipi";
-import { analizzaOutputModello } from "./schema";
 
 /**
  * Adattatore RadiciScan verso la stessa catena vision di Aggiungi prodotti.
  *
  * Differenze rispetto alla versione precedente, tutte misurate sul percorso
  * che funziona:
- * - una sola immagine (l'originale era già stata ridotta dal preprocessing);
- *   il ritaglio ingrandito raddoppiava il payload senza un guadagno
- *   dimostrato;
- * - nessun secondo modello automatico quando il testo è solo malformato: il
- *   parsing avviene dopo, con un parser tollerante. Il fallback scatta solo
- *   se il provider fallisce davvero (rete, HTTP, timeout, risposta vuota);
- * - timeout brevi e distinti: 15 s per Gemma, 7 s per il fallback.
+ * - usa lo stesso provider primario di Aggiungi prodotti (Cloudflare/Gemma 4);
+ * - una sola chiamata e una sola immagine preprocessata come nel flusso prodotti;
+ * - nessun Gemini, OpenRouter o provider di fallback: un solo motore, una sola
+ *   attesa, nessuna seconda chiamata nascosta;
+ * - il parsing RadiciScan resta locale e usa il suo schema dedicato.
  *
  * Prompt e schema restano quelli di RadiciScan: il motore è condiviso,
  * l'interpretazione no.
  */
 
 export const MODELLO_VISION_PRIMARIO = "@cf/google/gemma-4-26b-a4b-it";
-export const MODELLO_VISION_FALLBACK = "qwen/qwen2.5-vl-72b-instruct";
-
-export const TIMEOUT_VISION_PRIMARIO_MS = 15_000;
-export const TIMEOUT_VISION_FALLBACK_MS = 7_000;
+export const TIMEOUT_VISION_PRIMARIO_MS = 12_000;
 /** Budget di output dimensionato sullo schema RadiciScan, non su 1400 token fissi. */
 export const MAX_TOKEN_VISION = 700;
 
@@ -35,7 +29,6 @@ export interface OpzioniProviderVisionProdotti {
   /** Iniezione per i test: nessuna chiamata di rete. */
   analizza?: typeof analyzeImagesWithPrompt;
   timeoutMs?: number;
-  fallbackTimeoutMs?: number;
   maxTokenOutput?: number;
 }
 
@@ -44,23 +37,18 @@ export function creaProviderVisionProdotti(
 ): ProviderRadiciScan {
   const analizza = opzioni.analizza ?? analyzeImagesWithPrompt;
   const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_VISION_PRIMARIO_MS;
-  const fallbackTimeoutMs =
-    opzioni.fallbackTimeoutMs ?? TIMEOUT_VISION_FALLBACK_MS;
   const maxOutputTokens = opzioni.maxTokenOutput ?? MAX_TOKEN_VISION;
 
   return {
     nome: "vision-prodotti",
-    modello: `${MODELLO_VISION_PRIMARIO} -> ${MODELLO_VISION_FALLBACK}`,
+    modello: MODELLO_VISION_PRIMARIO,
     async genera({
       prompt,
       immagineBase64,
       mimeType,
-      immagineDettaglioBase64,
       signal,
     }) {
-      // Vista intera per identificazione + crop originale ad alta risoluzione
-      // per leggere testo, marchio e bollini. Il dettaglio è facoltativo:
-      // immagini piccole o non ritagliabili proseguono con la vista intera.
+      // Una sola immagine, identica al preprocessing del flusso Aggiungi prodotti.
       const immagini: VisionImage[] = [
         {
           buffer: Buffer.from(immagineBase64, "base64"),
@@ -68,21 +56,11 @@ export function creaProviderVisionProdotti(
           role: "primary",
         },
       ];
-      if (immagineDettaglioBase64) {
-        immagini.push({
-          buffer: Buffer.from(immagineDettaglioBase64, "base64"),
-          filename: "radiscan-dettaglio.jpg",
-          role: "detail",
-        });
-      }
 
       const opzioniChiamata: OpzioniVisionPrompt = {
         timeoutMs,
-        fallbackTimeoutMs,
         maxOutputTokens,
-        // Se Gemma restituisce testo ma non un riconoscimento utilizzabile,
-        // prova il provider di emergenza prima di dichiarare lo scan fallito.
-        validateRawText: (testo) => analizzaOutputModello(testo).ok,
+        primaryOnly: true,
       };
 
       const risultato = await analizza(

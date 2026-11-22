@@ -957,6 +957,10 @@ export default function ScanRisultato({
   const riscontroOnlineDop =
     !dopUfficialmenteRegistrata &&
     esito.web?.sintesi?.denominazione.stato === "menzionata";
+  const identificazioneCompletata =
+    esito.livello === "non_verificato" &&
+    typeof riconoscimento.prodotto === "string" &&
+    riconoscimento.prodotto.trim().length > 0;
   const gruppo = dopUfficialmenteRegistrata
     ? "verificato"
     : riscontroOnlineDop
@@ -976,7 +980,13 @@ export default function ScanRisultato({
             ? "Sono state trovate fonti online pertinenti che riportano questa denominazione come DOP/IGP. È un riscontro positivo sulla presenza della denominazione nelle fonti; la conferma del registro ufficiale e l'autenticità della singola confezione restano controlli separati."
             : `Le fonti online pertinenti associano il nome prodotto specifico "${riconoscimento.prodotto}" a una denominazione DOP/IGP. La denominazione non è stata letta in etichetta: il riscontro riguarda il nome del prodotto, non una certificazione ufficiale. La conferma del registro e l'autenticità della singola confezione restano controlli separati.`,
         }
-      : ETICHETTE_GRUPPO[gruppo];
+      : identificazioneCompletata
+        ? {
+            titolo: "Prodotto identificato",
+            descrizione:
+              "Il motore visivo ha letto il prodotto dalla fotografia. La verifica documentale DOP/IGP è un controllo separato: l'assenza di una corrispondenza nel registro non significa che il prodotto sia falso o non autentico.",
+          }
+        : ETICHETTE_GRUPPO[gruppo];
   const Icona = stile.icona;
 
   const indicatore = Array.isArray(riconoscimento.indicatoriEtichetta)
@@ -1076,9 +1086,12 @@ export default function ScanRisultato({
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#8a5a3b]" aria-hidden />
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8a5a3b]">
-              Verifica documentale
+              Verifica documentale DOP/IGP
             </p>
           </div>
+          <p className="mt-2 text-xs font-semibold leading-5 text-[#6b6459]">
+            Questo controllo riguarda la presenza della denominazione nei registri ufficiali, non il riconoscimento del prodotto né la sua autenticità.
+          </p>
           <p className="mt-2 text-sm leading-6 text-[#57534e]">{motivazione}</p>
         </div>
 

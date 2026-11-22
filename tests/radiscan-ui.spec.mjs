@@ -239,6 +239,9 @@ test("UI: nessun import da Vision, venditori o moduli server", () => {
   }
 
   const risultato = leggi("components/radiscan/ScanRisultato.tsx");
+  assert.match(risultato, /Prodotto identificato/);
+  assert.match(risultato, /Verifica documentale DOP\/IGP/);
+  assert.match(risultato, /l'assenza di una corrispondenza nel registro non significa che il prodotto sia falso/i);
   assert.match(risultato, /Prove documentali/);
   assert.match(risultato, /Ricerca non completata/);
   assert.match(risultato, /SchedaProva/);
