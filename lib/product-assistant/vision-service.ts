@@ -194,6 +194,8 @@ export interface OpzioniVisionPrompt {
   maxOutputTokens?: number;
   /** Catena alternativa, usata dai test per evitare la rete. */
   catena?: ReadonlyArray<ProviderEntry>;
+  /** Validazione specifica del chiamante: se fallisce si prova il fallback. */
+  validateRawText?: (text: string) => boolean;
 }
 
 export const TIMEOUT_VISION_PROMPT_MS = 15_000;
@@ -223,6 +225,7 @@ export async function analyzeImagesWithPrompt(
     opzioni.fallbackTimeoutMs ?? TIMEOUT_VISION_PROMPT_FALLBACK_MS;
 
   let ultimoErrore: unknown = null;
+  let ultimoTestoNonValido: { rawText: string; model: string; provider: string } | null = null;
   let tentativi = 0;
 
   for (const entry of catena) {
@@ -246,6 +249,18 @@ export async function analyzeImagesWithPrompt(
         );
       }
 
+      if (opzioni.validateRawText && !opzioni.validateRawText(result.rawText)) {
+        ultimoTestoNonValido = {
+          rawText: result.rawText,
+          model: result.model,
+          provider: entry.name,
+        };
+        console.warn(
+          `[radiscan][vision] provider=${entry.name} esito=schema_non_valido budget=${budget}ms`
+        );
+        continue;
+      }
+
       return { rawText: result.rawText, model: result.model, provider: entry.name };
     } catch (error) {
       ultimoErrore = error;
@@ -257,6 +272,9 @@ export async function analyzeImagesWithPrompt(
     }
   }
 
+  // Se anche il fallback non produce uno schema valido, restituiamo l'ultimo
+  // testo ricevuto: il parser RadiciScan emetterà il suo errore strutturato.
+  if (ultimoTestoNonValido) return ultimoTestoNonValido;
   if (ultimoErrore instanceof Error) throw ultimoErrore;
   throw new Error("Nessun provider vision configurato o disponibile.");
 }

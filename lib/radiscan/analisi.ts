@@ -1,4 +1,4 @@
-import { preparaImmagineVisione } from "./dettaglio";
+import { creaDettaglioEtichetta, preparaImmagineVisione } from "./dettaglio";
 import { estraiEtichetta } from "./etichetta";
 import { erroreInput, erroreSchema } from "./errori";
 import type { FonteUfficiale } from "./fonti";
@@ -112,11 +112,15 @@ export async function analizzaProdotto(
       })
     : Promise.resolve(null);
 
-  // Preprocessing del percorso che funziona: lato massimo 1024 px, JPEG 80,
-  // auto-orientamento EXIF, una sola immagine. Il dettaglio ingrandito non
-  // viene più prodotto: raddoppiava il payload e ritardava la chiamata.
+  // Manteniamo due viste complementari: l'immagine intera ridotta per
+  // identificare il prodotto e un dettaglio ad alta risoluzione per leggere
+  // etichetta, marchio e bollini. Il crop parte dall'originale, non dalla
+  // versione ridotta, così non perdiamo testo piccolo.
   const prepAvvio = Date.now();
-  const immagineVisione = await preparaImmagineVisione(base64, mime);
+  const [immagineVisione, immagineDettaglioBase64] = await Promise.all([
+    preparaImmagineVisione(base64, mime),
+    creaDettaglioEtichetta(base64),
+  ]);
   const preprocessamentoMs = Date.now() - prepAvvio;
 
   const aiAvvio = Date.now();
@@ -124,6 +128,7 @@ export async function analizzaProdotto(
     prompt: buildPromptRadiciScan(),
     immagineBase64: immagineVisione.base64,
     mimeType: immagineVisione.mime,
+    immagineDettaglioBase64: immagineDettaglioBase64 ?? undefined,
     signal,
   });
   const testo = rispostaAi.testo;
