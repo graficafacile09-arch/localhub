@@ -472,6 +472,10 @@ export function creaRicercaEAmbrosia(
         const esiti = await Promise.allSettled(
           query.map((voce) => cercaQuery(voce, controller.signal, fetchImpl))
         );
+        // Il timeout di questa fase protegge soltanto le chiamate al registro.
+        // La lettura PDF ha un budget autonomo in leggiAllegati: lasciare attivo
+        // questo timer taglierebbe i documenti dopo i 4,2 s della ricerca.
+        clearTimeout(timer);
 
         const righe: RigaEAmbrosia[] = [];
         let errori = 0;
