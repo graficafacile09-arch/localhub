@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 await import("./support/hook-radiscan.mjs");
 
-const { classificaTerritorioDichiarato, valutaProvenienza } = await import("../lib/radiscan/filiera.ts");
+const { classificaPerimetro, classificaTerritorioDichiarato, valutaProvenienza } =
+  await import("../lib/radiscan/filiera.ts");
+const { COMUNI_CALABRIA } = await import("../lib/radiscan/comuni-calabria.ts");
 const { verificaDenominazione } = await import("../lib/radiscan/verifica.ts");
 const { componiEsito } = await import("../lib/radiscan/livelli.ts");
 const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
@@ -364,4 +366,315 @@ test("eAmbrosia non promuove denominazioni affini o non ancora registrate", () =
   assert.notEqual(verify(makeProof({ stato: "pubblicata" })).livello, "verificato");
   assert.notEqual(verify(makeProof({ stato: "in_domanda" })).livello, "verificato");
   assert.notEqual(verify(makeProof({ stato: "rimossa" })).livello, "verificato");
+});
+
+// ─── Perimetro territoriale: nessun prodotto esterno è ammissibile ─────────
+
+function fonteTerritorio(override = {}) {
+  return {
+    id: "11111111-2222-4333-8444-555555555556",
+    slug: "test-fonte-territorio",
+    denominazione: "Pecorino Crotonese",
+    tipoAtto: "denominazione",
+    schemaQualita: "DOP",
+    territorio: "Provincia di Crotone",
+    ente: "MASAF",
+    urlUfficiale: "https://www.masaf.gov.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/15453",
+    riferimentoNormativo: "Reg. (UE) 2024/1143, art. 22",
+    consultataIl: "2026-11-23",
+    attiva: true,
+    ...override,
+  };
+}
+
+function riconoscimentoTerritorio(override = {}) {
+  return {
+    prodotto: "Pecorino Crotonese",
+    categoria: "formaggio",
+    denominazioneProposta: "Pecorino Crotonese",
+    territorioProposto: "Crotone, Calabria",
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 90,
+    note: null,
+    incongruenzeRilevate: [],
+    ...override,
+  };
+}
+
+test("DOP registrata in area esterna non viene restituita come verificata", () => {
+  const riconoscimento = riconoscimentoTerritorio({
+    prodotto: "Prosciutto di Parma",
+    denominazioneProposta: "Prosciutto di Parma",
+    territorioProposto: "Parma",
+  });
+  const fonte = fonteTerritorio({
+    denominazione: "Prosciutto di Parma",
+    territorio: "Provincia di Parma",
+  });
+
+  const verifica = verificaDenominazione(riconoscimento, [fonte]);
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.notEqual(verifica.livello, "verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /perimetro ammesso da RadiciScan/i);
+  assert.match(verifica.motivazione, /non è territorialmente ammissibile/i);
+
+  const esito = componiEsito({ riconoscimento, verifica, versionePrompt: "test" });
+  assert.notEqual(esito.livello, "verificato");
+  assert.equal(esito.denominazioneVerificata, null);
+  assert.equal(esito.fonteId, fonte.id);
+  assert.equal(esito.verifica.provenienza.territorio.stato, "non_documentato");
+  assert.match(
+    esito.verifica.provenienza.territorio.motivo,
+    /fuori dal perimetro territoriale ammesso/i
+  );
+  assert.doesNotMatch(esito.verifica.motivazione, /falso|non autentico/i);
+});
+
+test("una fonte ufficiale esterna blocca il verificato anche senza territorio letto", () => {
+  const riconoscimento = riconoscimentoTerritorio({
+    prodotto: "Prosciutto di Parma",
+    denominazioneProposta: "Prosciutto di Parma",
+    territorioProposto: null,
+  });
+  const fonte = fonteTerritorio({
+    denominazione: "Prosciutto di Parma",
+    territorio: "Provincia di Parma",
+  });
+
+  const verifica = verificaDenominazione(riconoscimento, [fonte]);
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.notEqual(verifica.livello, "verificato");
+  assert.equal(verifica.fonte?.territorio, "Provincia di Parma");
+});
+
+test("un'etichetta esterna non resta verificata contro una denominazione calabrese", () => {
+  const riconoscimento = riconoscimentoTerritorio({ territorioProposto: "Parma" });
+
+  const verifica = verificaDenominazione(riconoscimento, [fonteTerritorio()]);
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.notEqual(verifica.livello, "verificato");
+  assert.match(verifica.motivazione, /L'etichetta dichiara un territorio esterno/i);
+});
+
+test("i comuni lucani fuori dal Pollino non sono ammissibili", () => {
+  for (const luogo of ["Melfi (PZ)", "Policoro (MT)", "Potenza", "Basilicata"]) {
+    const riconoscimento = riconoscimentoTerritorio({ territorioProposto: luogo });
+    const verifica = verificaDenominazione(riconoscimento, [fonteTerritorio()]);
+    assert.ok(
+      ["fuori_perimetro", "territorio_incoerente"].includes(verifica.esito),
+      `${luogo}: ${verifica.esito}`
+    );
+    assert.notEqual(verifica.livello, "verificato", luogo);
+    assert.equal(verifica.denominazioneVerificata, null, luogo);
+  }
+});
+
+test("un comune del Pollino lucano resta territorialmente ammissibile", () => {
+  const riconoscimento = riconoscimentoTerritorio({ territorioProposto: "Rotonda" });
+
+  const verifica = verificaDenominazione(riconoscimento, [
+    fonteTerritorio({ territorio: "Rotonda" }),
+  ]);
+  assert.equal(verifica.esito, "confermata");
+  assert.equal(verifica.livello, "verificato");
+  assert.equal(verifica.provenienza.territorio.stato, "non_documentato");
+  assert.match(verifica.provenienza.territorio.motivo, /versante lucano/i);
+  assert.doesNotMatch(verifica.provenienza.territorio.motivo, /fuori dal perimetro/i);
+});
+
+// ─── Provenienza indeterminata: mai ammissibile ─────────────────────────────
+
+test("classificazione del perimetro: solo Calabria e Pollino sono ammessi", () => {
+  const casi = [
+    ["Calabria", "ammesso"],
+    ["Cosenza, Calabria", "ammesso"],
+    ["Provincia di Crotone", "ammesso"],
+    ["Reggio Calabria", "ammesso"],
+    ["Rotonda", "ammesso"],
+    ["Senise (PZ)", "ammesso"],
+    ["Parma", "fuori_perimetro"],
+    ["Policoro (MT)", "fuori_perimetro"],
+    ["Basilicata", "fuori_perimetro"],
+    ["Parma, Calabria", "fuori_perimetro"],
+    ["Valle di Atlantide", "indeterminato"],
+    ["Località Inesistente", "indeterminato"],
+    [null, "indeterminato"],
+    ["   ", "indeterminato"],
+  ];
+
+  for (const [testo, atteso] of casi) {
+    assert.equal(classificaPerimetro(testo).stato, atteso, String(testo));
+  }
+});
+
+// ─── Comuni calabresi indicati da soli ───────────────────────────────────────
+
+test("i comuni calabresi sono ammessi anche senza provincia o regione", () => {
+  const esempi = [
+    "Castrovillari", "Cosenza", "Corigliano-Rossano", "Reggio Calabria",
+    "Lamezia Terme", "Crotone", "Tropea", "Scalea",
+  ];
+
+  for (const comune of esempi) {
+    const esito = classificaPerimetro(comune);
+    assert.equal(esito.stato, "ammesso", comune);
+    assert.equal(esito.area, "calabria", comune);
+  }
+});
+
+test("sono riconosciuti comuni di tutte e cinque le province calabresi", () => {
+  const perProvincia = {
+    Cosenza: ["Acri", "Amantea", "Castrovillari", "Corigliano-Rossano", "Scalea"],
+    Catanzaro: ["Lamezia Terme", "Soverato", "Catanzaro", "Sellia", "Tiriolo"],
+    "Reggio Calabria": ["Reggio Calabria", "Locri", "Gioia Tauro", "Scilla", "Bova"],
+    "Vibo Valentia": ["Tropea", "Mileto", "Vibo Valentia", "Pizzo", "Nicotera"],
+    Crotone: ["Crotone", "Cirò", "Petilia Policastro", "Strongoli", "Umbriatico"],
+  };
+
+  for (const [provincia, comuni] of Object.entries(perProvincia)) {
+    for (const comune of comuni) {
+      assert.equal(
+        classificaPerimetro(comune).stato,
+        "ammesso",
+        `${comune} (${provincia})`
+      );
+    }
+  }
+});
+
+test("il nome del comune vale solo come parola intera: nessuna promozione per somiglianza", () => {
+  // «Lagonegro» contiene «Lago» (comune CS) ma è in Basilicata, fuori Pollino.
+  assert.equal(classificaPerimetro("Lagonegro").stato, "indeterminato");
+  // «Cassano d'Adda» non è il comune calabrese «Cassano all'Ionio».
+  assert.equal(classificaPerimetro("Cassano d'Adda").stato, "indeterminato");
+  // «Scala» (SA) non è «Scalea» (CS).
+  assert.equal(classificaPerimetro("Scala").stato, "indeterminato");
+  // Un comune calabrese con omonima frazione di un altro comune resta ammesso
+  // solo per il nome esatto.
+  assert.equal(classificaPerimetro("Cassano all'Ionio").stato, "ammesso");
+});
+
+test("un'indicazione esterna vince anche se il testo cita un comune calabrese", () => {
+  assert.equal(classificaPerimetro("Scalea, Salerno").stato, "fuori_perimetro");
+  assert.equal(classificaPerimetro("Tropea (PZ)").stato, "fuori_perimetro");
+  assert.equal(classificaPerimetro("Castrovillari, Basilicata").stato, "fuori_perimetro");
+});
+
+test("l'elenco calabrese coincide con il dataset ISTAT del repository", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const dataset = JSON.parse(
+    await readFile(new URL("../public/data/comuni.json", import.meta.url), "utf8")
+  );
+  const attesi = dataset
+    .filter((comune) => comune.regione.nome === "Calabria")
+    .map((comune) => comune.nome)
+    .sort();
+
+  assert.equal(attesi.length, 404);
+  assert.deepEqual([...COMUNI_CALABRIA].sort(), attesi);
+});
+
+test("un'etichetta col solo comune calabrese resta verificata", () => {
+  const verifica = verificaDenominazione(
+    riconoscimentoTerritorio({ territorioProposto: "Castrovillari" }),
+    [fonteTerritorio({ territorio: "Provincia di Cosenza" })]
+  );
+
+  assert.equal(verifica.esito, "confermata");
+  assert.equal(verifica.livello, "verificato");
+  assert.equal(verifica.denominazioneVerificata, "Pecorino Crotonese");
+});
+
+test("un comune lucano fuori Pollino resta non ammissibile anche da solo", () => {
+  const verifica = verificaDenominazione(
+    riconoscimentoTerritorio({ territorioProposto: "Lagonegro" }),
+    [fonteTerritorio({ territorio: "Calabria" })]
+  );
+
+  assert.equal(verifica.esito, "territorio_indeterminato");
+  assert.notEqual(verifica.livello, "verificato");
+});
+
+test("provenienza sconosciuta: denominazione valida, ma non ammissibile", () => {
+  const riconoscimento = riconoscimentoTerritorio({
+    territorioProposto: "Valle di Atlantide",
+  });
+
+  const verifica = verificaDenominazione(riconoscimento, [fonteTerritorio()]);
+  assert.equal(verifica.esito, "territorio_indeterminato");
+  assert.equal(verifica.livello, "coerente_non_verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /certificazione resta valida/i);
+  assert.match(verifica.motivazione, /non è territorialmente ammissibile/i);
+  assert.match(verifica.motivazione, /non è dichiarato falso o non autentico/i);
+  assert.doesNotMatch(
+    verifica.motivazione,
+    /è falso|è contraffatto|prodotto non autentico/i
+  );
+
+  const esito = componiEsito({ riconoscimento, verifica, versionePrompt: "test" });
+  assert.notEqual(esito.livello, "verificato");
+  assert.equal(esito.denominazioneVerificata, null);
+});
+
+test("provenienza ambigua: Calabria insieme a un'area esterna non ammette", () => {
+  const verifica = verificaDenominazione(
+    riconoscimentoTerritorio({ territorioProposto: "Parma, Crotone" }),
+    [fonteTerritorio()]
+  );
+
+  assert.notEqual(verifica.livello, "verificato");
+  assert.ok(
+    ["fuori_perimetro", "territorio_incoerente", "territorio_indeterminato"].includes(
+      verifica.esito
+    ),
+    verifica.esito
+  );
+});
+
+test("etichetta senza provenienza e area della fonte non riconoscibile: non ammissibile", () => {
+  const riconoscimento = riconoscimentoTerritorio({ territorioProposto: null });
+
+  const verifica = verificaDenominazione(riconoscimento, [
+    fonteTerritorio({ territorio: "Area non specificata" }),
+  ]);
+  assert.equal(verifica.esito, "territorio_indeterminato");
+  assert.notEqual(verifica.livello, "verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /Area non specificata/);
+  assert.match(verifica.motivazione, /perimetro ammesso da RadiciScan/i);
+});
+
+test("una provenienza Calabria resta ammessa", () => {
+  const verifica = verificaDenominazione(
+    riconoscimentoTerritorio({ territorioProposto: "Calabria" }),
+    [fonteTerritorio()]
+  );
+
+  assert.equal(verifica.esito, "confermata");
+  assert.equal(verifica.livello, "verificato");
+  assert.equal(verifica.denominazioneVerificata, "Pecorino Crotonese");
+});
+
+test("DOP esterna: certificazione valida, ma fuori perimetro InCittà", () => {
+  const verifica = verificaDenominazione(
+    riconoscimentoTerritorio({
+      prodotto: "Prosciutto di Parma",
+      denominazioneProposta: "Prosciutto di Parma",
+      territorioProposto: null,
+    }),
+    [
+      fonteTerritorio({
+        denominazione: "Prosciutto di Parma",
+        territorio: "Provincia di Parma",
+      }),
+    ]
+  );
+
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.equal(verifica.livello, "coerente_non_verificato");
+  assert.match(verifica.motivazione, /legittimità della certificazione/i);
+  assert.match(verifica.motivazione, /non è territorialmente ammissibile/i);
 });

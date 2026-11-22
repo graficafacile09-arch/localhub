@@ -1,4 +1,9 @@
-import { valutaProvenienza } from "./filiera";
+import {
+  classificaPerimetro,
+  classificaTerritorioDichiarato,
+  territorioFuoriPerimetro,
+  valutaProvenienza,
+} from "./filiera";
 import {
   fonteDocumentata,
   isUrlFonteUfficiale,
@@ -787,6 +792,22 @@ function verificaBase(
       );
     }
 
+    // Perimetro territoriale: una denominazione registrata in un'area esterna
+    // resta legittima come DOP/IGP/STG, ma non è territorialmente ammissibile.
+    const territorioFonte = classificaTerritorioDichiarato(
+      documentata.territorio
+    );
+    if (territorioFonte?.tipo === "fuori_calabria") {
+      return nonVerificato(
+        "coerente_non_verificato",
+        "fuori_perimetro",
+        `Denominazione ${documentata.schemaQualita ?? "registrata"} confermata su fonte ufficiale registrata (${documentata.ente}), ma l'area geografica della denominazione ("${documentata.territorio}") è esterna al perimetro ammesso da RadiciScan: tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. Il prodotto non è territorialmente ammissibile; questo non mette in dubbio la legittimità della certificazione.`,
+        documentata,
+        prove,
+        ricerca
+      );
+    }
+
     const territorioLetto = riconoscimento.territorioProposto?.trim() ?? "";
     const coerenzaTerritoriale = territorioLetto
       ? confrontaTerritori(territorioLetto, documentata.territorio)
@@ -809,6 +830,31 @@ function verificaBase(
         : !territorioLetto
           ? " Il territorio non è indicato: la compatibilità territoriale non è stata verificata. La verifica riguarda la denominazione, non la provenienza della singola confezione; il prodotto non è dichiarato falso o non autentico."
           : "";
+
+    // Nessun territorio indeterminato può sostenere l'ammissibilità: se
+    // l'etichetta o l'area della fonte non sono riconducibili al perimetro,
+    // manca la prova territoriale (la certificazione resta valida).
+    const perimetroEtichetta = territorioLetto
+      ? classificaPerimetro(territorioLetto)
+      : null;
+    const perimetroFonte = classificaPerimetro(documentata.territorio);
+    const motivoIndeterminato =
+      perimetroEtichetta?.stato === "indeterminato"
+        ? `la provenienza indicata in etichetta ("${territorioLetto}") non è riconducibile con certezza al perimetro ammesso da RadiciScan`
+        : perimetroFonte.stato === "indeterminato"
+          ? `l'area di produzione indicata dalla fonte ufficiale ("${documentata.territorio}") non è riconducibile con certezza al perimetro ammesso da RadiciScan`
+          : null;
+
+    if (motivoIndeterminato) {
+      return nonVerificato(
+        "coerente_non_verificato",
+        "territorio_indeterminato",
+        `Denominazione confermata su fonte ufficiale registrata (${documentata.ente}), consultata il ${documentata.consultataIl}, ma ${motivoIndeterminato}: tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. Il prodotto non è dichiarato falso o non autentico e la certificazione resta valida, ma la provenienza non è verificata e il prodotto non è territorialmente ammissibile.`,
+        documentata,
+        prove,
+        ricerca
+      );
+    }
 
     return {
       esito: "confermata",
@@ -971,10 +1017,42 @@ export function verificaDenominazione(
     base.prove[0] ??
     null;
   const lettura = ricerca.lettura ?? null;
+  const provenienza = valutaProvenienza(
+    riconoscimento,
+    provaRiferimento,
+    lettura
+  );
+  const motivazione = `${base.motivazione}${notaLettura(lettura)}`;
+
+  // Nessun prodotto fuori perimetro può restare `verificato`, nemmeno quando
+  // la denominazione è confermata: la validità DOP/IGP/STG e l'ammissibilità
+  // territoriale sono due giudizi distinti.
+  const fuoriPerimetro = territorioFuoriPerimetro(
+    riconoscimento,
+    provaRiferimento
+  );
+  if (base.livello === "verificato" && fuoriPerimetro) {
+    const luogo =
+      fuoriPerimetro.origine === "etichetta"
+        ? riconoscimento.territorioProposto?.trim() || fuoriPerimetro.luogo
+        : fuoriPerimetro.luogo;
+    const esclusione =
+      fuoriPerimetro.origine === "etichetta"
+        ? `L'etichetta dichiara un territorio esterno al perimetro ammesso da RadiciScan ("${luogo}"): tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata.`
+        : `L'area geografica della denominazione ufficiale "${provaRiferimento?.denominazione}" è esterna al perimetro ammesso da RadiciScan ("${luogo}"): tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata.`;
+    return {
+      ...base,
+      esito: "fuori_perimetro",
+      livello: "coerente_non_verificato",
+      denominazioneVerificata: null,
+      motivazione: `${motivazione} ${esclusione} Il prodotto non è territorialmente ammissibile, anche se la denominazione risulta registrata: la certificazione resta valida, l'appartenenza al perimetro no.`,
+      provenienza,
+    };
+  }
 
   return {
     ...base,
-    motivazione: `${base.motivazione}${notaLettura(lettura)}`,
-    provenienza: valutaProvenienza(riconoscimento, provaRiferimento, lettura),
+    motivazione,
+    provenienza,
   };
 }

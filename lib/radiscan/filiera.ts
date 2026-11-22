@@ -1,3 +1,4 @@
+import { ALIAS_COMUNI_CALABRIA, COMUNI_CALABRIA } from "./comuni-calabria";
 import type {
   EvidenzaProvenienza,
   LetturaDocumentale,
@@ -181,6 +182,120 @@ export function classificaTerritorioDichiarato(testo: string | null | undefined)
   return null;
 }
 
+const PROVINCE_CALABRESI_PERIMETRO = [
+  "cosenza", "crotone", "catanzaro", "vibo valentia",
+  "reggio calabria", "reggio di calabria",
+] as const;
+
+export type ClassificazionePerimetro =
+  | { stato: "ammesso"; area: "calabria" | "pollino_lucano"; luogo: string }
+  | { stato: "fuori_perimetro"; luogo: string }
+  | { stato: "indeterminato"; motivo: "assente" | "non_riconosciuto" };
+
+/**
+ * Classifica un territorio rispetto al perimetro ammesso da RadiciScan:
+ * tutta la Calabria e i soli comuni del Parco Nazionale del Pollino situati
+ * in Basilicata.
+ *
+ * Sono ammessi la regione, le province calabresi e i singoli comuni della
+ * Calabria (elenco ISTAT in `comuni-calabria.ts`), anche quando l'etichetta
+ * indica il solo nome del comune senza provincia né regione.
+ *
+ * Solo l'area riconosciuta è ammessa: un territorio assente, sconosciuto o
+ * ambiguo resta `indeterminato` e non può sostenere l'ammissibilità
+ * territoriale. Un luogo esterno riconosciuto vince anche quando il testo
+ * cita la Calabria, perché un'indicazione contraddittoria non è una prova.
+ */
+export function classificaPerimetro(
+  testo: string | null | undefined
+): ClassificazionePerimetro {
+  const dichiarato = classificaTerritorioDichiarato(testo);
+  if (dichiarato?.tipo === "fuori_calabria") {
+    return { stato: "fuori_perimetro", luogo: dichiarato.luogo };
+  }
+  if (dichiarato?.tipo === "pollino_lucano") {
+    return {
+      stato: "ammesso",
+      area: "pollino_lucano",
+      luogo: dichiarato.comune,
+    };
+  }
+  if (!testo?.trim()) return { stato: "indeterminato", motivo: "assente" };
+
+  const normalizzato = normalizza(testo);
+  if (contieneLuogo(normalizzato, "calabria")) {
+    return { stato: "ammesso", area: "calabria", luogo: "Calabria" };
+  }
+  const provincia = PROVINCE_CALABRESI_PERIMETRO.find((nome) =>
+    contieneLuogo(normalizzato, nome)
+  );
+  if (provincia) {
+    return { stato: "ammesso", area: "calabria", luogo: provincia };
+  }
+
+  // Comune calabrese indicato da solo: il nome deve comparire come parola
+  // intera, così «Lagonegro» o «Cassano d'Adda» non vengono promossi.
+  const comune = [...COMUNI_CALABRIA, ...ALIAS_COMUNI_CALABRIA].find((nome) =>
+    contieneLuogo(normalizzato, normalizza(nome))
+  );
+  if (comune) {
+    return { stato: "ammesso", area: "calabria", luogo: comune };
+  }
+
+  return { stato: "indeterminato", motivo: "non_riconosciuto" };
+}
+
+/**
+ * Il nome geografico vale come territorio soltanto quando proviene da una
+ * corrispondenza ESATTA con una denominazione DOP/IGP/STG ufficiale e
+ * registrata. Il nome commerciale o una prova affine non bastano.
+ */
+function denominazioneUfficialeEsatta(
+  prova: ProvaDocumentale | null,
+  riconoscimento: RiconoscimentoAi
+): boolean {
+  return Boolean(
+    prova &&
+      prova.tipo === "ufficiale" &&
+      prova.stato === "registrata" &&
+      (prova.schemaQualita === "DOP" ||
+        prova.schemaQualita === "IGP" ||
+        prova.schemaQualita === "STG") &&
+      riconoscimento.denominazioneProposta?.trim() &&
+      normalizza(prova.denominazione) ===
+        normalizza(riconoscimento.denominazioneProposta ?? "")
+  );
+}
+
+/**
+ * Verdetto esplicito sul perimetro territoriale ammesso: tutta la Calabria e
+ * i soli comuni del Parco Nazionale del Pollino situati in Basilicata.
+ *
+ * Restituisce il luogo esterno soltanto quando la provenienza è riconosciuta
+ * come esterna. Un territorio non riconosciuto resta indeterminato: non viene
+ * dichiarato ammesso e non viene usato per confermare nulla.
+ */
+export function territorioFuoriPerimetro(
+  riconoscimento: RiconoscimentoAi,
+  prova: ProvaDocumentale | null
+): { luogo: string; origine: "etichetta" | "denominazione" } | null {
+  const etichetta = classificaTerritorioDichiarato(
+    riconoscimento.territorioProposto
+  );
+  if (etichetta?.tipo === "fuori_calabria") {
+    return { luogo: etichetta.luogo, origine: "etichetta" };
+  }
+
+  const ufficiale = denominazioneUfficialeEsatta(prova, riconoscimento)
+    ? classificaTerritorioDichiarato(prova?.denominazione)
+    : null;
+  if (ufficiale?.tipo === "fuori_calabria") {
+    return { luogo: ufficiale.luogo, origine: "denominazione" };
+  }
+
+  return null;
+}
+
 function valutaTerritorio(
   prova: ProvaDocumentale | null,
   lettura: LetturaDocumentale | null,
@@ -190,20 +305,11 @@ function valutaTerritorio(
     riconoscimento.territorioProposto
   );
 
-  // Il nome geografico vale come territorio soltanto quando proviene da una
-  // corrispondenza ESATTA con una denominazione DOP/IGP/STG ufficiale e
-  // registrata. Il nome commerciale o una prova affine non bastano.
-  const denominazioneUfficialeEsatta =
-    prova?.tipo === "ufficiale" &&
-    prova.stato === "registrata" &&
-    (prova.schemaQualita === "DOP" ||
-      prova.schemaQualita === "IGP" ||
-      prova.schemaQualita === "STG") &&
-    Boolean(riconoscimento.denominazioneProposta?.trim()) &&
-    normalizza(prova.denominazione) ===
-      normalizza(riconoscimento.denominazioneProposta ?? "");
-  const territorioDaDenominazione = denominazioneUfficialeEsatta
-    ? classificaTerritorioDichiarato(prova.denominazione)
+  const territorioDaDenominazione = denominazioneUfficialeEsatta(
+    prova,
+    riconoscimento
+  )
+    ? classificaTerritorioDichiarato(prova?.denominazione)
     : null;
   const territorio = territorioEtichetta ?? territorioDaDenominazione;
   const territorioDaFonteUfficiale =

@@ -269,6 +269,10 @@ export type EsitoVerifica =
   | "nessuna_denominazione"
   | "fonte_non_verificabile"
   | "territorio_incoerente"
+  /** Provenienza riconosciuta fuori dal perimetro ammesso: mai ammissibile. */
+  | "fuori_perimetro"
+  /** Provenienza non classificabile: non è una prova di ammissibilità. */
+  | "territorio_indeterminato"
   | "schema_incoerente"
   | "riscontro_parziale"
   | "ricerca_non_disponibile";

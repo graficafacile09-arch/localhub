@@ -461,21 +461,24 @@ test("sede del gruppo assente o fuori regione non incide sul controllo territori
   }
 });
 
-test("denominazione verificata e territorio non comparabile: nome e territorio restano distinti", () => {
+test("denominazione verificata e territorio sconosciuto: mai territorialmente ammissibile", () => {
   const esito = verificaDenominazione(
     riconoscimento({ territorioProposto: "Valle di Atlantide" }),
     [fonteCurata({ territorio: "Calabria" })],
     ricerca([prova()])
   );
 
-  assert.equal(esito.livello, "verificato");
-  assert.equal(esito.esito, "confermata");
-  assert.equal(esito.denominazioneVerificata, "Caciocavallo Silano DOP");
+  // La denominazione resta confermata nella sostanza, ma una provenienza non
+  // classificabile non può produrre un esito territorialmente ammissibile.
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.equal(esito.esito, "territorio_indeterminato");
+  assert.equal(esito.denominazioneVerificata, null);
   assert.match(
     esito.motivazione,
-    /compatibilità territoriale non è stata verificata/i
+    /non è riconducibile con certezza al perimetro ammesso/i
   );
-  assert.match(esito.motivazione, /verifica riguarda la denominazione/i);
+  assert.match(esito.motivazione, /non è territorialmente ammissibile/i);
+  assert.match(esito.motivazione, /certificazione resta valida/i);
   assert.match(
     esito.motivazione,
     /non è dichiarato falso o non autentico/i
