@@ -886,7 +886,7 @@ test("schema: la dicitura del bollino non diventa la denominazione", () => {
 });
 
 test("DOP: badge solo per prova ufficiale registrata ed esatta", async () => {
-  const { dopRiconosciuta } = await import("@/components/radiscan/logica");
+  const { dopRiconosciuta, denominazioneUfficialmenteRegistrata } = await import("@/components/radiscan/logica");
   const esatta = {
     tipo: "ufficiale",
     stato: "registrata",
@@ -903,5 +903,31 @@ test("DOP: badge solo per prova ufficiale registrata ed esatta", async () => {
     dopRiconosciuta([{ ...esatta, relazione: "Denominazione affine" }]),
     false,
     "una denominazione affine non basta"
+  );
+
+  assert.equal(
+    denominazioneUfficialmenteRegistrata([{ ...esatta, schemaQualita: "IGP" }]),
+    true,
+    "anche una IGP esatta e registrata deve essere riconosciuta"
+  );
+  assert.equal(
+    denominazioneUfficialmenteRegistrata([{ ...esatta, schemaQualita: "STG" }]),
+    true,
+    "anche una STG esatta e registrata deve essere riconosciuta"
+  );
+  assert.equal(
+    denominazioneUfficialmenteRegistrata([{ ...esatta, schemaQualita: "IGP", stato: "in_domanda" }]),
+    false,
+    "una domanda non equivale a una registrazione"
+  );
+  assert.equal(
+    denominazioneUfficialmenteRegistrata([{ ...esatta, schemaQualita: "IGP", relazione: "Denominazione affine" }]),
+    false,
+    "una denominazione affine non equivale a una corrispondenza esatta"
+  );
+  assert.equal(
+    denominazioneUfficialmenteRegistrata([{ ...esatta, schemaQualita: "IGP", tipo: "informativa" }]),
+    false,
+    "una fonte informativa non può confermare una registrazione"
   );
 });
