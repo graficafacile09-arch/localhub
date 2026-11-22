@@ -70,7 +70,7 @@ export const ETICHETTE_GRUPPO: Record<
  * corrispondenza esatta della denominazione. Un risultato informativo o una
  * denominazione affine non basta, e non autentica la singola confezione.
  */
-export function dopRiconosciuta(
+export function denominazioneUfficialmenteRegistrata(
   prove: readonly {
     tipo: string;
     stato: string;
@@ -82,8 +82,24 @@ export function dopRiconosciuta(
     (prova) =>
       prova.tipo === "ufficiale" &&
       prova.stato === "registrata" &&
-      prova.schemaQualita === "DOP" &&
+      (prova.schemaQualita === "DOP" ||
+        prova.schemaQualita === "IGP" ||
+        prova.schemaQualita === "STG") &&
       prova.relazione.startsWith("Corrispondenza esatta")
+  );
+}
+
+/** Compatibilità per i controlli e i test che chiedono specificamente una DOP. */
+export function dopRiconosciuta(
+  prove: readonly {
+    tipo: string;
+    stato: string;
+    schemaQualita: string | null;
+    relazione: string;
+  }[]
+): boolean {
+  return denominazioneUfficialmenteRegistrata(
+    prove.filter((prova) => prova.schemaQualita === "DOP")
   );
 }
 
