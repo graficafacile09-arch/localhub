@@ -46,7 +46,6 @@ export function creaProviderVisionProdotti(
       prompt,
       immagineBase64,
       mimeType,
-      immagineDettaglioBase64,
       signal,
     }) {
       // Una sola immagine, identica al preprocessing del flusso Aggiungi prodotti.
