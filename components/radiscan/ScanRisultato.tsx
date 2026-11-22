@@ -29,6 +29,7 @@ import {
   èCipollaBiancaCastrovillari,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
+  messaggioFuoriPerimetro,
   type GruppoEsito,
 } from "./logica";
 
@@ -990,15 +991,23 @@ export default function ScanRisultato({
     esito.livello === "non_verificato" &&
     typeof riconoscimento.prodotto === "string" &&
     riconoscimento.prodotto.trim().length > 0;
-  const gruppo = denominazioneUeRegistrata || marchioDecoRiconosciuto
-    ? "verificato"
-    : marchioDecoRilevato
-      ? "non_documentato"
-      : riscontroOnlineDop
-      ? "non_documentato"
-      : gruppoDaLivello(esito.livello);
+  // L'esclusione territoriale non è un dettaglio della provenienza: deve
+  // prevalere sull'intestazione, altrimenti una DOP esterna viene mostrata
+  // come denominazione verificata e il messaggio finale resta ambiguo.
+  const fuoriPerimetro = esito.verifica?.esito === "fuori_perimetro";
+  const gruppo = fuoriPerimetro
+    ? "non_documentato"
+    : denominazioneUeRegistrata || marchioDecoRiconosciuto
+      ? "verificato"
+      : marchioDecoRilevato
+        ? "non_documentato"
+        : riscontroOnlineDop
+          ? "non_documentato"
+          : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
-  const etichetta = cipollaBiancaCastrovillari
+  const etichetta = fuoriPerimetro
+    ? messaggioFuoriPerimetro(riconoscimento)
+    : cipollaBiancaCastrovillari
     ? {
         titolo: "Cipolla Bianca di Castrovillari — DE.CO.",
         descrizione:

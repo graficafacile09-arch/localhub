@@ -801,7 +801,7 @@ function verificaBase(
       return nonVerificato(
         "coerente_non_verificato",
         "fuori_perimetro",
-        `Denominazione ${documentata.schemaQualita ?? "registrata"} confermata su fonte ufficiale registrata (${documentata.ente}), ma l'area geografica della denominazione ("${documentata.territorio}") è esterna al perimetro ammesso da RadiciScan: tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. Il prodotto non è territorialmente ammissibile; questo non mette in dubbio la legittimità della certificazione.`,
+        `Denominazione ${documentata.schemaQualita ?? "registrata"} confermata su fonte ufficiale registrata (${documentata.ente}), ma l'area geografica della denominazione ("${documentata.territorio}") è esterna al perimetro ammesso da RadiciScan: tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. Il prodotto non appartiene alla filiera calabro-lucana e non è territorialmente ammissibile; questo non mette in dubbio la legittimità della certificazione.`,
         documentata,
         prove,
         ricerca
@@ -912,6 +912,26 @@ function verificaBase(
         "incongruenza_possibile",
         "riscontro_parziale",
         motivazioneRiscontroParziale(prova, proposta, true),
+        null,
+        prove,
+        ricerca
+      );
+    }
+
+    // Anche una denominazione registrata in eAmbrosia ma non duplicata nel
+    // registro curato può essere esterna al perimetro: senza questo controllo
+    // il caso resterebbe un "riscontro parziale" e l'esclusione territoriale
+    // andrebbe persa nel messaggio finale.
+    const fuoriPerimetro = territorioFuoriPerimetro(riconoscimento, prova);
+    if (fuoriPerimetro) {
+      const luogo =
+        fuoriPerimetro.origine === "etichetta"
+          ? riconoscimento.territorioProposto?.trim() || fuoriPerimetro.luogo
+          : fuoriPerimetro.luogo.replace(/^./, (lettera) => lettera.toUpperCase());
+      return nonVerificato(
+        "coerente_non_verificato",
+        "fuori_perimetro",
+        `Denominazione ${prova.schemaQualita ?? "registrata"} riconosciuta e valida: "${prova.denominazione}" risulta registrata nel registro ufficiale eAmbrosia (${prova.riferimentoNormativo ?? "scheda UE"}). Il prodotto non appartiene alla filiera calabro-lucana e si trova fuori dal perimetro territoriale ammesso da InCittà ("${luogo}"): tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. La legittimità della certificazione non è messa in dubbio; il prodotto non è territorialmente ammissibile.`,
         null,
         prove,
         ricerca
@@ -1035,7 +1055,7 @@ export function verificaDenominazione(
     const luogo =
       fuoriPerimetro.origine === "etichetta"
         ? riconoscimento.territorioProposto?.trim() || fuoriPerimetro.luogo
-        : fuoriPerimetro.luogo;
+        : fuoriPerimetro.luogo.replace(/^./, (lettera) => lettera.toUpperCase());
     const esclusione =
       fuoriPerimetro.origine === "etichetta"
         ? `L'etichetta dichiara un territorio esterno al perimetro ammesso da RadiciScan ("${luogo}"): tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata.`
@@ -1045,7 +1065,7 @@ export function verificaDenominazione(
       esito: "fuori_perimetro",
       livello: "coerente_non_verificato",
       denominazioneVerificata: null,
-      motivazione: `${motivazione} ${esclusione} Il prodotto non è territorialmente ammissibile, anche se la denominazione risulta registrata: la certificazione resta valida, l'appartenenza al perimetro no.`,
+      motivazione: `${motivazione} ${esclusione} Il prodotto non appartiene alla filiera calabro-lucana e non è territorialmente ammissibile, anche se la denominazione risulta registrata: la certificazione resta valida, l'appartenenza al perimetro no.`,
       provenienza,
     };
   }

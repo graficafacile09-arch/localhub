@@ -7,7 +7,8 @@ const { classificaPerimetro, classificaTerritorioDichiarato, valutaProvenienza }
 const { COMUNI_CALABRIA } = await import("../lib/radiscan/comuni-calabria.ts");
 const { verificaDenominazione } = await import("../lib/radiscan/verifica.ts");
 const { componiEsito } = await import("../lib/radiscan/livelli.ts");
-const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
+const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari, messaggioFuoriPerimetro } =
+  await import("../components/radiscan/logica.ts");
 
 test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
   assert.equal(decoRiconosciuta([{
@@ -677,4 +678,86 @@ test("DOP esterna: certificazione valida, ma fuori perimetro InCittà", () => {
   assert.equal(verifica.livello, "coerente_non_verificato");
   assert.match(verifica.motivazione, /legittimità della certificazione/i);
   assert.match(verifica.motivazione, /non è territorialmente ammissibile/i);
+});
+
+const RICONOSCIMENTO_PARMA = {
+  prodotto: "Prosciutto di Parma",
+  categoria: "salume",
+  denominazioneProposta: "Prosciutto di Parma",
+  territorioProposto: "Parma",
+  schemaProposto: "DOP",
+  indicatoriEtichetta: ["DOP"],
+  confidenza: 95,
+  note: null,
+  incongruenzeRilevate: [],
+};
+
+const PROVA_EAMBROSIA_PARMA = {
+  id: "eambrosia:parma",
+  tipo: "ufficiale",
+  denominazione: "Prosciutto di Parma",
+  schemaQualita: "DOP",
+  ente: "Commissione europea — eAmbrosia",
+  titolo: "Prosciutto di Parma (DOP)",
+  url: "https://example.test/parma",
+  riferimentoNormativo: "Regolamento UE",
+  riferimentoUrl: null,
+  documentoUrl: null,
+  estratto: null,
+  consultataIl: "2026-11-23",
+  relazione: "Corrispondenza esatta",
+  stato: "registrata",
+  allegati: [],
+  gruppoProduttori: null,
+  sedeGruppo: null,
+};
+
+const RICERCA_EAMBROSIA_PARMA = {
+  stato: "ok",
+  fonte: "eAmbrosia",
+  consultataIl: "2026-11-23",
+  query: ["Prosciutto di Parma DOP"],
+  prove: [PROVA_EAMBROSIA_PARMA],
+  messaggio: null,
+  lettura: null,
+};
+
+test("DOP esterna in eAmbrosia: riconosciuta, ma fuori perimetro anche senza fonte curata", () => {
+  const verifica = verificaDenominazione(RICONOSCIMENTO_PARMA, [], RICERCA_EAMBROSIA_PARMA);
+
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.equal(verifica.livello, "coerente_non_verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /Prosciutto di Parma/);
+  assert.match(verifica.motivazione, /registrata nel registro ufficiale eAmbrosia/i);
+  assert.match(verifica.motivazione, /non appartiene alla filiera calabro-lucana/i);
+  assert.match(verifica.motivazione, /fuori dal perimetro territoriale ammesso da InCittà/i);
+  assert.match(verifica.motivazione, /non è territorialmente ammissibile/i);
+  assert.doesNotMatch(verifica.motivazione, /falso|non autentic/i);
+
+  const esito = componiEsito({
+    riconoscimento: RICONOSCIMENTO_PARMA,
+    verifica,
+    versionePrompt: "test",
+  });
+  assert.equal(esito.riconoscimento.prodotto, "Prosciutto di Parma");
+  assert.equal(esito.verifica.esito, "fuori_perimetro");
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.equal(esito.denominazioneVerificata, null);
+  assert.notEqual(esito.livello, "verificato");
+  assert.equal(esito.verifica.provenienza.territorio.stato, "non_documentato");
+  assert.match(esito.verifica.provenienza.territorio.motivo, /fuori dal perimetro/i);
+});
+
+test("il messaggio finale dichiara DOP valida e non appartenenza alla filiera calabro-lucana", () => {
+  const messaggio = messaggioFuoriPerimetro({
+    prodotto: "Prosciutto di Parma",
+    schemaProposto: "DOP",
+  });
+
+  assert.match(messaggio.descrizione, /Prodotto identificato: Prosciutto di Parma DOP/);
+  assert.match(messaggio.descrizione, /denominazione DOP è riconosciuta e valida/i);
+  assert.match(messaggio.descrizione, /non appartiene alla filiera calabro-lucana/i);
+  assert.match(messaggio.descrizione, /fuori dal perimetro territoriale ammesso da InCittà/i);
+  assert.doesNotMatch(messaggio.descrizione, /falso|non autentic/i);
 });

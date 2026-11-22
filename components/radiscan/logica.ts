@@ -167,6 +167,31 @@ export function gruppoDaLivello(livello: Livello): GruppoEsito {
   }
 }
 
+/**
+ * Messaggio finale per un prodotto identificato ma escluso dal perimetro.
+ *
+ * La denominazione resta riconosciuta e valida: l'esclusione riguarda la
+ * filiera calabro-lucana e l'ammissibilità territoriale, non la DOP/IGP/STG.
+ */
+export function messaggioFuoriPerimetro(riconoscimento: {
+  prodotto?: string | null;
+  schemaProposto?: string | null;
+}): { titolo: string; descrizione: string } {
+  const prodotto = riconoscimento.prodotto?.trim() || "Prodotto identificato";
+  const schema = riconoscimento.schemaProposto?.trim() || null;
+  const nome =
+    schema && !prodotto.toUpperCase().includes(schema.toUpperCase())
+      ? `${prodotto} ${schema}`
+      : prodotto;
+
+  return {
+    titolo: "Fuori dal perimetro territoriale",
+    descrizione:
+      `Prodotto identificato: ${nome}. La denominazione ${schema ?? "di qualità"} è riconosciuta e valida, ` +
+      "ma il prodotto non appartiene alla filiera calabro-lucana e si trova fuori dal perimetro territoriale ammesso da InCittà.",
+  };
+}
+
 export interface FileLocale {
   type: string;
   size: number;
