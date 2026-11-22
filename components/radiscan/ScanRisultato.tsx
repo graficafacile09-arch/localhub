@@ -25,6 +25,7 @@ import type {
 import {
   denominazioneUfficialmenteRegistrata,
   decoRiconosciuta,
+  decoRilevata,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
@@ -957,6 +958,11 @@ export default function ScanRisultato({
     (decoRiconosciuta(prove) ||
       (esito.verifica?.esito === "confermata" &&
         esito.verifica?.fonte?.schemaQualita === "DECO"));
+  const marchioDecoRilevato = decoRilevata(
+    riconoscimento.schemaProposto,
+    riconoscimento.indicatoriEtichetta ?? [],
+    riconoscimento.certificazioni ?? []
+  );
   // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
@@ -969,7 +975,9 @@ export default function ScanRisultato({
     riconoscimento.prodotto.trim().length > 0;
   const gruppo = denominazioneUeRegistrata || marchioDecoRiconosciuto
     ? "verificato"
-    : riscontroOnlineDop
+    : marchioDecoRilevato
+      ? "non_documentato"
+      : riscontroOnlineDop
       ? "non_documentato"
       : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
@@ -979,6 +987,12 @@ export default function ScanRisultato({
         descrizione:
           "La denominazione DE.CO. corrisponde a una fonte ufficiale comunale consultata. La DE.CO. attesta il legame identitario con il territorio: non è una certificazione di qualità e non autentica la singola confezione, il lotto o il produttore.",
       }
+    : marchioDecoRilevato
+      ? {
+          titolo: "Marchio DE.CO. rilevato",
+          descrizione:
+            "La sigla DE.CO. è stata rilevata sull'etichetta, ma non è stata ancora collegata a una fonte ufficiale comunale per una corrispondenza esatta. La DE.CO. attesta un legame identitario locale: non è una certificazione di qualità né autentica la singola confezione.",
+        }
     : denominazioneUeRegistrata
     ? {
         titolo: "Denominazione ufficialmente registrata",
