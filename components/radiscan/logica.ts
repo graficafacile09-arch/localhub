@@ -89,6 +89,27 @@ export function denominazioneUfficialmenteRegistrata(
   );
 }
 
+/**
+ * DE.CO. è un riconoscimento comunale, distinto dagli schemi UE DOP/IGP/STG.
+ * Si considera riscontrato solo con una fonte ufficiale e corrispondenza esatta.
+ */
+export function decoRiconosciuta(
+  prove: readonly {
+    tipo: string;
+    stato: string;
+    schemaQualita: string | null;
+    relazione: string;
+  }[]
+): boolean {
+  return prove.some(
+    (prova) =>
+      prova.tipo === "ufficiale" &&
+      prova.stato === "registrata" &&
+      prova.schemaQualita === "DECO" &&
+      prova.relazione.startsWith("Corrispondenza esatta")
+  );
+}
+
 /** Compatibilità per i controlli e i test che chiedono specificamente una DOP. */
 export function dopRiconosciuta(
   prove: readonly {
