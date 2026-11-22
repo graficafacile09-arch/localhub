@@ -4,6 +4,7 @@ import {
   type OpzioniVisionPrompt,
 } from "../product-assistant/vision-service";
 import type { MimeAmmesso, ProviderRadiciScan } from "./tipi";
+import { analizzaOutputModello } from "./schema";
 
 /**
  * Adattatore RadiciScan verso la stessa catena vision di Aggiungi prodotti.
@@ -57,11 +58,9 @@ export function creaProviderVisionProdotti(
       immagineDettaglioBase64,
       signal,
     }) {
-      // Il dettaglio ingrandito non viene più inviato: il preprocessing ha
-      // già ridotto l'immagine e un secondo ritaglio non ha mostrato un
-      // miglioramento misurabile. Resta accettato per compatibilità.
-      void immagineDettaglioBase64;
-
+      // Vista intera per identificazione + crop originale ad alta risoluzione
+      // per leggere testo, marchio e bollini. Il dettaglio è facoltativo:
+      // immagini piccole o non ritagliabili proseguono con la vista intera.
       const immagini: VisionImage[] = [
         {
           buffer: Buffer.from(immagineBase64, "base64"),
@@ -69,11 +68,21 @@ export function creaProviderVisionProdotti(
           role: "primary",
         },
       ];
+      if (immagineDettaglioBase64) {
+        immagini.push({
+          buffer: Buffer.from(immagineDettaglioBase64, "base64"),
+          filename: "radiscan-dettaglio.jpg",
+          role: "detail",
+        });
+      }
 
       const opzioniChiamata: OpzioniVisionPrompt = {
         timeoutMs,
         fallbackTimeoutMs,
         maxOutputTokens,
+        // Se Gemma restituisce testo ma non un riconoscimento utilizzabile,
+        // prova il provider di emergenza prima di dichiarare lo scan fallito.
+        validateRawText: (testo) => analizzaOutputModello(testo).ok,
       };
 
       const risultato = await analizza(
