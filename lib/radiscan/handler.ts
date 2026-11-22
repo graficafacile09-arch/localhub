@@ -67,6 +67,8 @@ export interface DipendenzeHandler {
   saleQuota: string | null;
   /** Segreto HMAC della cache: assente => nessun riuso della cache. */
   segretoCache?: string | null;
+  /** Hash SHA-256 del cookie anonimo, calcolato esclusivamente dal server. */
+  sessioneAnonimaHash?: () => string | null;
   adesso?: () => Date;
 }
 
@@ -150,8 +152,9 @@ export function rigaDaEsito(input: {
   utenteId: string | null;
   impronta: string | null;
   richiestaId: string;
+  sessioneAnonimaHash?: string | null;
 }): RigaAnalisi {
-  const { esito, meta, modalita, utenteId, impronta, richiestaId } = input;
+  const { esito, meta, modalita, utenteId, impronta, richiestaId, sessioneAnonimaHash } = input;
   const verificato = esito.livello === "verificato";
 
   if (verificato && (!esito.fonteId || !esito.denominazioneVerificata)) {
@@ -187,6 +190,7 @@ export function rigaDaEsito(input: {
     durataMs: meta.durataMs,
     esitoTecnico: "ok",
     codiceErrore: null,
+    sessioneAnonimaHash: modalita === "anonimo" ? sessioneAnonimaHash ?? null : null,
   };
 }
 
@@ -376,6 +380,7 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
         utenteId,
         impronta: immagine.impronta,
         richiestaId: randomUUID(),
+        sessioneAnonimaHash: dipendenze.sessioneAnonimaHash?.() ?? null,
       });
     } catch {
       return errore(500, "ERRORE_INTERNO", "Errore interno. Riprova più tardi.");
