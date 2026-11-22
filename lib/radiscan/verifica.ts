@@ -872,33 +872,6 @@ function verificaBase(
       );
     }
 
-    // Una corrispondenza esatta, unica e attiva in eAmbrosia conferma
-    // lo status UE della denominazione anche senza duplicazione nel registro
-    // curato. La lettura parziale dei PDF non annulla la registrazione:
-    // riguarda gli allegati, non lo stato ufficiale della denominazione.
-    if (
-      prova.tipo === "ufficiale" &&
-      prova.stato === "registrata" &&
-      (prova.schemaQualita === "DOP" ||
-        prova.schemaQualita === "IGP" ||
-        prova.schemaQualita === "STG")
-    ) {
-      return {
-        esito: "confermata",
-        livello: "verificato",
-        fonte: null,
-        denominazioneVerificata: prova.denominazione,
-        motivazione:
-          "Denominazione " + prova.schemaQualita + " confermata: " +
-          JSON.stringify(prova.denominazione) +
-          " risulta registrata nel registro ufficiale eAmbrosia (" +
-          (prova.riferimentoNormativo ?? "scheda UE") + "). " +
-          "La registrazione conferma lo status della denominazione, non l'autenticità della singola confezione, del lotto o del produttore.",
-        prove,
-        ricerca,
-      };
-    }
-
     return nonVerificato(
       "coerente_non_verificato",
       "riscontro_parziale",

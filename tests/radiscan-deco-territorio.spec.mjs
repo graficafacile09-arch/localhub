@@ -4,6 +4,7 @@ await import("./support/hook-radiscan.mjs");
 
 const { classificaTerritorioDichiarato, valutaProvenienza } = await import("../lib/radiscan/filiera.ts");
 const { verificaDenominazione } = await import("../lib/radiscan/verifica.ts");
+const { componiEsito } = await import("../lib/radiscan/livelli.ts");
 const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
 
 test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
@@ -224,13 +225,97 @@ test("eAmbrosia: denominazione esatta e registrata confermata anche con PDF parz
     },
   };
 
+  // Senza fonte curata nel registro la denominazione non è verificata: il
+  // riscontro resta parziale e non produce fonte né snapshot.
   const esito = verificaDenominazione(riconoscimento, [], ricerca);
-  assert.equal(esito.esito, "confermata");
+  assert.equal(esito.esito, "riscontro_parziale");
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.equal(esito.fonte, null);
+  assert.equal(esito.denominazioneVerificata, null);
+  assert.match(esito.motivazione, /registro ufficiale eAmbrosia/);
+});
+
+test("eAmbrosia esatta e registrata senza fonte curata non genera SCHEMA_NON_VALIDO", () => {
+  const riconoscimento = {
+    prodotto: "Pecorino Crotonese",
+    categoria: "formaggio",
+    denominazioneProposta: "Pecorino Crotonese",
+    territorioProposto: "Crotone, Calabria",
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 90,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const prova = {
+    id: "eambrosia:test-integrazione",
+    tipo: "ufficiale",
+    denominazione: "Pecorino Crotonese",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "Pecorino Crotonese (DOP)",
+    url: "https://example.test/eambrosia",
+    riferimentoNormativo: "Regolamento UE di registrazione",
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: null,
+    consultataIl: "2026-11-22",
+    relazione: "Corrispondenza esatta con la denominazione letta",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+  };
+  const ricerca = {
+    stato: "ok",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-22",
+    query: ["pecorino crotonese"],
+    prove: [prova],
+    messaggio: null,
+  };
+
+  const verifica = verificaDenominazione(riconoscimento, [], ricerca);
+  let esito;
+  assert.doesNotThrow(() => {
+    esito = componiEsito({ riconoscimento, verifica, versionePrompt: "test" });
+  });
+  assert.notEqual(esito.livello, "verificato");
+  assert.equal(esito.fonteId, null);
+  assert.equal(esito.denominazioneVerificata, null);
+});
+
+test("eAmbrosia esatta e registrata con fonte curata resta verificata", () => {
+  const riconoscimento = {
+    prodotto: "Pecorino Crotonese",
+    categoria: "formaggio",
+    denominazioneProposta: "Pecorino Crotonese",
+    territorioProposto: "Crotone, Calabria",
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 90,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const fonteCurata = {
+    id: "11111111-2222-4333-8444-555555555555",
+    slug: "test-pecorino-crotonese",
+    denominazione: "Pecorino Crotonese",
+    tipoAtto: "denominazione",
+    schemaQualita: "DOP",
+    territorio: "Provincia di Crotone",
+    ente: "MASAF",
+    urlUfficiale: "https://www.masaf.gov.it/flex/cm/pages/ServeBLOB.php/L/IT/IDPagina/15453",
+    riferimentoNormativo: "Reg. (UE) 2024/1143, art. 22",
+    consultataIl: "2026-11-18",
+    attiva: true,
+  };
+
+  const verifica = verificaDenominazione(riconoscimento, [fonteCurata]);
+  const esito = componiEsito({ riconoscimento, verifica, versionePrompt: "test" });
   assert.equal(esito.livello, "verificato");
+  assert.equal(esito.fonteId, fonteCurata.id);
   assert.equal(esito.denominazioneVerificata, "Pecorino Crotonese");
-  assert.match(esito.motivazione, /registrata nel registro ufficiale eAmbrosia/);
-  assert.match(esito.motivazione, /lettura incompleta/i);
-  assert.match(esito.motivazione, /non l'autenticità della singola confezione/);
 });
 
 test("eAmbrosia non promuove denominazioni affini o non ancora registrate", () => {
