@@ -174,6 +174,7 @@ function rigaAnalisiSql(riga: RigaAnalisi): Record<string, unknown> {
     durata_ms: riga.durataMs,
     esito_tecnico: riga.esitoTecnico,
     codice_errore: riga.codiceErrore,
+    sessione_anonima_hash: riga.sessioneAnonimaHash,
   };
 }
 
