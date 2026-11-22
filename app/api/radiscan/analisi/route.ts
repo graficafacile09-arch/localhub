@@ -1,4 +1,10 @@
 import { cercaBarcode } from "@/lib/radiscan/barcode";
+import {
+  cookieSessioneRadiciScan,
+  creaTokenSessioneRadiciScan,
+  hashTokenSessioneRadiciScan,
+  leggiTokenSessioneRadiciScan,
+} from "@/lib/radiscan/sessione-anonima";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
@@ -52,6 +58,9 @@ async function utenteCorrente(): Promise<{ id: string } | null> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const tokenEsistente = leggiTokenSessioneRadiciScan(request);
+  const tokenSessione = tokenEsistente ?? creaTokenSessioneRadiciScan();
+  const sessioneHash = hashTokenSessioneRadiciScan(tokenSessione);
   const handler = creaHandlerAnalisi({
     utenteCorrente,
     creaRepository: () =>
@@ -72,7 +81,17 @@ export async function POST(request: Request): Promise<Response> {
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
     segretoCache: process.env.RADISCAN_CACHE_SECRET ?? null,
+    sessioneAnonimaHash: () => sessioneHash,
   });
 
-  return handler(request);
+  const risposta = await handler(request);
+  if (tokenEsistente) return risposta;
+
+  const intestazioni = new Headers(risposta.headers);
+  intestazioni.append("Set-Cookie", cookieSessioneRadiciScan(tokenSessione));
+  return new Response(risposta.body, {
+    status: risposta.status,
+    statusText: risposta.statusText,
+    headers: intestazioni,
+  });
 }
