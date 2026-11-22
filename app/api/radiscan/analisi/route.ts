@@ -26,7 +26,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Percorso rapido: riconoscimento visivo + verifica sul registro ufficiale.
-// Il timeout interno dell'handler è 20 s, così una richiesta lenta chiude con
+// Il timeout interno dell'handler è 26 s, così una richiesta lenta chiude con
 // 504 JSON prima che la piattaforma uccida la funzione a 30 s.
 export const maxDuration = 30;
 
