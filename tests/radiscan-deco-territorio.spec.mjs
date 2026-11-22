@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 await import("./support/hook-radiscan.mjs");
 
 const { classificaTerritorioDichiarato } = await import("../lib/radiscan/filiera.ts");
-const { decoRiconosciuta } = await import("../components/radiscan/logica.ts");
+const { decoRiconosciuta, decoRilevata } = await import("../components/radiscan/logica.ts");
 
 test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
   assert.equal(decoRiconosciuta([{
@@ -24,6 +24,13 @@ test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
     schemaQualita: "DECO",
     relazione: "Denominazione simile",
   }]), false);
+});
+
+test("la sigla DE.CO. viene rilevata ma non certificata automaticamente", () => {
+  assert.equal(decoRilevata("DECO"), true);
+  assert.equal(decoRilevata(null, ["Marchio DE.CO. presente"]), true);
+  assert.equal(decoRilevata(null, [], ["DE CO"]), true);
+  assert.equal(decoRilevata(null, ["prodotto tradizionale"]), false);
 });
 
 test("i 24 comuni lucani del Parco del Pollino sono ammessi", () => {
