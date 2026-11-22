@@ -953,7 +953,10 @@ export default function ScanRisultato({
   const denominazioneUeRegistrata =
     denominazioneLetta && denominazioneUfficialmenteRegistrata(prove);
   const marchioDecoRiconosciuto =
-    denominazioneLetta && decoRiconosciuta(prove);
+    denominazioneLetta &&
+    (decoRiconosciuta(prove) ||
+      (esito.verifica?.esito === "confermata" &&
+        esito.verifica?.fonte?.schemaQualita === "DECO"));
   // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
