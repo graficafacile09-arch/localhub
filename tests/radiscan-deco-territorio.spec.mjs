@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 await import("./support/hook-radiscan.mjs");
 
 const { classificaTerritorioDichiarato } = await import("../lib/radiscan/filiera.ts");
-const { decoRiconosciuta, decoRilevata } = await import("../components/radiscan/logica.ts");
+const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
 
 test("DE.CO. è riconosciuta solo con riscontro ufficiale esatto", () => {
   assert.equal(decoRiconosciuta([{
@@ -59,4 +59,12 @@ test("territori italiani fuori Calabria sono classificati come esterni", () => {
 test("il riconoscimento Pollino non scatta per comuni lucani fuori elenco", () => {
   assert.equal(classificaTerritorioDichiarato("Matera")?.tipo, "fuori_calabria");
   assert.equal(classificaTerritorioDichiarato("Potenza")?.tipo, "fuori_calabria");
+});
+
+
+test("la Cipolla Bianca di Castrovillari resta DE.CO. e non viene promossa a DOP", () => {
+  assert.equal(èCipollaBiancaCastrovillari("Cipolla Bianca di Castrovillari"), true);
+  assert.equal(èCipollaBiancaCastrovillari("cipolla bianca Castrovillari - prodotto tipico"), true);
+  assert.equal(èCipollaBiancaCastrovillari("Cipolla Bianca di Tropea"), false);
+  assert.equal(èCipollaBiancaCastrovillari("Cipolla bianca"), false);
 });

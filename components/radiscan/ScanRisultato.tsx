@@ -26,6 +26,7 @@ import {
   denominazioneUfficialmenteRegistrata,
   decoRiconosciuta,
   decoRilevata,
+  èCipollaBiancaCastrovillari,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
@@ -951,22 +952,37 @@ export default function ScanRisultato({
   const denominazioneLetta = Boolean(
     riconoscimento.denominazioneProposta?.trim()
   );
+  const cipollaBiancaCastrovillari = èCipollaBiancaCastrovillari(
+    riconoscimento.prodotto,
+    riconoscimento.denominazioneProposta,
+    ...(riconoscimento.indicatoriEtichetta ?? []),
+    ...(riconoscimento.certificazioni ?? []),
+    esito.etichetta?.nomeCommerciale?.valore,
+    esito.etichetta?.denominazioneLegale?.valore,
+    esito.ocr?.testo
+  );
   const denominazioneUeRegistrata =
-    denominazioneLetta && denominazioneUfficialmenteRegistrata(prove);
+    denominazioneLetta &&
+    !cipollaBiancaCastrovillari &&
+    denominazioneUfficialmenteRegistrata(prove);
   const marchioDecoRiconosciuto =
     denominazioneLetta &&
     (decoRiconosciuta(prove) ||
       (esito.verifica?.esito === "confermata" &&
         esito.verifica?.fonte?.schemaQualita === "DECO"));
-  const marchioDecoRilevato = decoRilevata(
-    riconoscimento.schemaProposto,
-    riconoscimento.indicatoriEtichetta ?? [],
-    riconoscimento.certificazioni ?? []
-  );
+  const marchioDecoRilevato =
+    cipollaBiancaCastrovillari ||
+    decoRilevata(
+      riconoscimento.schemaProposto,
+      riconoscimento.indicatoriEtichetta ?? [],
+      riconoscimento.certificazioni ?? []
+    );
   // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
   const riscontroOnlineDop =
+    !cipollaBiancaCastrovillari &&
+    !marchioDecoRilevato &&
     !denominazioneUeRegistrata &&
     esito.web?.sintesi?.denominazione.stato === "menzionata";
   const identificazioneCompletata =

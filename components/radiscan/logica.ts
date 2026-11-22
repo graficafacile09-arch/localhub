@@ -110,6 +110,24 @@ export function decoRiconosciuta(
   );
 }
 
+/**
+ * La Cipolla Bianca di Castrovillari è documentata come DE.CO. da ARSAC,
+ * non come DOP. Questo blocco impedisce che risultati web generici o prove
+ * associate in modo errato la promuovano a denominazione UE.
+ */
+export function èCipollaBiancaCastrovillari(...campi: Array<string | null | undefined>): boolean {
+  const testo = campi
+    .filter((campo): campo is string => typeof campo === "string")
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\\s+/g, " ")
+    .trim();
+  return /\\bcipolla bianca (?:di )?castrovillari\\b/.test(testo);
+}
+
 /** Rileva la sigla DE.CO. in campi estratti, senza attribuirle valore certificativo. */
 export function decoRilevata(
   schemaProposto: string | null,
