@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 await import("./support/hook-radiscan.mjs");
 
-const { classificaTerritorioDichiarato } = await import("../lib/radiscan/filiera.ts");
+const { classificaTerritorioDichiarato, valutaProvenienza } = await import("../lib/radiscan/filiera.ts");
 const { verificaDenominazione } = await import("../lib/radiscan/verifica.ts");
 const { decoRiconosciuta, decoRilevata, èCipollaBiancaCastrovillari } = await import("../components/radiscan/logica.ts");
 
@@ -61,6 +61,110 @@ test("il riconoscimento Pollino non scatta per comuni lucani fuori elenco", () =
   assert.equal(classificaTerritorioDichiarato("Matera")?.tipo, "fuori_calabria");
   assert.equal(classificaTerritorioDichiarato("Potenza")?.tipo, "fuori_calabria");
 });
+
+test("le province italiane esterne sono riconosciute anche senza il nome della regione", () => {
+  for (const luogo of ["Parma", "Provincia di Parma", "Bologna", "Milano", "Roma", "Napoli", "Matera", "Potenza"]) {
+    assert.equal(classificaTerritorioDichiarato(luogo)?.tipo, "fuori_calabria", luogo);
+  }
+  for (const luogo of ["Cosenza", "Crotone", "Catanzaro", "Vibo Valentia", "Reggio Calabria"]) {
+    assert.equal(classificaTerritorioDichiarato(luogo), null, luogo);
+  }
+});
+
+
+test("una DOP esatta e registrata può fornire il territorio dal nome ufficiale", () => {
+  const riconoscimento = {
+    prodotto: "Prosciutto di Parma",
+    categoria: "salume",
+    denominazioneProposta: "Prosciutto di Parma",
+    territorioProposto: null,
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 95,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const prova = {
+    id: "eambrosia:parma",
+    tipo: "ufficiale",
+    denominazione: "Prosciutto di Parma",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "Prosciutto di Parma (DOP)",
+    url: "https://example.test/parma",
+    riferimentoNormativo: "Regolamento UE",
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: null,
+    consultataIl: "2026-11-22",
+    relazione: "Corrispondenza esatta",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+  };
+  const esito = valutaProvenienza(riconoscimento, prova, null);
+  assert.equal(esito.territorio.stato, "non_documentato");
+  assert.match(esito.territorio.motivo, /denominazione ufficiale DOP/i);
+  assert.match(esito.territorio.motivo, /Parma/i);
+  assert.match(esito.territorio.motivo, /fuori dal perimetro territoriale ammesso/i);
+  assert.doesNotMatch(esito.territorio.motivo, /autenticità|falso/i);
+});
+
+test("una denominazione affine o non registrata non viene usata per dedurre il territorio", () => {
+  const riconoscimento = {
+    prodotto: "Prosciutto tipo Parma",
+    categoria: "salume",
+    denominazioneProposta: "Prosciutto tipo Parma",
+    territorioProposto: null,
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 80,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  const prova = {
+    id: "eambrosia:parma-affine",
+    tipo: "ufficiale",
+    denominazione: "Prosciutto di Parma",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "Prosciutto di Parma (DOP)",
+    url: "https://example.test/parma",
+    riferimentoNormativo: null,
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: null,
+    consultataIl: "2026-11-22",
+    relazione: "Denominazione affine",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+  };
+  const esito = valutaProvenienza(riconoscimento, prova, null);
+  assert.equal(esito.territorio.stato, "non_documentato");
+  assert.doesNotMatch(esito.territorio.motivo, /fuori dal perimetro/i);
+});
+
+test("il nome commerciale da solo non viene scambiato per territorio dichiarato", () => {
+  const riconoscimento = {
+    prodotto: "Prosciutto di Parma",
+    categoria: "salume",
+    denominazioneProposta: "Prosciutto di Parma",
+    territorioProposto: null,
+    schemaProposto: "DOP",
+    indicatoriEtichetta: ["DOP"],
+    confidenza: 95,
+    note: null,
+    incongruenzeRilevate: [],
+  };
+  assert.equal(classificaTerritorioDichiarato(riconoscimento.territorioProposto), null);
+  const provenienza = valutaProvenienza(riconoscimento, null, null);
+  assert.equal(provenienza.territorio.stato, "non_verificabile");
+  assert.doesNotMatch(provenienza.territorio.motivo, /fuori dalla Calabria|fuori calabria/i);
+});
+
 
 
 test("la Cipolla Bianca di Castrovillari resta DE.CO. e non viene promossa a DOP", () => {

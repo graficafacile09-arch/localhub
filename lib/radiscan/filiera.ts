@@ -111,6 +111,37 @@ const REGIONI_NON_CALABRIA = [
   "valle d aosta", "veneto",
 ] as const;
 
+/**
+ * Province e città metropolitane esterne al perimetro ammesso.
+ * Le province calabresi non sono qui: Calabria e i 24 comuni del Pollino
+ * lucano restano le sole aree territoriali ammesse da questa filiera.
+ */
+const PROVINCE_NON_CALABRIA = [
+  "alessandria", "asti", "biella", "cuneo", "novara", "torino", "verbano cusio ossola", "vercelli",
+  "aosta",
+  "bergamo", "brescia", "como", "cremona", "lecco", "lodi", "mantova", "milano",
+  "monza e brianza", "monza brianza", "pavia", "sondrio", "varese",
+  "bolzano", "trento",
+  "belluno", "padova", "rovigo", "treviso", "venezia", "verona", "vicenza",
+  "gorizia", "pordenone", "trieste", "udine",
+  "genova", "imperia", "la spezia", "savona",
+  "piacenza", "parma", "reggio emilia", "modena", "bologna", "ferrara", "ravenna",
+  "forli cesena", "rimini",
+  "massa carrara", "lucca", "pistoia", "firenze", "prato", "livorno", "pisa",
+  "arezzo", "siena", "grosseto",
+  "perugia", "terni",
+  "ancona", "ascoli piceno", "fermo", "macerata", "pesaro e urbino", "pesaro urbino",
+  "viterbo", "rieti", "roma", "latina", "frosinone",
+  "laquila", "teramo", "pescara", "chieti",
+  "campobasso", "isernia",
+  "napoli", "caserta", "benevento", "avellino", "salerno",
+  "foggia", "bari", "taranto", "brindisi", "lecce", "barletta andria trani",
+  "potenza", "matera",
+  "cagliari", "nuoro", "oristano", "sassari", "sud sardegna",
+  "palermo", "catania", "messina", "siracusa", "ragusa", "trapani",
+  "agrigento", "caltanissetta", "enna",
+] as const;
+
 function contieneLuogo(testo: string, luogo: string): boolean {
   return ` ${testo} `.includes(` ${luogo} `);
 }
@@ -136,8 +167,15 @@ export function classificaTerritorioDichiarato(testo: string | null | undefined)
   );
   if (regione) return { tipo: "fuori_calabria", luogo: regione };
 
-  // Province lucane: utile quando l'etichetta riporta solo la sigla.
-  if (/(^| )(pz|mt|potenza|matera)( |$)/.test(normalizzato)) {
+  // Anche una sola provincia/città metropolitana identifica un territorio
+  // esterno: per esempio "Parma" sull'etichetta del Prosciutto di Parma DOP.
+  const provincia = PROVINCE_NON_CALABRIA.find((nome) =>
+    contieneLuogo(normalizzato, normalizza(nome))
+  );
+  if (provincia) return { tipo: "fuori_calabria", luogo: provincia };
+
+  // Sigle provinciali lucane, quando sono esplicitamente lette in etichetta.
+  if (/(^| )(pz|mt)( |$)/.test(normalizzato)) {
     return { tipo: "fuori_calabria", luogo: normalizzato };
   }
   return null;
@@ -148,7 +186,29 @@ function valutaTerritorio(
   lettura: LetturaDocumentale | null,
   riconoscimento: RiconoscimentoAi
 ): ValutazioneProvenienza["territorio"] {
-  const territorio = classificaTerritorioDichiarato(riconoscimento.territorioProposto);
+  const territorioEtichetta = classificaTerritorioDichiarato(
+    riconoscimento.territorioProposto
+  );
+
+  // Il nome geografico vale come territorio soltanto quando proviene da una
+  // corrispondenza ESATTA con una denominazione DOP/IGP/STG ufficiale e
+  // registrata. Il nome commerciale o una prova affine non bastano.
+  const denominazioneUfficialeEsatta =
+    prova?.tipo === "ufficiale" &&
+    prova.stato === "registrata" &&
+    (prova.schemaQualita === "DOP" ||
+      prova.schemaQualita === "IGP" ||
+      prova.schemaQualita === "STG") &&
+    Boolean(riconoscimento.denominazioneProposta?.trim()) &&
+    normalizza(prova.denominazione) ===
+      normalizza(riconoscimento.denominazioneProposta ?? "");
+  const territorioDaDenominazione = denominazioneUfficialeEsatta
+    ? classificaTerritorioDichiarato(prova.denominazione)
+    : null;
+  const territorio = territorioEtichetta ?? territorioDaDenominazione;
+  const territorioDaFonteUfficiale =
+    territorioEtichetta === null && territorioDaDenominazione !== null;
+
   if (territorio?.tipo === "pollino_lucano") {
     return {
       stato: "non_documentato",
@@ -161,8 +221,9 @@ function valutaTerritorio(
     return {
       stato: "non_documentato",
       evidenze: [],
-      motivo:
-        `Non è un prodotto di filiera calabrese. L'etichetta indica un territorio esterno alla Calabria (${riconoscimento.territorioProposto}); il Pollino lucano è l'eccezione territoriale ammessa.`,
+      motivo: territorioDaFonteUfficiale
+        ? `La denominazione ufficiale ${prova?.schemaQualita} "${prova?.denominazione}" risulta registrata in eAmbrosia e identifica un'area geografica esterna alla Calabria (${territorio.luogo}). È fuori dal perimetro territoriale ammesso da RadiciScan; questo non mette in dubbio la legittimità della DOP/IGP/STG.`
+        : `L'etichetta indica un territorio esterno alla Calabria (${riconoscimento.territorioProposto}). È fuori dal perimetro territoriale ammesso da RadiciScan; il Pollino lucano è l'eccezione territoriale.`,
     };
   }
 
