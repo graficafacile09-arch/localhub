@@ -71,10 +71,23 @@ export async function POST(request: Request): Promise<Response> {
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
     creaProvider: () => creaProviderVisionProdotti(),
-    // La ricerca eAmbrosia resta nel percorso principale: è la verifica ufficiale
-    // necessaria per lo stato della denominazione. La lettura dei PDF è esclusa
-    // dal percorso sincrono per non trattenere il riconoscimento.
-    creaRicerca: () => creaRicercaEAmbrosia({ lettura: false }),
+    // eAmbrosia: si amplia il tempo della ricerca e si legge la documentazione
+    // ufficiale entro un budget separato, compatibile con i 18 s dell'handler.
+    // Prima il disciplinare, poi il riepilogo italiano; gli altri riepiloghi
+    // restano consultabili dal link ufficiale ma non rallentano la scansione.
+    creaRicerca: () =>
+      creaRicercaEAmbrosia({
+        timeoutMs: 4_200,
+        lettura: {
+          timeoutTotaleMs: 6_500,
+          timeoutDocumentoMs: 5_500,
+          maxDocumenti: 2,
+          maxPagine: 40,
+          maxBytes: 15_000_000,
+          maxCaratteriTotali: 180_000,
+          concorrenza: 2,
+        },
+      }),
     creaWeb: () => creaRicercaWebIbrida(),
     // Ricerca web multifonte in parallelo a eAmbrosia: prima motori gratuiti,
     // Tavily solo se configurato e se i risultati gratuiti non bastano.
