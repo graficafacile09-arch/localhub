@@ -110,6 +110,18 @@ export function decoRiconosciuta(
   );
 }
 
+/** Rileva la sigla DE.CO. in campi estratti, senza attribuirle valore certificativo. */
+export function decoRilevata(
+  schemaProposto: string | null,
+  indicatori: readonly string[] = [],
+  certificazioni: readonly string[] = []
+): boolean {
+  if (schemaProposto?.toUpperCase() === "DECO") return true;
+  return [...indicatori, ...certificazioni].some((valore) =>
+    /\\bde\\s*\\.?\\s*co\\.?\\b/i.test(valore)
+  );
+}
+
 /** Compatibilità per i controlli e i test che chiedono specificamente una DOP. */
 export function dopRiconosciuta(
   prove: readonly {
