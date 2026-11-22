@@ -101,7 +101,7 @@ const COMUNI_POLLINO_LUCANO = [
   "francavilla in sinni", "latronico", "lauria", "noepoli", "rotonda",
   "san costantino albanese", "san giorgio lucano", "san paolo albanese",
   "san severino lucano", "senise", "teana", "terranova di pollino",
-  "valsinni", "viggi anello", "vigianello", "viggianello",
+  "valsinni", "viggianello",
 ] as const;
 
 const REGIONI_NON_CALABRIA = [
@@ -112,15 +112,14 @@ const REGIONI_NON_CALABRIA = [
 ] as const;
 
 function contieneLuogo(testo: string, luogo: string): boolean {
-  return new RegExp(`(^| )${luogo.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function valutaTerritorio(
-")}( |$)`).test(testo);
+  return ` ${testo} `.includes(` ${luogo} `);
 }
 
 /**
  * Classifica soltanto il territorio esplicitamente proposto dalla lettura
  * dell'etichetta. Non usa il nome commerciale del prodotto come provenienza.
  */
-function classificaTerritorioDichiarato(testo: string | null | undefined):
+export function classificaTerritorioDichiarato(testo: string | null | undefined):
   | { tipo: "pollino_lucano"; comune: string }
   | { tipo: "fuori_calabria"; luogo: string }
   | null {
