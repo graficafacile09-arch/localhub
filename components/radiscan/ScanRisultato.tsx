@@ -966,10 +966,11 @@ export default function ScanRisultato({
     !cipollaBiancaCastrovillari &&
     denominazioneUfficialmenteRegistrata(prove);
   const marchioDecoRiconosciuto =
-    denominazioneLetta &&
-    (decoRiconosciuta(prove) ||
-      (esito.verifica?.esito === "confermata" &&
-        esito.verifica?.fonte?.schemaQualita === "DECO"));
+    cipollaBiancaCastrovillari ||
+    (denominazioneLetta &&
+      (decoRiconosciuta(prove) ||
+        (esito.verifica?.esito === "confermata" &&
+          esito.verifica?.fonte?.schemaQualita === "DECO")));
   const marchioDecoRilevato =
     cipollaBiancaCastrovillari ||
     decoRilevata(
@@ -997,7 +998,13 @@ export default function ScanRisultato({
       ? "non_documentato"
       : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
-  const etichetta = marchioDecoRiconosciuto
+  const etichetta = cipollaBiancaCastrovillari
+    ? {
+        titolo: "Cipolla Bianca di Castrovillari — DE.CO.",
+        descrizione:
+          "ARSAC documenta il riconoscimento comunale DE.CO. della Cipolla Bianca di Castrovillari. Non è una DOP, IGP o STG: la DE.CO. attesta il legame identitario con il territorio e non certifica la qualità né autentica la singola confezione, il lotto o il produttore.",
+      }
+    : marchioDecoRiconosciuto
     ? {
         titolo: "Marchio comunale DE.CO. riscontrato",
         descrizione:
