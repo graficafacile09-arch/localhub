@@ -51,7 +51,7 @@ export interface ClientDatiRadiciScan {
 export interface TabellaRadiciScan {
   select(colonne: string): SelettoreRadiciScan;
   insert(valori: Record<string, unknown>): PromiseLike<{
-    error: { message?: string } | null;
+    error: { message?: string; code?: string } | null;
   }>;
   upsert(
     valori: Record<string, unknown>,
@@ -227,10 +227,25 @@ export function creaRepositorySupabase(client: ClientDatiRadiciScan): Repository
     },
 
     async registraAnalisi(riga) {
-      const { error } = await client
-        .from("radiscan_analisi")
-        .insert(rigaAnalisiSql(riga));
-      if (error) throw new Error("Registrazione analisi non riuscita.");
+      const valori = rigaAnalisiSql(riga);
+      const { error } = await client.from("radiscan_analisi").insert(valori);
+      if (!error) return;
+
+      // Compatibilità durante il passaggio: se la migration dello storico non
+      // è ancora applicata, non interrompere le analisi già funzionanti.
+      // In quel caso la registrazione resta nel formato precedente e lo storico
+      // anonimo diventa disponibile dopo l'applicazione della migration.
+      const colonnaAssente =
+        (error.code === "42703" || error.code === "PGRST204") &&
+        (error.message ?? "").includes("sessione_anonima_hash");
+      if (colonnaAssente) {
+        const { sessione_anonima_hash: _nonUsato, ...valoriCompatibili } = valori;
+        const fallback = await client
+          .from("radiscan_analisi")
+          .insert(valoriCompatibili);
+        if (!fallback.error) return;
+      }
+      throw new Error("Registrazione analisi non riuscita.");
     },
 
     async consumaQuota(chiave, modalita) {
