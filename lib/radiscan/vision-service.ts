@@ -77,6 +77,7 @@ export async function analyzeRadiciScanImages(
 
     const budget = tentativi === 0 ? timeoutMs : fallbackTimeoutMs;
     tentativi += 1;
+    const tentativoIniziato = Date.now();
 
     try {
       const result = await provider.analyze(images, undefined, prompt, signal, {
@@ -94,15 +95,20 @@ export async function analyzeRadiciScanImages(
 
       if (opzioni.validateRawText && !opzioni.validateRawText(result.rawText)) {
         ultimoTestoNonValido = { rawText: result.rawText, model: result.model, provider: entry.name };
-        console.warn(`[radiscan][vision-copia] provider=${entry.name} esito=schema_non_valido budget=${budget}ms`);
+        console.warn(
+          `[radiscan][vision-copia] provider=${entry.name} esito=schema_non_valido durata_ms=${Date.now() - tentativoIniziato} budget_ms=${budget}`
+        );
         continue;
       }
+      console.info(
+        `[radiscan][vision-copia] provider=${entry.name} esito=ok modello=${result.model} durata_ms=${Date.now() - tentativoIniziato} latency_provider_ms=${result.latencyMs ?? "n/d"} http_status=${result.httpStatus ?? "n/d"} budget_ms=${budget}`
+      );
       return { rawText: result.rawText, model: result.model, provider: entry.name };
     } catch (error) {
       ultimoErrore = error;
       const codice = error instanceof ProviderError ? error.code : "UNKNOWN";
       console.warn(
-        `[radiscan][vision-copia] provider=${entry.name} esito=errore codice=${codice} budget=${budget}ms`
+        `[radiscan][vision-copia] provider=${entry.name} esito=errore codice=${codice} durata_ms=${Date.now() - tentativoIniziato} budget_ms=${budget}`
       );
     }
   }
