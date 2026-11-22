@@ -73,7 +73,10 @@ export async function analyzeRadiciScanImages(
 
   for (const entry of catenaEffettiva) {
     const provider = entry.build();
-    if (!provider) continue;
+    if (!provider) {
+      console.warn(`[radiscan][vision-copia] provider=${entry.name} esito=saltato motivo=configurazione_mancante`);
+      continue;
+    }
 
     const budget = tentativi === 0 ? timeoutMs : fallbackTimeoutMs;
     tentativi += 1;
@@ -107,8 +110,10 @@ export async function analyzeRadiciScanImages(
     } catch (error) {
       ultimoErrore = error;
       const codice = error instanceof ProviderError ? error.code : "UNKNOWN";
+      const httpStatus = error instanceof ProviderError ? error.httpStatus : "n/d";
+      const timeout = codice === "AI_PROVIDER_TIMEOUT" || codice === "timeout";
       console.warn(
-        `[radiscan][vision-copia] provider=${entry.name} esito=errore codice=${codice} durata_ms=${Date.now() - tentativoIniziato} budget_ms=${budget}`
+        `[radiscan][vision-copia] provider=${entry.name} esito=errore codice=${codice} http_status=${httpStatus} timeout=${timeout} durata_ms=${Date.now() - tentativoIniziato} budget_ms=${budget}`
       );
     }
   }

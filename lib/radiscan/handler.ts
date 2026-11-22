@@ -9,6 +9,7 @@ import {
   type RigaCache,
 } from "./cache";
 import { CODICI_ERRORE, ErroreRadiciScan } from "./errori";
+import { ProviderError } from "../product-assistant/providers/utils";
 import type { FonteUfficiale } from "./fonti";
 import { ipAttendibile } from "./identita";
 import type { ImmagineValida } from "./immagine";
@@ -336,13 +337,20 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
       let provider: ProviderRadiciScan;
       try {
         provider = dipendenze.creaProvider();
-      } catch {
+      } catch (causa) {
+        // Diagnostica: solo tipo e codice sanificato, mai messaggi grezzi.
+        const codiceInit =
+          causa instanceof ErroreRadiciScan ? causa.codice : causa instanceof ProviderError ? causa.code : "NON_CLASSIFICATO";
+        console.warn(
+          `[radiscan][analisi] esito=errore origine=inizializzazione_provider tipo=${causa instanceof Error ? causa.name : typeof causa} codice=${codiceInit}`
+        );
         return errore(503, "ANALISI_NON_DISPONIBILE", "Servizio di analisi non disponibile.");
       }
 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_ANALISI_MS);
 
+      const inizioAnalisi = Date.now();
       try {
         const risultato = await analizzaProdotto(
           {
@@ -364,6 +372,21 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
         esito = risultato.esito;
         meta = risultato.meta;
       } catch (causa) {
+        // Diagnostica: solo codici e status sanificati, mai messaggi grezzi del provider.
+        const origine =
+          causa instanceof ProviderError ? "provider"
+          : causa instanceof ErroreRadiciScan ? "radiciscan"
+          : "altro";
+        const codice =
+          causa instanceof ProviderError
+            ? causa.code
+            : causa instanceof ErroreRadiciScan
+              ? causa.codice
+              : "NON_CLASSIFICATO";
+        const httpStatus = causa instanceof ProviderError ? String(causa.httpStatus) : "n/d";
+        console.warn(
+          `[radiscan][analisi] esito=errore origine=${origine} codice=${codice} http_status=${httpStatus} durata_ms=${Date.now() - inizioAnalisi}`
+        );
         return rispostaErrore(causa);
       } finally {
         clearTimeout(timer);
