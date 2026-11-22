@@ -3,8 +3,8 @@
  *
  * Verifica, senza rete e senza provider reali:
  *  - preprocessing 1024 px / JPEG 80 e auto-orientamento;
- *  - una sola immagine inviata al modello, nessun dettaglio ingrandito;
- *  - nessun secondo modello automatico quando il testo è solo malformato;
+ *  - vista intera + dettaglio ad alta risoluzione quando disponibile;
+ *  - fallback sul secondo modello anche quando il primo output non rispetta lo schema;
  *  - fallback attivato soltanto su un errore reale del provider;
  *  - schema tollerante sulla forma, rigoroso sul significato.
  *
@@ -156,7 +156,7 @@ function providerFinto(nome, comportamento) {
   };
 }
 
-test("vision: un testo malformato non avvia il secondo modello", async () => {
+test("vision: senza validatore il testo viene restituito al chiamante", async () => {
   let secondiChiamati = 0;
   const risultato = await vision.analyzeImagesWithPrompt(
     [{ buffer: Buffer.from([1, 2, 3]), filename: "a.jpg", role: "primary" }],
@@ -181,6 +181,39 @@ test("vision: un testo malformato non avvia il secondo modello", async () => {
   assert.equal(secondiChiamati, 0);
   assert.equal(risultato.provider, "Cloudflare");
   assert.equal(risultato.rawText, "ecco il prodotto: Soppressata");
+});
+
+test("vision: uno schema non valido attiva il fallback e accetta la risposta valida", async () => {
+  let secondiChiamati = 0;
+  const risultato = await vision.analyzeImagesWithPrompt(
+    [{ buffer: Buffer.from([1, 2, 3]), filename: "a.jpg", role: "primary" }],
+    "prompt",
+    undefined,
+    {
+      validateRawText: (rawText) => radiscan.analizzaOutputModello(rawText).ok,
+      catena: [
+        providerFinto("Cloudflare", () => ({
+          rawText: "prodotto non strutturato",
+          model: "gemma-4",
+          latencyMs: 10,
+          httpStatus: 200,
+        })),
+        providerFinto("OpenRouter", () => {
+          secondiChiamati += 1;
+          return {
+            rawText: '{"prodotto":"Soppressata di Calabria","confidenza":80}',
+            model: "qwen",
+            latencyMs: 10,
+            httpStatus: 200,
+          };
+        }),
+      ],
+    }
+  );
+
+  assert.equal(secondiChiamati, 1);
+  assert.equal(risultato.provider, "OpenRouter");
+  assert.equal(radiscan.analizzaOutputModello(risultato.rawText).ok, true);
 });
 
 test("vision: un errore reale del provider attiva il fallback breve", async () => {
@@ -230,7 +263,7 @@ test("vision: una risposta vuota è un errore del provider, non un parsing da co
 
 // ─── Adattatore RadiciScan ───────────────────────────────────────────────
 
-test("adattatore: una sola immagine, budget token e timeout dedicati", async () => {
+test("adattatore: vista intera + dettaglio e fallback schema", async () => {
   let catturato = null;
   const provider = providerVision.creaProviderVisionProdotti({
     analizza: async (immagini, prompt, signal, opzioni) => {
@@ -246,8 +279,11 @@ test("adattatore: una sola immagine, budget token e timeout dedicati", async () 
     immagineDettaglioBase64: "DETTAGLIO",
   });
 
-  assert.equal(catturato.immagini.length, 1);
+  assert.equal(catturato.immagini.length, 2);
   assert.equal(catturato.immagini[0].role, "primary");
+  assert.equal(catturato.immagini[1].role, "detail");
+  assert.equal(catturato.immagini[1].filename, "radiscan-dettaglio.jpg");
+  assert.equal(typeof catturato.opzioni.validateRawText, "function");
   assert.equal(catturato.prompt, "prompt-radiscan");
   assert.equal(catturato.opzioni.maxOutputTokens, 700);
   assert.equal(catturato.opzioni.timeoutMs, 15_000);
