@@ -98,11 +98,29 @@ test("la correzione appresa sostituisce l'interpretazione sbagliata", () => {
   assert.equal(chiaveCorrezionePino("  Ho Fame! "), "ho fame");
 });
 
-test("«ho sete» non finisce nel messaggio generico", async () => {
-  const r = await chatConAssistente([u("ho sete")]);
-  assert.doesNotMatch(r.risposta, /Non trovo risultati per questa richiesta/);
-  assert.match(r.risposta, /bar|bere|bevande/i);
-  assert.deepEqual(r.negozi, []);
+test("«ho sete» usa il fallback locale senza sporcare i log con il blocco rete atteso", async () => {
+  const warnOriginale = console.warn;
+  const avvisi = [];
+  console.warn = (...args) => avvisi.push(args);
+  try {
+    const r = await chatConAssistente([u("ho sete")]);
+    assert.doesNotMatch(r.risposta, /Non trovo risultati per questa richiesta/);
+    assert.match(r.risposta, /bar|bere|bevande/i);
+    assert.deepEqual(r.negozi, []);
+
+    // In questo test fetch è volutamente bloccato: il planner AI deve
+    // ripiegare sul piano locale. Verifichiamo l'avviso atteso senza
+    // stamparlo come falso allarme nel log della build.
+    assert.ok(
+      avvisi.some(([messaggio, errore]) =>
+        String(messaggio).startsWith("[pino-semantic] planner non disponibile") &&
+        String(errore?.message ?? errore).startsWith("rete disattivata nei test Pino:")
+      ),
+      "il test deve confermare il fallback causato esclusivamente dal blocco rete intenzionale"
+    );
+  } finally {
+    console.warn = warnOriginale;
+  }
 });
 
 test("la correzione viene salvata e la risposta la prende in carico", async () => {
