@@ -48,9 +48,7 @@ if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 
 
 const cases = selectedCases.slice(0, requestedLimit);
 const results = [];
-let aiCalls = 0;
 let fallbacks = 0;
-let aiLatencyTotalMs = 0;
 
 for (const item of cases) {
   const deterministic = planPinoCoreRequest(item.text);
@@ -69,8 +67,7 @@ for (const item of cases) {
     ? diagnostic.outcome === "ai_accepted"
     : (typeof actual.reason === "string" && actual.reason.startsWith("ai:"));
   if (usedAI) {
-    aiCalls += 1;
-    aiLatencyTotalMs += elapsedMs;
+
   } else if (shouldCallAI) {
     fallbacks += 1;
   }
@@ -150,9 +147,6 @@ console.log(JSON.stringify({
     : null,
   fallbackCount: fallbacks,
   averageAiLatencyMs: aiAttempts
-    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / aiAttempts)
-    : null,
-  averageAiAttemptLatencyMs: aiAttempts
     ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / aiAttempts)
     : null,
   aiAttempts,
