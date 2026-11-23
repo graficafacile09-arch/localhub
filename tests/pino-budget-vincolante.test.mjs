@@ -21,7 +21,7 @@ globalThis.fetch = async (url, init) => {
   assert.equal(init?.method, "POST");
   const corpo = JSON.parse(init.body);
   assert.ok(Array.isArray(corpo.messages) && corpo.messages.length > 0);
-  const piano = pianoGemini ?? {
+  const piano = pianoGroq ?? {
     surface: "products",
     intent: "food",
     query: "pasta",
@@ -81,7 +81,7 @@ test("lo zero esplicito non viene scartato dal contratto dei parametri", () => {
 
 test("«entro 0 euro»: tetto zero vincolante, nessun prodotto positivo", async () => {
   // Il modello prova ad allargare il tetto: non deve riuscirci.
-  pianoGemini = pianoPasta({ minPrice: null, maxPrice: 999 });
+  pianoGroq = pianoPasta({ minPrice: null, maxPrice: 999 });
   azzeraSpia();
 
   const r = await rispondi("Cerco pasta entro 0 euro");
@@ -98,7 +98,7 @@ test("«entro 0 euro»: tetto zero vincolante, nessun prodotto positivo", async 
 
 test("«senza budget»: lo zero inventato dal modello non diventa un limite", async () => {
   // Il modello restituisce 0/0 pur non essendoci alcun budget nella richiesta.
-  pianoGemini = pianoPasta({ minPrice: 0, maxPrice: 0 });
+  pianoGroq = pianoPasta({ minPrice: 0, maxPrice: 0 });
   azzeraSpia();
 
   const r = await rispondi("Cerco pasta senza budget");
@@ -122,7 +122,7 @@ const CASI_POSITIVI = [
 for (const [richiesta, maxAtteso, minAtteso] of CASI_POSITIVI) {
   test(`${richiesta} → limiti deterministici ${minAtteso ?? "-"} / ${maxAtteso ?? "-"}`, async () => {
     // Valori ostili dal modello: devono essere sostituiti dall'estrazione.
-    pianoGemini = pianoPasta({ minPrice: 1, maxPrice: 1 });
+    pianoGroq = pianoPasta({ minPrice: 1, maxPrice: 1 });
     azzeraSpia();
 
     const r = await rispondi(richiesta);
