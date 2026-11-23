@@ -56,7 +56,30 @@ import type { ProviderRicercaWeb } from "./web";
 /** Deve restare sotto il `maxDuration` della route (30 s): un timeout interno
  * più lungo verrebbe ucciso dalla piattaforma senza risposta JSON. */
 const TIMEOUT_ANALISI_MS = 18_000;
+/** Budget circoscritto alla sola registrazione: 18 s + 4 s resta sotto il
+ * `maxDuration` di 30 s, così un database lento non porta via l'esito. */
+const TIMEOUT_REGISTRAZIONE_MS = 4_000;
 const SALE_MINIMO = 16;
+
+/** `true` solo se il lavoro si chiude entro il budget; `false` su errore o
+ * timeout. La promessa originale non viene annullata: chi chiama ha già
+ * tutto ciò che serve per rispondere. */
+async function entroBudget(lavoro: Promise<unknown>, ms: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      lavoro,
+      new Promise<never>((_, rifiuta) => {
+        timer = setTimeout(() => rifiuta(new Error("timeout")), ms);
+      }),
+    ]);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export interface DipendenzeHandler {
   utenteCorrente: () => Promise<{ id: string } | null>;
@@ -338,7 +361,7 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
 
     const { esito, meta, cache } = lavoro;
 
-    // ── Registrazione dell'esito (obbligatoria, una sola volta) ───────────
+    // ── Rigenerazione della riga di archivio (una sola volta) ────────────
     let riga: RigaAnalisi;
     try {
       riga = rigaDaEsito({
@@ -359,14 +382,28 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
       };
     }
 
-    try {
-      await contesto.repository.registraAnalisi(riga);
-    } catch {
+    // ── Registrazione dell'esito (best-effort, una sola volta) ───────────
+    // La persistenza è distinta dal giudizio: se la scrittura fallisce o
+    // resta appesa oltre il budget, l'esito già composto e validato viene
+    // comunque consegnato, con un'indicazione neutra, e la cache non viene
+    // scritta (nessun riuso di un esito non registrato).
+    const registrata = await entroBudget(
+      contesto.repository.registraAnalisi(riga),
+      TIMEOUT_REGISTRAZIONE_MS
+    );
+
+    if (!registrata) {
       return {
-        tipo: "errore",
-        statoHttp: 503,
-        codice: "REGISTRAZIONE_NON_DISPONIBILE",
-        messaggio: "Servizio non disponibile. Riprova più tardi.",
+        tipo: "ok",
+        cache: false,
+        meta,
+        esito: {
+          ...esito,
+          persistenza: {
+            salvata: false,
+            motivo: "Registrazione non confermata entro il tempo previsto. Il giudizio è disponibile; lo stato del salvataggio non è verificato.",
+          },
+        },
       };
     }
 

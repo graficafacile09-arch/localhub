@@ -956,8 +956,15 @@ export default function ScanRisultato({
   // Una DOP, IGP o STG esatta e attiva in eAmbrosia è un riscontro positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.
+  // Il titolo "DOP/IGP" richiede anche che il prodotto sia stato letto o
+  // proposto con uno schema europeo: una De.Co., un PAT o una denominazione
+  // comunale non possono diventarlo tramite una fonte web.
+  const schemaUeIndicato = /\b(DOP|IGP|STG|PDO|PGI|TSG)\b/i.test(
+    `${riconoscimento.schemaProposto ?? ""} ${riconoscimento.denominazioneProposta ?? ""}`
+  );
   const riscontroOnlineDop =
     !denominazioneUeRegistrata &&
+    schemaUeIndicato &&
     esito.web?.sintesi?.denominazione.stato === "menzionata";
   const identificazioneCompletata =
     esito.livello === "non_verificato" &&
@@ -1034,6 +1041,11 @@ export default function ScanRisultato({
               Esito riutilizzato dalla cache
             </span>
           ) : null}
+          {esito.persistenza?.salvata === false ? (
+            <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-900">
+              Registrazione non confermata
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -1057,11 +1069,26 @@ export default function ScanRisultato({
             valore={riconoscimento.territorioProposto}
           />
           <Campo
-            etichetta="Schema di qualità indicato"
+            etichetta="Schema di qualità proposto (non verificato)"
             valore={riconoscimento.schemaProposto}
           />
           <Campo etichetta="Categoria" valore={riconoscimento.categoria} />
         </dl>
+
+        <p className="mt-2 text-[11px] leading-5 text-[#8a8378]">
+          «Denominazione letta» e «schema proposto» riportano ciò che il modello
+          visivo ha letto nell&apos;immagine: sono ipotesi, non una certificazione
+          verificata. Lo schema risulta verificato solo quando compare
+          «Denominazione confermata» qui sotto.
+        </p>
+
+        {esito.persistenza?.salvata === false ? (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-900">
+            Il giudizio è disponibile, ma la registrazione non è stata confermata entro il tempo previsto:
+            lo stato del salvataggio non è verificato. Questo esito non verrà riutilizzato
+            dalla cache.
+          </p>
+        ) : null}
 
         {indicatore.length > 0 ? (
           <div className="mt-4">

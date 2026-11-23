@@ -318,6 +318,12 @@ export interface EsitoAnalisi {
   produttore?: VerificaProduttore | null;
   /** Tempi misurati per fase. */
   tempi?: TempiAnalisi | null;
+  /**
+   * Persistenza dell'esito, distinta dal giudizio. Presente solo quando la
+   * registrazione non è riuscita: l'esito resta valido per la sessione ma non
+   * verrà riutilizzato dalla cache.
+   */
+  persistenza?: { salvata: boolean; motivo: string | null } | null;
 }
 
 // ─── OCR, etichetta e controllo incrociato ────────────────────────────────

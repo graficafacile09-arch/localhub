@@ -1220,15 +1220,24 @@ export function sintetizzaFontiWeb(
   const schemaRichiesto = normalizza(
     `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
   );
+  const RIFERIMENTO_DOP = /\b(dop|pdo)\b|protected designation of origin|denominazione di origine protetta/;
+  const RIFERIMENTO_IGP = /\b(igp|pgi)\b|protected geographical indication|indicazione geografica protetta/;
+  const RIFERIMENTO_STG = /\b(stg|tsg)\b|traditional speciality guaranteed|specialità tradizionale garantita/;
+  const schemiRichiesti = {
+    DOP: RIFERIMENTO_DOP.test(schemaRichiesto),
+    IGP: RIFERIMENTO_IGP.test(schemaRichiesto),
+    STG: RIFERIMENTO_STG.test(schemaRichiesto),
+  };
+  // Un riscontro web esiste solo con una sigla esplicita nella fonte. Una
+  // "denominazione comunale", una registrazione comunale, DE.CO. o PAT non
+  // attestano una certificazione europea e non devono produrre un falso
+  // riscontro DOP/IGP/STG.
   const schemaPresenteNellaFonte = (testo: string) => {
     const t = normalizza(testo);
-    if (/\b(dop|pdo)\b|protected designation of origin/.test(t))
-      return /\b(dop|pdo)\b|protected designation of origin/.test(schemaRichiesto);
-    if (/\b(igp|pgi)\b|protected geographical indication/.test(t))
-      return /\b(igp|pgi)\b|protected geographical indication/.test(schemaRichiesto);
-    if (/\b(stg|tsg)\b|traditional speciality guaranteed/.test(t))
-      return /\b(stg|tsg)\b|traditional speciality guaranteed/.test(schemaRichiesto);
-    return /registrat|denominazione|geographical indication|quality scheme/.test(t);
+    if (RIFERIMENTO_DOP.test(t)) return schemiRichiesti.DOP;
+    if (RIFERIMENTO_IGP.test(t)) return schemiRichiesti.IGP;
+    if (RIFERIMENTO_STG.test(t)) return schemiRichiesti.STG;
+    return false;
   };
   const fontiDenominazione = fonti.filter((fonte) => {
     if (!chiaveDenominazione) return false;

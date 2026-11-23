@@ -547,6 +547,141 @@ test("Google grounding non disponibile: fallback keyless dichiarato", async () =
   assert.equal(esito.stato, "ok");
 });
 
+// ─── De.Co., PAT e sigle esplicite ─────────────────────────────────────────
+
+function fonteLetta(estratto, titolo = "Pagina letta") {
+  return {
+    id: `web:${titolo}`,
+    titolo,
+    ente: "esempio.it",
+    url: `https://esempio.it/${encodeURIComponent(titolo)}`,
+    dominio: "esempio.it",
+    natura: "istituzionale_it",
+    attendibilita: "media",
+    consultataIl: "2026-11-23",
+    dataDocumento: null,
+    estratto,
+    riferimentoNormativo: null,
+    pagineLette: 1,
+    lettoIntegralmente: true,
+    metodoLettura: "http",
+    relazione: "Pagina letta.",
+    dichiarazione: "indipendente",
+    rilevanza: "alta",
+  };
+}
+
+function cipollaCastrovillari(override = {}) {
+  return riconoscimento({
+    prodotto: "Cipolla Bianca di Castrovillari",
+    categoria: "Ortofrutta",
+    denominazioneProposta: "Cipolla Bianca di Castrovillari De.Co.",
+    territorioProposto: "Castrovillari",
+    schemaProposto: "DE.CO.",
+    indicatoreEtichetta: ["DE.CO."],
+    indicatoriEtichetta: ["DE.CO."],
+    produttore: null,
+    ...override,
+  });
+}
+
+test("De.Co.: «denominazione comunale registrata» non è un riscontro DOP/IGP", () => {
+  const sintesi = sintetizzaFontiWeb(
+    cipollaCastrovillari(),
+    [
+      fonteLetta(
+        "La Cipolla Bianca di Castrovillari ha ottenuto la denominazione comunale registrata dal Comune di Castrovillari."
+      ),
+    ],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+  assert.equal(sintesi.denominazione.fonti.length, 0);
+});
+
+test("De.Co.: una fonte che cita esplicitamente DE.CO. non produce un riscontro DOP/IGP", () => {
+  const sintesi = sintetizzaFontiWeb(
+    cipollaCastrovillari(),
+    [
+      fonteLetta(
+        "La Cipolla Bianca di Castrovillari è una De.Co., denominazione comunale di origine del Comune di Castrovillari."
+      ),
+    ],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+});
+
+test("De.Co.: una fonte non può attribuire DOP a un prodotto letto come De.Co.", () => {
+  const sintesi = sintetizzaFontiWeb(
+    cipollaCastrovillari(),
+    [fonteLetta("La Cipolla Bianca di Castrovillari è una DOP.")],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+});
+
+test("DOP esplicita nella fonte: riscontro sulla denominazione DOP", () => {
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento({
+      prodotto: "Pecorino Crotonese",
+      denominazioneProposta: "Pecorino Crotonese DOP",
+      schemaProposto: "DOP",
+      produttore: null,
+    }),
+    [
+      fonteLetta(
+        "Il Pecorino Crotonese è tutelato come DOP (Protected Designation of Origin)."
+      ),
+    ],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "menzionata");
+});
+
+test("IGP esplicita nella fonte (anche PGI): riscontro sulla denominazione IGP", () => {
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento({
+      prodotto: "Soppressata di Calabria",
+      denominazioneProposta: "Soppressata di Calabria IGP",
+      schemaProposto: "IGP",
+      indicatoreEtichetta: ["IGP"],
+    }),
+    [
+      fonteLetta(
+        "La Soppressata di Calabria è una IGP (Protected Geographical Indication)."
+      ),
+    ],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "menzionata");
+});
+
+test("PAT: un prodotto tradizionale registrato non produce un riscontro DOP/IGP", () => {
+  const sintesi = sintetizzaFontiWeb(
+    riconoscimento({
+      prodotto: "Pomodoro seccagno",
+      denominazioneProposta: "Pomodoro seccagno di Calabria PAT",
+      schemaProposto: "PAT",
+      indicatoreEtichetta: ["PAT"],
+      produttore: null,
+    }),
+    [
+      fonteLetta(
+        "Il Pomodoro seccagno di Calabria è registrato nell'elenco dei prodotti agroalimentari tradizionali (PAT)."
+      ),
+    ],
+    []
+  );
+
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+});
+
 test("UI: sezione FONTI TROVATE, cinque verifiche e link apribili", () => {
   const sorgente = readFileSync(
     radice("components/radiscan/ScanRisultato.tsx"),

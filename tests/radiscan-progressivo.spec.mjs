@@ -382,7 +382,13 @@ test("progressivo: cache hit non emette preliminari e non chiama il provider", a
 
 // ─── Errori ────────────────────────────────────────────────────────────────
 
-test("progressivo: errore dopo l'avvio arriva come evento, senza esito", async () => {
+test("progressivo: registrazione fallita non perde il giudizio già composto", async () => {
+  const riferimento = creaAmbiente();
+  const eventiRiferimento = await leggiEventi(
+    await esegui(riferimento.handler, richiestaProgressiva())
+  );
+  const giudizioAtteso = eventiRiferimento.at(-1).esito;
+
   const repository = creaRepositoryFinto({
     async registraAnalisi() {
       this.chiamate.analisi += 1;
@@ -395,10 +401,89 @@ test("progressivo: errore dopo l'avvio arriva come evento, senza esito", async (
   assert.equal(risposta.status, 200, "lo status resta 200: l'errore viaggia nello stream");
 
   const eventi = await leggiEventi(risposta);
+  assert.deepEqual(
+    eventi.map((evento) => evento.evento),
+    ["riconoscimento", "documentale", "web", "esito"],
+    "la registrazione non può sostituire l'esito con un errore"
+  );
+  assert.equal(
+    eventi.filter((evento) => evento.evento === "esito").length,
+    1,
+    "un solo evento esito"
+  );
+  const finale = eventi.at(-1);
+  assert.equal(finale.esito.persistenza.salvata, false);
+  assert.equal(finale.cache, false, "un esito non registrato non viene messo in cache");
+  assert.equal(finale.esito.livello, giudizioAtteso.livello, "il livello non cambia");
+  assert.equal(
+    finale.esito.verifica.motivazione,
+    giudizioAtteso.verifica.motivazione,
+    "la motivazione non cambia"
+  );
+  assert.equal(repository.chiamate.analisi, 1);
+  assert.equal(repository.chiamate.cacheScritte, 0);
+});
+
+test("JSON: registrazione fallita restituisce comunque il giudizio, senza dichiararlo salvato", async () => {
+  const repository = creaRepositoryFinto({
+    async registraAnalisi() {
+      this.chiamate.analisi += 1;
+      throw new Error("database giù");
+    },
+  });
+  const { handler } = creaAmbiente({ repository });
+
+  const risposta = await esegui(handler, richiestaClassica());
+  assert.equal(risposta.status, 200);
+  const corpo = await risposta.json();
+  assert.equal(corpo.success, true);
+  assert.equal(corpo.cache, false);
+  assert.equal(corpo.esito.persistenza.salvata, false);
+  assert.equal(repository.chiamate.cacheScritte, 0);
+});
+
+test("progressivo: registrazione bloccata, il giudizio arriva entro il budget", async () => {
+  let liberata;
+  const repository = creaRepositoryFinto({
+    registraAnalisi() {
+      this.chiamate.analisi += 1;
+      return new Promise((risolvi) => {
+        liberata = risolvi;
+      });
+    },
+  });
+  const { handler } = creaAmbiente({ repository });
+
+  const inizio = Date.now();
+  const eventi = await leggiEventi(await esegui(handler, richiestaProgressiva()));
+  const durata = Date.now() - inizio;
+
+  assert.equal(eventi.at(-1).evento, "esito");
+  assert.equal(eventi.at(-1).esito.persistenza.salvata, false);
+  assert.ok(durata >= 3_000, `timeout troppo breve: ${durata} ms`);
+  assert.ok(durata < 15_000, `timeout fuori budget: ${durata} ms`);
+  assert.equal(repository.chiamate.cacheScritte, 0);
+  liberata();
+});
+
+test("progressivo: errore prima del giudizio non inventa un esito", async () => {
+  const provider = {
+    stato: { chiamate: 0 },
+    provider: {
+      nome: "finto",
+      modello: "finto-1",
+      async genera() {
+        throw new Error("vision non disponibile");
+      },
+    },
+  };
+  const repository = creaRepositoryFinto();
+  const { handler } = creaAmbiente({ repository, provider });
+
+  const eventi = await leggiEventi(await esegui(handler, richiestaProgressiva()));
   assert.equal(eventi.at(-1).evento, "errore");
-  assert.equal(eventi.at(-1).errore.codice, "REGISTRAZIONE_NON_DISPONIBILE");
-  assert.equal(eventi.at(-1).stato, 503);
   assert.ok(!eventi.some((evento) => evento.evento === "esito"));
+  assert.equal(repository.chiamate.analisi, 0);
   assert.equal(repository.chiamate.cacheScritte, 0);
 });
 
