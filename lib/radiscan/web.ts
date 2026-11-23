@@ -1239,6 +1239,39 @@ export function sintetizzaFontiWeb(
     if (RIFERIMENTO_STG.test(t)) return schemiRichiesti.STG;
     return false;
   };
+  // De.Co. è un riconoscimento comunale distinto dagli schemi UE.
+  // Si considera solo una pagina effettivamente letta e una frase che
+  // collega insieme il marcatore, il prodotto specifico e il territorio.
+  const territorioDeCo =
+    riconoscimento.territorioProposto?.trim() ||
+    (normalizza(prodotto).includes("castrovillari") ? "Castrovillari" : "");
+  const fontiDeCo = fonti.filter((fonte) => {
+    const letta =
+      fonte.metodoLettura === "http" || fonte.metodoLettura === "tavily_extract";
+    if (!letta || fonte.rilevanza === "bassa") return false;
+    const testoOriginale = `${fonte.titolo}. ${fonte.estratto ?? ""}`;
+    const frasi = testoOriginale.split(/(?<=[.!?;])\s+|[\r\n]+/);
+    return frasi.some((frase) => {
+      const normalizzata = normalizza(frase);
+      const marcatoreDeCo =
+        /\bde\s*co\b|\bdeco\b|denominazione comunale/.test(normalizzata);
+      const prodottoPresente =
+        nomeSpecificoPresente(normalizzata, prodotto) ||
+        (denominazione ? nomeSpecificoPresente(normalizzata, denominazione) : false);
+      const territorioPresente =
+        Boolean(territorioDeCo) && copre(normalizzata, territorioDeCo);
+      return marcatoreDeCo && prodottoPresente && territorioPresente;
+    });
+  });
+  const decoComunale: SintesiVerificaWeb | null =
+    fontiDeCo.length > 0
+      ? statoWeb(
+          "menzionata",
+          `Riconoscimento De.Co. documentato per ${prodotto} nel territorio di ${territorioDeCo}. Il riscontro riguarda il riconoscimento comunale, non una DOP/IGP/STG e non certifica confezione, lotto o produttore.`,
+          fontiDeCo
+        )
+      : null;
+
   const fontiDenominazione = fonti.filter((fonte) => {
     if (!chiaveDenominazione) return false;
     const testo = testoFonte(fonte);
@@ -1436,6 +1469,7 @@ export function sintetizzaFontiWeb(
               );
 
   return {
+    decoComunale,
     denominazione: denominazioneSintesi,
     produttore: produttoreSintesi,
     marchio: marchioSintesi,
