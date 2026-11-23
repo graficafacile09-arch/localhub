@@ -108,6 +108,7 @@ const diagnosticRows = results.map((r) => r.diagnostic).filter(Boolean);
 const attempts = diagnosticRows.filter((d) => d.attempted);
 const countOutcome = (outcome) => diagnosticRows.filter((d) => d.outcome === outcome).length;
 const aiAccepted = countOutcome("ai_accepted");
+const aiAttempts = attempts.length;
 const skipped = countOutcome("ai_skipped");
 const providerErrors = countOutcome("provider_error");
 const timeouts = countOutcome("timeout");
@@ -143,16 +144,18 @@ console.log(JSON.stringify({
   aiAcceptancePercent: attempts.length
     ? Number((aiAccepted / attempts.length * 100).toFixed(1))
     : null,
-  aiCalls,
-  aiCallSuccessRatePercent: aiCalls + fallbacks
-    ? Number((aiCalls / (aiCalls + fallbacks) * 100).toFixed(1))
+  aiCalls: aiAttempts,
+  aiCallSuccessRatePercent: aiAttempts
+    ? Number((aiAccepted / aiAttempts * 100).toFixed(1))
     : null,
   fallbackCount: fallbacks,
-  averageAiLatencyMs: aiCalls ? Math.round(aiLatencyTotalMs / aiCalls) : null,
-  averageAiAttemptLatencyMs: attempts.length
-    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / attempts.length)
+  averageAiLatencyMs: aiAttempts
+    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / aiAttempts)
     : null,
-  aiAttempts: attempts.length,
+  averageAiAttemptLatencyMs: aiAttempts
+    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / aiAttempts)
+    : null,
+  aiAttempts,
   errorDistribution,
   failureReasons,
   routeAccuracyPercent: Number((routeCorrect / results.length * 100).toFixed(1)),
