@@ -749,6 +749,48 @@ test("DOP esterna in eAmbrosia: riconosciuta, ma fuori perimetro anche senza fon
   assert.match(esito.verifica.provenienza.territorio.motivo, /fuori dal perimetro/i);
 });
 
+test("denominazione con suffisso DOP senza territorio in etichetta resta fuori perimetro", () => {
+  const verifica = verificaDenominazione(
+    {
+      ...RICONOSCIMENTO_PARMA,
+      prodotto: "Prosciutto di Parma DOP",
+      denominazioneProposta: "Prosciutto di Parma DOP",
+      territorioProposto: null,
+    },
+    [],
+    RICERCA_EAMBROSIA_PARMA
+  );
+
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.equal(verifica.livello, "coerente_non_verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /Prosciutto di Parma/);
+  assert.match(verifica.motivazione, /non appartiene alla filiera calabro-lucana/i);
+  assert.match(verifica.motivazione, /fuori dal perimetro territoriale ammesso da InCittà/i);
+  assert.doesNotMatch(verifica.motivazione, /falso|non autentic/i);
+});
+
+test("nome prodotto esterno senza denominazione letta resta fuori perimetro", () => {
+  const verifica = verificaDenominazione(
+    {
+      ...RICONOSCIMENTO_PARMA,
+      prodotto: "PROSCIUTTO DI PARMA DOP",
+      denominazioneProposta: null,
+      territorioProposto: null,
+    },
+    [],
+    RICERCA_EAMBROSIA_PARMA
+  );
+
+  assert.equal(verifica.esito, "fuori_perimetro");
+  assert.equal(verifica.livello, "coerente_non_verificato");
+  assert.equal(verifica.denominazioneVerificata, null);
+  assert.match(verifica.motivazione, /riconosciuta e valida/i);
+  assert.match(verifica.motivazione, /non appartiene alla filiera calabro-lucana/i);
+  assert.match(verifica.motivazione, /fuori dal perimetro territoriale ammesso da InCittà/i);
+  assert.doesNotMatch(verifica.motivazione, /falso|non autentic/i);
+});
+
 test("il messaggio finale dichiara DOP valida e non appartenenza alla filiera calabro-lucana", () => {
   const messaggio = messaggioFuoriPerimetro({
     prodotto: "Prosciutto di Parma",

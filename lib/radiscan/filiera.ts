@@ -53,6 +53,49 @@ function normalizza(valore: string): string {
     .replace(/\s+/g, " ");
 }
 
+const ETICHETTE_QUALITA: readonly string[] = [
+  "dop",
+  "igp",
+  "stg",
+  "doc",
+  "docg",
+  "igt",
+  "pat",
+  "deco",
+  "pdo",
+  "pgi",
+  "tsg",
+];
+
+/**
+ * Normalizzazione per il confronto delle denominazioni: toglie le etichette
+ * di qualità finali, così "Prosciutto di Parma DOP" coincide con la scheda
+ * ufficiale "Prosciutto di Parma". Senza questo passaggio il suffisso scritto
+ * in etichetta impedirebbe ogni confronto esatto.
+ */
+function normalizzaDenominazione(valore: string): string {
+  const parole = normalizza(valore).split(" ").filter(Boolean);
+  while (parole.length > 1 && ETICHETTE_QUALITA.includes(parole[parole.length - 1])) {
+    parole.pop();
+  }
+  return parole.join(" ");
+}
+
+/**
+ * Testo da confrontare con la denominazione ufficiale: la denominazione letta
+ * oppure, solo se manca e lo schema è protetto, il nome prodotto specifico.
+ */
+function chiaveDenominazionePerProva(
+  riconoscimento: RiconoscimentoAi
+): string {
+  const proposta = riconoscimento.denominazioneProposta?.trim() ?? "";
+  if (proposta) return normalizzaDenominazione(proposta);
+
+  const schema = riconoscimento.schemaProposto;
+  if (schema !== "DOP" && schema !== "IGP" && schema !== "STG") return "";
+  return normalizzaDenominazione(riconoscimento.prodotto?.trim() ?? "");
+}
+
 function segnaleCalabria(testo: string | null | undefined): string | null {
   if (!testo) return null;
   const normalizzato = normalizza(testo);
@@ -254,6 +297,7 @@ function denominazioneUfficialeEsatta(
   prova: ProvaDocumentale | null,
   riconoscimento: RiconoscimentoAi
 ): boolean {
+  const chiave = chiaveDenominazionePerProva(riconoscimento);
   return Boolean(
     prova &&
       prova.tipo === "ufficiale" &&
@@ -261,9 +305,8 @@ function denominazioneUfficialeEsatta(
       (prova.schemaQualita === "DOP" ||
         prova.schemaQualita === "IGP" ||
         prova.schemaQualita === "STG") &&
-      riconoscimento.denominazioneProposta?.trim() &&
-      normalizza(prova.denominazione) ===
-        normalizza(riconoscimento.denominazioneProposta ?? "")
+      chiave !== "" &&
+      normalizzaDenominazione(prova.denominazione) === chiave
   );
 }
 

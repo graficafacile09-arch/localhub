@@ -686,6 +686,27 @@ function verificaBase(
 
     if (proveAccettabili.length === 1) {
       const { prova, coerenza } = proveAccettabili[0];
+
+      // Anche senza denominazione leggibile il nome prodotto può corrispondere
+      // a una DOP/IGP/STG registrata fuori dal perimetro: la certificazione
+      // resta valida, ma il prodotto va dichiarato esterno alla filiera.
+      // Solo la denominazione ufficiale dimostra qui l'area esterna; una
+      // semplice etichetta esterna resta un riscontro parziale.
+      const fuoriPerimetro = territorioFuoriPerimetro(riconoscimento, prova);
+      if (fuoriPerimetro?.origine === "denominazione") {
+        const luogo = fuoriPerimetro.luogo.replace(/^./, (lettera) =>
+          lettera.toUpperCase()
+        );
+        return nonVerificato(
+          "coerente_non_verificato",
+          "fuori_perimetro",
+          `Denominazione ${prova.schemaQualita ?? "registrata"} riconosciuta e valida: il nome prodotto "${prodotto}" corrisponde alla denominazione registrata "${prova.denominazione}" nel registro ufficiale eAmbrosia (${prova.riferimentoNormativo ?? "scheda UE"}). Il prodotto non appartiene alla filiera calabro-lucana e si trova fuori dal perimetro territoriale ammesso da InCittà ("${luogo}"): tutta la Calabria e i soli comuni del Parco Nazionale del Pollino in Basilicata. La legittimità della certificazione non è messa in dubbio; il prodotto non è territorialmente ammissibile.`,
+          null,
+          prove,
+          ricerca
+        );
+      }
+
       const messaggioTerritorio =
         coerenza === "coerente"
           ? ` Il territorio letto ("${riconoscimento.territorioProposto}") è compatibile con il territorio della fonte curata che corrisponde alla stessa denominazione e schema.`
