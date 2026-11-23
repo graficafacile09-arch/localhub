@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import type { EsitoAnalisi } from "@/lib/radiscan/tipi";
 import ScanRisultato, { ScanRisultatoProgressivo } from "./ScanRisultato";
-import StoricoRadiciScan from "./StoricoRadiciScan";
 import {
   LATO_MASSIMO,
   LATO_MINIMO,
@@ -528,7 +527,6 @@ export default function RadiciScanStudio() {
             setEsito(evento.esito);
             setDaCache(evento.cache);
             setFase("esito");
-            window.dispatchEvent(new Event("radiscan:aggiorna-storico"));
             concluso = true;
           } else if (evento.evento === "errore") {
             setErrore(evento.errore);
@@ -560,7 +558,6 @@ export default function RadiciScanStudio() {
           setEsito(risultato.esito);
           setDaCache(risultato.cache);
           setFase("esito");
-          window.dispatchEvent(new Event("radiscan:aggiorna-storico"));
         } catch {
           setErrore({
             codice: "RISPOSTA_NON_VALIDA",
@@ -637,7 +634,6 @@ export default function RadiciScanStudio() {
 
   return (
     <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
-      <StoricoRadiciScan />
       <div className="mb-3 flex justify-end">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
           <ShieldCheck className="h-3.5 w-3.5 text-[#24462f]" aria-hidden />
