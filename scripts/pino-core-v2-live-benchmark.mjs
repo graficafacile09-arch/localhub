@@ -2,6 +2,7 @@ import { performance } from "node:perf_hooks";
 import { pinoBenchmarkCases } from "../tests/fixtures/pino-core-v2-benchmark-cases.mjs";
 import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.ts";
 import { planPinoCoreRequestWithAI } from "../lib/assistente/core-v2/ai-request-planner.ts";
+import { summarizePinoLiveBenchmarkDiagnostics } from "./pino-live-benchmark-metrics.mjs";
 
 if (process.env.PINO_RUN_LIVE_BENCHMARK !== "1") {
   throw new Error("Live AI benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
@@ -99,59 +100,32 @@ const mismatches = results.filter((r) =>
   r.actual.route !== r.expected.route || r.actual.surface !== r.expected.surface
 );
 
-// Aggregazione diagnostica: si contano solo i casi che hanno davvero tentato
-// la chiamata al provider per la percentuale di accettazione AI.
+// Aggregazione isolata e coperta da test: tentativi reali, non piani accettati.
 const diagnosticRows = results.map((r) => r.diagnostic).filter(Boolean);
-const attempts = diagnosticRows.filter((d) => d.attempted);
-const countOutcome = (outcome) => diagnosticRows.filter((d) => d.outcome === outcome).length;
-const aiAccepted = countOutcome("ai_accepted");
-const aiAttempts = attempts.length;
-const skipped = countOutcome("ai_skipped");
-const providerErrors = countOutcome("provider_error");
-const timeouts = countOutcome("timeout");
-const invalidJson = countOutcome("invalid_json");
-const invalidSchema = countOutcome("invalid_schema");
-const fallbackInvalidPlan = countOutcome("fallback_invalid_plan");
-const otherFallbacks = skipped + fallbackInvalidPlan;
-
-const errorDistribution = diagnosticRows.reduce((acc, d) => {
-  acc[d.outcome] = (acc[d.outcome] ?? 0) + 1;
-  return acc;
-}, {});
-const failureReasons = diagnosticRows
-  .filter((d) => d.outcome !== "ai_accepted")
-  .reduce((acc, d) => {
-    const chiave = `${d.outcome}: ${d.reason}`;
-    acc[chiave] = (acc[chiave] ?? 0) + 1;
-    return acc;
-  }, {});
+const metrics = summarizePinoLiveBenchmarkDiagnostics(diagnosticRows);
 
 console.log(JSON.stringify({
   benchmark: "Pino Core v2 live Groq planner",
   model: process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b",
   cases: results.length,
   totalRequests: results.length,
-  aiAcceptedPlans: aiAccepted,
+  aiAcceptedPlans: aiAccepted: metrics.aiAccepted,
   deterministicFallbacks: fallbacks,
-  providerErrors,
-  timeouts,
-  invalidJsonResponses: invalidJson,
-  invalidSchemaResponses: invalidSchema,
-  otherFallbacks,
-  aiAcceptancePercent: attempts.length
-    ? Number((aiAccepted / attempts.length * 100).toFixed(1))
-    : null,
-  aiCalls: aiAttempts,
+  providerErrors: metrics.providerErrors,
+  timeouts: metrics.timeouts,
+  invalidJsonResponses: invalidJson: metrics.invalidJson,
+  invalidSchemaResponses: invalidSchema: metrics.invalidSchema,
+  otherFallbacks: metrics.otherFallbacks,
+  aiAcceptancePercent: metrics.aiAcceptancePercent,
+  aiCalls: aiAttempts: metrics.aiAttempts,
   aiCallSuccessRatePercent: aiAttempts
     ? Number((aiAccepted / aiAttempts * 100).toFixed(1))
     : null,
   fallbackCount: fallbacks,
-  averageAiLatencyMs: aiAttempts
-    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / aiAttempts)
-    : null,
-  aiAttempts,
-  errorDistribution,
-  failureReasons,
+  averageAiLatencyMs: metrics.averageAiLatencyMs,
+  aiAttempts: metrics.aiAttempts,
+  errorDistribution: metrics.errorDistribution,
+  failureReasons: metrics.failureReasons,
   routeAccuracyPercent: Number((routeCorrect / results.length * 100).toFixed(1)),
   surfaceAccuracyPercent: Number((surfaceCorrect / results.length * 100).toFixed(1)),
   combinedAccuracyPercent: Number((combinedCorrect / results.length * 100).toFixed(1)),
