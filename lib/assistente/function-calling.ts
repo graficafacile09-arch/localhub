@@ -13,7 +13,6 @@
  *
  * @module lib/assistente/function-calling
  */
-import type { FunctionDeclaration } from "@google/genai";
 import type { StrumentoPino, ToolParams } from "./tools";
 
 export type TipoParametroFunctionCalling =
@@ -316,6 +315,13 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
   },
 ] as const;
 
+/** Dichiarazione provider-neutral degli strumenti esposti a Pino. */
+export type PinoToolDeclaration = {
+  name: string;
+  description: string;
+  parametersJsonSchema: SchemaParametriFunctionCalling;
+};
+
 /** Chiavi ammesse dal validatore, derivate dallo stesso contratto. */
 export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolParams)[]> =
   TOOL_DEFINITIONS.reduce(
@@ -326,8 +332,8 @@ export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolPara
     {} as Record<StrumentoPino, readonly (keyof ToolParams)[]>
   );
 
-/** Strumenti dichiarati a Gemini: il fan-out regalo resta interno. */
-export function buildNativeToolDeclarations(): FunctionDeclaration[] {
+/** Strumenti dichiarati al provider AI: il fan-out regalo resta interno. */
+export function buildNativeToolDeclarations(): PinoToolDeclaration[] {
   return TOOL_DEFINITIONS.filter((definizione) => definizione.exposed).map((definizione) => ({
     name: definizione.name,
     description: definizione.description,
