@@ -1,15 +1,15 @@
 /**
- * LocalHub — Pino: contratto centrale dei tool e Function Calling Gemini.
+ * LocalHub — Pino: contratto centrale dei tool e Function Calling provider-neutral.
  *
  * Questo modulo è la sola fonte per:
  * - nome, descrizione e JSON Schema dei parametri;
  * - chiavi ammesse dal validatore;
  * - elenco degli strumenti esposti al modello e strumenti interni;
- * - dichiarazioni native Gemini (`tools.functionDeclarations`);
+ * - dichiarazioni native compatibili con il provider;
  * - menu testuale usato dal percorso JSON legacy.
  *
  * Il percorso nativo è sperimentale e non viene attivato di default. Il
- * contratto non esegue tool, non accede a Supabase e non chiama Gemini.
+ * contratto non esegue tool, non accede a Supabase e non chiama provider AI.
  *
  * @module lib/assistente/function-calling
  */
@@ -45,7 +45,7 @@ export type DefinizioneStrumentoPino = {
   parameters: SchemaParametriFunctionCalling;
   /** Chiavi ammesse dal validatore, incluse quelle interne non esposte. */
   allowedParams: readonly (keyof ToolParams)[];
-  /** true = dichiarato a Gemini; false = solo uso interno/deterministico. */
+  /** true = dichiarato al provider AI; false = solo uso interno/deterministico. */
   exposed: boolean;
 };
 
