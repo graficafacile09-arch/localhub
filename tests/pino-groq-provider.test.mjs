@@ -30,7 +30,8 @@ test("Groq text provider sends system/history/user messages and JSON mode", asyn
       "system", "user", "assistant", "user",
     ]);
     assert.deepEqual(body.response_format, { type: "json_object" });
-    assert.ok(body.max_tokens >= 700);
+    assert.ok(body.max_completion_tokens >= 700);
+    assert.equal(body.reasoning_format, "hidden");
     return new Response(JSON.stringify({
       choices: [{ message: { content: '{"route":"catalog"}' } }],
     }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -53,6 +54,8 @@ test("Groq Function Calling returns normalized tool calls and parsed arguments",
   await conProviderMock(async (_url, options) => {
     const body = JSON.parse(options.body);
     assert.equal(body.tool_choice, "auto");
+    assert.equal(body.reasoning_format, "hidden");
+    assert.equal(body.parallel_tool_calls, false);
     assert.equal(body.tools[0].function.name, "searchProducts");
     assert.deepEqual(body.tools[0].function.parameters, {
       type: "object",
