@@ -7,20 +7,20 @@ import { validaToolParams } from "../lib/assistente/tools.ts";
 // ─── Budget esplicito nel percorso REALE ────────────────────────────────────
 //
 // Il test attraversa orchestratore → costruzione parametri → contratto dei tool
-// → `searchProducts` → Search Service. Gemini è simulato per dimostrare che il
+// → `searchProducts` → Search Service. Groq è simulato per dimostrare che il
 // modello non può introdurre né togliere un vincolo; Supabase è il client finto
 // dell'hook di test, che registra tabelle e filtri `gte`/`lte` realmente usati.
 
-process.env.GEMINI_API_KEY = "test-budget-pino";
-process.env.GEMINI_MODEL = "gemini-test";
+process.env.GROQ_API_KEY = "test-budget-pino";
+process.env.GROQ_MODEL = "openai/gpt-oss-120b";
 
-let pianoGemini = null;
+let pianoGroq = null;
 
 globalThis.fetch = async (url, init) => {
-  assert.match(String(url), /generativelanguage\.googleapis\.com/);
+  assert.match(String(url), /api\.groq\.com\/openai\/v1\/chat\/completions/);
   assert.equal(init?.method, "POST");
   const corpo = JSON.parse(init.body);
-  assert.ok(Array.isArray(corpo.contents) && corpo.contents.length > 0);
+  assert.ok(Array.isArray(corpo.messages) && corpo.messages.length > 0);
   const piano = pianoGemini ?? {
     surface: "products",
     intent: "food",
@@ -35,7 +35,7 @@ globalThis.fetch = async (url, init) => {
   };
   return new Response(
     JSON.stringify({
-      candidates: [{ content: { parts: [{ text: JSON.stringify(piano) }] } }],
+      choices: [{ message: { content: JSON.stringify(piano) } }],
     }),
     { status: 200, headers: { "content-type": "application/json" } }
   );
