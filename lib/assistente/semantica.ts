@@ -9,7 +9,7 @@
  * Fallback locale: se Groq non è disponibile, il piano resta utilizzabile
  * con intent + termini originali.
  */
-import { callGroqText, type GroqHistoryMessage } from "@/lib/ai/groq";
+import { callGroqText } from "@/lib/ai/groq";
 import {
   chiamataAIConBudgetPino,
   type BudgetPinoAI,
@@ -1032,8 +1032,7 @@ export async function interpretaRichiestaPino(
         maxTokens: 300,
         temperature: 0,
         json: true,
-        // 4s: oltre questa soglia Groq non è utile a questa richiesta e il
-        // turno passa a Groq, che ha 6s propri.
+        // Timeout diretto Groq: se scade, il catch usa il piano locale deterministico.
         timeoutMs: 4_000,
         retries: 1,
       })
