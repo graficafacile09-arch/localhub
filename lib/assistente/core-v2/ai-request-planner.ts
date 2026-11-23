@@ -372,7 +372,6 @@ export async function planPinoCoreRequestWithAI(
           temperature: 0,
           maxTokens: 450,
           timeoutMs: 12_000,
-          retries: 1,
         });
   } catch (errore) {
     // Provider outage, missing key, timeout, quota or malformed output must
