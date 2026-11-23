@@ -177,7 +177,12 @@ export async function callGroqFunctionCalling(
       parameters: declaration.parametersJsonSchema,
     },
   }));
-  const result = await completaGroq(messages, { ...params, tools });
+  const result = await completaGroq(messages, {
+    maxTokens: params.maxTokens,
+    temperature: params.temperature,
+    timeoutMs: params.timeoutMs,
+    tools,
+  });
   const message = result.choices?.[0]?.message;
   const calls = (message?.tool_calls ?? []).flatMap((call) => {
     const name = call.function?.name;
