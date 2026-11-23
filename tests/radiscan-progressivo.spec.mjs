@@ -12,6 +12,8 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const radiscan = await import("@/lib/radiscan");
 
@@ -487,4 +489,31 @@ test("progressivo: l'annullamento del client aborta il segnale e ferma il lavoro
   assert.equal(stato.abortito, true, "il provider deve ricevere l'abort");
   assert.equal(repository.chiamate.analisi, 0, "un'annullamento non registra nulla");
   assert.equal(repository.chiamate.cacheScritte, 0);
+});
+
+// ─── Presentazione in primo piano (sorgenti UI) ──────────────────────────────
+
+const leggi = (percorso) =>
+  readFileSync(fileURLToPath(new URL(`../${percorso}`, import.meta.url)), "utf8");
+
+test("UI: nessuna etichetta interna «preliminare» o formula tecnica visibile", () => {
+  const risultato = leggi("components/radiscan/ScanRisultato.tsx");
+  const progressivo = risultato.slice(
+    risultato.indexOf("export function ScanRisultatoProgressivo")
+  );
+
+  assert.doesNotMatch(progressivo, />\s*preliminare\s*</);
+  assert.doesNotMatch(progressivo, /Dati parziali|non ancora verificati|Analisi in corso/);
+});
+
+test("UI: il progressivo usa la stessa area principale dell'esito e scorre al primo dato", () => {
+  const studio = leggi("components/radiscan/RadiciScanStudio.tsx");
+
+  // Il ref è lo stesso per esito e progressivo: un solo contenitore principale.
+  assert.equal(studio.match(/ref=\{risultatoRef\}/g)?.length, 2);
+  assert.match(studio, /primoDatoArrivato/);
+  assert.match(
+    studio,
+    /if \(!primoDatoArrivato\) return;[\s\S]*?scrollIntoView/
+  );
 });

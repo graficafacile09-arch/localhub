@@ -268,6 +268,22 @@ export default function RadiciScanStudio() {
     return () => window.cancelAnimationFrame(frame);
   }, [fase]);
 
+  // Appena arriva il primo dato utile, lo riporta in primo piano (una sola volta
+  // per analisi): il resto aggiorna la stessa area senza ulteriori scroll.
+  const primoDatoArrivato =
+    fase === "analisi" &&
+    Boolean(progressivo.riconoscimento || progressivo.documentale || progressivo.web);
+
+  useEffect(() => {
+    if (!primoDatoArrivato) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      risultatoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [primoDatoArrivato]);
+
   useEffect(() => {
     if (fase !== "fotocamera") return;
 
@@ -851,7 +867,9 @@ export default function RadiciScanStudio() {
       ) : null}
 
       {fase === "analisi" ? (
-        <ScanRisultatoProgressivo stato={progressivo} inCorso />
+        <div ref={risultatoRef} className="scroll-mt-6">
+          <ScanRisultatoProgressivo stato={progressivo} inCorso />
+        </div>
       ) : null}
 
       {fase === "errore" && errore ? (

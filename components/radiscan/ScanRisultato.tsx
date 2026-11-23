@@ -1215,14 +1215,14 @@ export function ScanRisultatoProgressivo({
         )}
         <div className="min-w-0">
           <p className="text-sm font-bold text-[#1b3624]">
-            {inCorso ? "Analisi in corso" : "Dati parziali già letti"}
+            {inCorso ? "Risultato in aggiornamento" : "Risultato interrotto"}
           </p>
           <p className="text-xs leading-5 text-[#57534e]">
             {!inCorso
-              ? "La verifica non è arrivata all'esito definitivo: questi dati non sono un esito."
+              ? "L'analisi non è stata completata: quanto mostrato sopra è ciò che è stato letto finora."
               : nessunDato
                 ? "Sto leggendo l'etichetta. I dati compaiono appena disponibili."
-                : "I dati qui sotto sono già letti ma non ancora verificati: puoi leggerli mentre il controllo continua."}
+                : "Ricerca in corso: i dati si aggiornano man mano che arrivano nuove evidenze."}
           </p>
         </div>
       </div>
@@ -1231,9 +1231,6 @@ export function ScanRisultatoProgressivo({
         <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-black text-[#1b3624]">Prodotto riconosciuto</p>
-            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
-              preliminare
-            </span>
           </div>
           <p className="mt-2 text-sm font-bold leading-6 text-[#1b3624] break-words">
             {riconoscimento.prodotto || "Non leggibile"}
@@ -1271,9 +1268,6 @@ export function ScanRisultatoProgressivo({
         <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-black text-[#1b3624]">Verifica documentale</p>
-            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
-              preliminare
-            </span>
           </div>
           <p className="mt-2 text-xs leading-5 text-[#57534e]">
             {documentale.stato === "ok"
@@ -1316,9 +1310,6 @@ export function ScanRisultatoProgressivo({
         <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-black text-[#1b3624]">Fonti web</p>
-            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
-              preliminare
-            </span>
           </div>
           <p className="mt-2 text-xs leading-5 text-[#57534e]">
             {web.stato === "ok"
@@ -1341,8 +1332,7 @@ export function ScanRisultatoProgressivo({
         </div>
       ) : null}
 
-      <p className="text-xs leading-5 text-[#7a5c1e]">
-        {inCorso
+      <p className="text-xs leading-5 text-[#7a5c1e]">          {inCorso
           ? "Il livello definitivo arriva solo alla fine delle verifiche."
           : "Analisi interrotta: i dati sopra restano quelli letti fino a quel momento."}
       </p>
