@@ -1034,7 +1034,6 @@ export async function interpretaRichiestaPino(
         json: true,
         // Timeout diretto Groq: se scade, il catch usa il piano locale deterministico.
         timeoutMs: 4_000,
-        retries: 1,
       })
     );
 
