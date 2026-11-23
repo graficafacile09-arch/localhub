@@ -20,9 +20,9 @@ runtime through the Shadow Tier 0 observer.
   imported by the runtime.
 - The Shadow does not change route behavior, pages, widgets, public search
   results, Supabase queries or the database schema.
-- The deterministic planner is pure. The AI planner is a separate opt-in function and only calls Gemini to obtain a structured plan.
+- The deterministic planner is pure. The AI planner is a separate opt-in function and only calls Groq to obtain a structured plan.
 - The AI planner performs no catalog search, database access, writes, or user-facing response generation.
-- If Gemini is unavailable, times out, exceeds quota, or returns invalid JSON, the deterministic planner is used unchanged.
+- If Groq is unavailable, times out, exceeds quota, or returns invalid JSON, the deterministic planner is used unchanged.
 - Explicit deterministic routes (conversation, attractions, events, weather and pharmacies) bypass the AI call.
 
 ## Planner output
@@ -58,12 +58,12 @@ Two separate measurements are emitted:
 
 **Important comparison limit:** the current-Pino adapter measures only those pure deterministic routing gates. It does not execute the entire production pipeline (semantic Gemini planner, intent layer, conversation-state orchestration, tool selection and catalog retrieval). It must not be described as a full production Pino score. A fair full-pipeline comparison still requires a dedicated read-only adapter and controlled/mocked provider and retrieval boundaries.
 
-The v2 AI planner's existing tests validate JSON parsing, plan validation, deterministic constraint preservation and fallback using injected model responses. They do not represent a live Gemini quality benchmark. A real 165-request model run must be explicitly opt-in, cost-controlled and report latency, provider failures and token usage; it must not run as part of ordinary preview builds.
+The v2 AI planner's existing tests validate JSON parsing, plan validation, deterministic constraint preservation and fallback using injected model responses. They do not represent a live Groq quality benchmark. A real 165-request model run must be explicitly opt-in, cost-controlled and report latency, provider failures and token usage; it must not run as part of ordinary preview builds.
 
 
-### Live Gemini benchmark (opt-in only)
+### Live Groq benchmark (opt-in only)
 
-The live runner is `scripts/pino-core-v2-live-benchmark.mjs`. It is intentionally excluded from `prebuild` and the normal test suite. It loads `.env.local` when present and requires both `GEMINI_API_KEY` and an explicit `PINO_RUN_LIVE_BENCHMARK=1` opt-in. It defaults to 10 cases to avoid unexpectedly running 165 provider calls.
+The live runner is `scripts/pino-core-v2-live-benchmark.mjs`. It is intentionally excluded from `prebuild` and the normal test suite. It loads `.env.local` when present and requires both `GROQ_API_KEY` and an explicit `PINO_RUN_LIVE_BENCHMARK=1` opt-in. It defaults to 10 cases to avoid unexpectedly running 165 provider calls.
 
 Example for a small smoke run:
 
@@ -77,14 +77,14 @@ Full corpus (165 requests):
 PINO_RUN_LIVE_BENCHMARK=1 PINO_BENCHMARK_LIMIT=165 npm run benchmark:pino:live
 ```
 
-The report measures route/surface accuracy, model-call success/fallback and latency. The current hand-labelled corpus does not yet contain gold labels for subject/query/attributes, and the Gemini wrapper does not expose token usage; do not claim those metrics or a monetary cost from this run.
+The report measures route/surface accuracy, model-call success/fallback and latency. The current hand-labelled corpus does not yet contain gold labels for subject/query/attributes, and the Groq wrapper does not expose token usage; do not claim those metrics or a monetary cost from this run.
 
 ## Next milestones
 
 1. [x] Build a 165-request labelled corpus and deterministic v2 scoring runner.
 2. [x] Measure the existing deterministic routing gates separately from the full production pipeline.
 3. [ ] Build a read-only adapter for the full current Pino semantic/intent pipeline without editing the production orchestrator.
-4. [ ] Run live AI v2 against the same corpus in a controlled environment with explicit cost limits.
+4. [ ] Run live Groq AI v2 against the same corpus in a controlled environment with explicit cost limits.
 5. [ ] Compare route/surface/query accuracy, constraint extraction, false-positive searches, clarification quality, latency and fallback rate.
 6. [ ] Add conversation-state merging and explicit uncertainty handling.
 

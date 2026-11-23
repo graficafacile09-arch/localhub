@@ -34,7 +34,7 @@ Stato: candidato finale, **nessun merge su `main`, nessuna promozione a Producti
 | Fase 2 | Collegamento della Shadow alla route con `after()` | Completata |
 | Fase 3 | Memoria semantica, rate limiter, modalità di collaudo locale | Completata |
 | Core V2 — milestone 1-2 | Corpus etichettato da 165 richieste + misura delle sole guardie deterministiche | Completata |
-| Core V2 — milestone 3-6 | Adattatore full-pipeline, run live della AI v2, confronto, fusione dello stato conversazionale | **Non completata**: richiede chiamate Gemini reali e un adattatore read-only del pipeline completo; lasciata dichiaratamente fuori scope |
+| Core V2 — milestone 3-6 | Adattatore full-pipeline, run live della AI v2, confronto, fusione dello stato conversazionale | **Non completata**: richiede chiamate Groq reali e un adattatore read-only del pipeline completo; lasciata dichiaratamente fuori scope |
 
 Nessuna nuova sottofase è stata aperta. Il lavoro di questo ciclo è: verifica
 dello stato, chiusura dei buchi di verifica, build e relazione.
@@ -140,7 +140,7 @@ disattivato). Nessuna quota consumata, nessun limite gratuito a rischio.
 
 Non eseguiti (motivo nella sezione 6):
 - `npm run benchmark:pino:live` — richiede `PINO_RUN_LIVE_BENCHMARK=1` e chiamate
-  Gemini reali;
+  Groq reali;
 - `tests/pino-widget.spec.ts` e `npm run test:e2e` — richiedono un ambiente
   avviato/browser e navigano l'app reale.
 
@@ -177,7 +177,7 @@ Imperfezioni e limiti:
   deterministiche **non** è un punteggio del Pino di produzione.
 - Il corpus etichettato da 165 richieste non contiene gold label per soggetto,
   attributi e query normalizzata: quelle metriche non sono dichiarabili.
-- Il wrapper Gemini non espone il token usage: nessuna stima di costo.
+- Il wrapper Groq non espone il token usage: nessuna stima di costo.
 - Il timeout di 20 s per invocazione smette di attendere la promessa ma non
   annulla la query PostgREST (nessun `AbortSignal` disponibile): la richiesta
   resta in volo lato DB.

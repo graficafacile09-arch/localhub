@@ -4,10 +4,10 @@ import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.t
 import { planPinoCoreRequestWithAI } from "../lib/assistente/core-v2/ai-request-planner.ts";
 
 if (process.env.PINO_RUN_LIVE_BENCHMARK !== "1") {
-  throw new Error("Live Gemini benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
+  throw new Error("Live AI benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
 }
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is missing; no live calls were made.");
+if (!process.env.GROQ_API_KEY) {
+  throw new Error("GROQ_API_KEY is missing; no live calls were made.");
 }
 
 // Selezione del corpus: senza PINO_BENCHMARK_GROUPS si usano i primi N casi
@@ -129,8 +129,8 @@ const failureReasons = diagnosticRows
   }, {});
 
 console.log(JSON.stringify({
-  benchmark: "Pino Core v2 live Gemini planner",
-  model: process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash (fallback)",
+  benchmark: "Pino Core v2 live Groq planner",
+  model: process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b",
   cases: results.length,
   totalRequests: results.length,
   aiAcceptedPlans: aiAccepted,
@@ -164,6 +164,6 @@ console.log(JSON.stringify({
     "Only route and surface are hand-labelled in the current corpus; query/subject/attributes require additional labels before those metrics can be scored.",
     "aiAcceptancePercent uses only requests that actually attempted a provider call (diagnostic.attempted), so it is not comparable with route/surface accuracy.",
     "Requests handled by deterministic special routes are reported as ai_skipped and never reach the provider by design.",
-    "Gemini token usage and monetary cost are not returned by the current callGeminiText wrapper.",
+    "Groq token usage and monetary cost are not returned by the current callGroqText wrapper.",
   ],
 }, null, 2));
