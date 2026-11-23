@@ -624,6 +624,53 @@ test("De.Co.: una fonte non può attribuire DOP a un prodotto letto come De.Co."
   assert.equal(sintesi.denominazione.stato, "non_confermata");
 });
 
+
+test("De.Co.: riconosce la Cipolla Bianca di Castrovillari nella stessa frase", () => {
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [
+    fonteLetta("La Cipolla Bianca di Castrovillari è riconosciuta come De.Co. dal Comune di Castrovillari.")
+  ]);
+  assert.ok(sintesi.decoComunale);
+  assert.match(sintesi.decoComunale.testo, /De.Co. documentato/i);
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+});
+
+test("De.Co.: accetta la forma DECO", () => {
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [
+    fonteLetta("La Cipolla Bianca di Castrovillari è DECO del Comune di Castrovillari.")
+  ]);
+  assert.ok(sintesi.decoComunale);
+});
+
+test("De.Co.: accetta Denominazione Comunale con prodotto e territorio", () => {
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [
+    fonteLetta("La Cipolla Bianca di Castrovillari ha ottenuto la Denominazione Comunale del Comune di Castrovillari.")
+  ]);
+  assert.ok(sintesi.decoComunale);
+});
+
+test("De.Co.: non attribuisce il riconoscimento se manca il territorio", () => {
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [
+    fonteLetta("La Cipolla Bianca di Castrovillari è riconosciuta come De.Co.")
+  ]);
+  assert.equal(sintesi.decoComunale, null);
+});
+
+test("De.Co.: non attribuisce il riconoscimento se prodotto e marcatore sono in frasi diverse", () => {
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [
+    fonteLetta("La Cipolla Bianca di Castrovillari è coltivata qui. Il Comune riconosce molti prodotti come De.Co.")
+  ]);
+  assert.equal(sintesi.decoComunale, null);
+});
+
+test("De.Co.: non usa snippet di fonti non lette", () => {
+  const fonte = {
+    ...fonteLetta("La Cipolla Bianca di Castrovillari è riconosciuta come De.Co. dal Comune di Castrovillari."),
+    metodoLettura: "snippet",
+  };
+  const sintesi = sintetizzaFontiWeb(cipollaCastrovillari(), [fonte]);
+  assert.equal(sintesi.decoComunale, null);
+});
+
 test("DOP esplicita nella fonte: riscontro sulla denominazione DOP", () => {
   const sintesi = sintetizzaFontiWeb(
     riconoscimento({
