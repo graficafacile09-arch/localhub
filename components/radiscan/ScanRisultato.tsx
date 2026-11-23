@@ -966,13 +966,16 @@ export default function ScanRisultato({
     !denominazioneUeRegistrata &&
     schemaUeIndicato &&
     esito.web?.sintesi?.denominazione.stato === "menzionata";
+  const riscontroDeCo =
+    !denominazioneUeRegistrata &&
+    esito.web?.sintesi?.decoComunale?.stato === "menzionata";
   const identificazioneCompletata =
     esito.livello === "non_verificato" &&
     typeof riconoscimento.prodotto === "string" &&
     riconoscimento.prodotto.trim().length > 0;
   const gruppo = denominazioneUeRegistrata
     ? "verificato"
-    : riscontroOnlineDop
+    : riscontroOnlineDop || riscontroDeCo
       ? "non_documentato"
       : gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
@@ -982,6 +985,12 @@ export default function ScanRisultato({
         descrizione:
           "La corrispondenza esatta risulta registrata in eAmbrosia, il registro ufficiale dell'Unione europea. La documentazione accessoria può essere incompleta: il riconoscimento della denominazione non autentica la singola confezione, il lotto o il produttore.",
       }
+    : riscontroDeCo
+      ? {
+          titolo: `${riconoscimento.prodotto} — riconoscimento De.Co. documentato`,
+          descrizione:
+            "Le fonti lette documentano il riconoscimento comunale De.Co. per questo prodotto e territorio. La De.Co. non è una DOP, IGP o STG e non certifica la singola confezione, il lotto o il produttore.",
+        }
     : riscontroOnlineDop
       ? {
           titolo: "DOP/IGP con riscontri online",
