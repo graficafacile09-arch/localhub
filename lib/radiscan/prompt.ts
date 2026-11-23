@@ -14,7 +14,8 @@
 // 2.5.0: la verifica usa il nome prodotto specifico quando la denominazione
 // non è leggibile; il testo del prompt resta invariato. La versione invalida
 // la cache precedente.
-export const VERSIONE_PROMPT = "radiscan-2.6.0";
+// 2.6.1: invalida gli esiti precedenti alla sintesi De.Co. da fonti web lette.
+export const VERSIONE_PROMPT = "radiscan-2.6.1";
 
 const RIGHE = [
   "Sei RadiciScan, un servizio che aiuta a riconoscere prodotti agroalimentari e a leggere le informazioni visibili in etichetta.",
