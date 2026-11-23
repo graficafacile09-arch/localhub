@@ -1,12 +1,12 @@
 /**
  * Pino Core v2 — AI structured request planner.
  *
- * Experimental only: never imported by the production assistant. Gemini turns
+ * Experimental only: never imported by the production assistant. Groq turns
  * natural, misspelled or colloquial requests into a typed search plan. The
  * deterministic planner remains the safe fallback and the source of truth for
  * mechanically detectable constraints (prices, open-now and exclusions).
  */
-import { callGeminiText } from "../../ai/gemini-text.ts";
+import { callGroqText } from "../../ai/groq.ts";
 import {
   planPinoCoreRequest,
   type PinoCorePlan,
@@ -365,7 +365,7 @@ export async function planPinoCoreRequestWithAI(
   try {
     raw = options.plannerCall
       ? await options.plannerCall(prompt)
-      : await callGeminiText({
+      : await callGroqText({
           systemPrompt: SYSTEM_PROMPT,
           userPrompt: prompt,
           json: true,
@@ -382,7 +382,7 @@ export async function planPinoCoreRequestWithAI(
       emetti("timeout", {
         attempted: true,
         durationMs,
-        reason: `gemini_timeout: ${(errore as Error | null)?.message ?? "aborted"}`,
+        reason: `groq_timeout: ${(errore as Error | null)?.message ?? "aborted"}`,
       });
     } else {
       const httpStatus = statoHttpErrore(errore);
@@ -390,7 +390,7 @@ export async function planPinoCoreRequestWithAI(
         attempted: true,
         durationMs,
         httpStatus,
-        reason: `gemini_provider_error: ${(errore as Error | null)?.message ?? "unknown"}`,
+        reason: `groq_provider_error: ${(errore as Error | null)?.message ?? "unknown"}`,
       });
     }
     return deterministic;
