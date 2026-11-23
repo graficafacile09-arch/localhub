@@ -103,13 +103,16 @@ async function completaGroq(
       model,
       messages,
       temperature: options.temperature ?? 0.2,
-      max_tokens: Math.max(options.maxTokens ?? 0, MAX_TOKENS_MINIMO),
+      max_completion_tokens: Math.max(options.maxTokens ?? 0, MAX_TOKENS_MINIMO),
       stream: false,
     };
     if (options.json) body.response_format = { type: "json_object" };
+    if (options.json || options.tools?.length) body.reasoning_format = "hidden";
     if (options.tools?.length) {
       body.tools = options.tools;
       body.tool_choice = "auto";
+      // Il modello GPT-OSS 120B non supporta tool call parallele.
+      body.parallel_tool_calls = false;
     }
 
     const response = await fetch(ENDPOINT, {
