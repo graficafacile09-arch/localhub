@@ -4,14 +4,14 @@ import { join } from "node:path";
 
 import {
   fallbackSelezioneVuotaPino,
-  messaggioIndisponibilitaGemini,
+  messaggioIndisponibilitaAI,
   selezioneUtilizzabilePino,
   validaInvocazioniPino,
 } from "../lib/assistente/index";
 
 // ─── M5-A: selezione vuota ─────────────────────────────────────────────────
 //
-// Una risposta Gemini formalmente valida ma senza tool e senza `directReply`
+// Una risposta del provider AI formalmente valida ma senza tool e senza `directReply`
 // non è una "nessuna ricerca voluta": è una selezione fallita. Deve valere il
 // recupero già esistente (`searchAll`) e, se anche quello è vuoto, il messaggio
 // S19 — mai un saluto generico al posto di una ricerca.
@@ -158,8 +158,8 @@ test.describe("M5-A — recupero S19 quando il fallback non trova nulla", () => 
 
 test.describe("M5-A — coerenza italiano/inglese", () => {
   test("il messaggio S19 esiste in entrambe le lingue e non dichiara un catalogo vuoto", () => {
-    const it = messaggioIndisponibilitaGemini("it");
-    const en = messaggioIndisponibilitaGemini("en");
+    const it = messaggioIndisponibilitaAI("it");
+    const en = messaggioIndisponibilitaAI("en");
 
     expect(it).not.toBe(en);
     expect(it).toMatch(/catalogo/i);
