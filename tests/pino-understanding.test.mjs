@@ -536,6 +536,6 @@ test("professional searches use a deterministic business-only fast path", () => 
   assert.ok(attractionsStart > fastPathStart);
   const fastPath = assistantSource.slice(fastPathStart, attractionsStart);
   assert.match(fastPath, /await searchStores\(professione, \{ limit: 8 \}\)/);
-  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
+  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGroqText|recuperaMemoria/);
   assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo Radici Calabria/);
 });
