@@ -4182,8 +4182,7 @@ export async function chatConAssistente(
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
             temperature: 0.1,
-            // 4,5s: oltre questa soglia Groq è inutile per questo turno e
-            // il budget residuo va a Groq (6s), restando sotto i 25s.
+            // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
             timeoutMs: 4_500,
           })
         );
