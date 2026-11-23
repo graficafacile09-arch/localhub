@@ -1,5 +1,5 @@
 /**
- * P1.1 — Function Calling nativo Gemini, senza chiamate reali.
+ * P1.1 — Function Calling nativo Groq, senza chiamate reali.
  *
  * Il provider è sempre mockato. Questi test verificano contratto,
  * dichiarazioni, parsing, validazione, budget, directReply e fallback.
@@ -215,7 +215,7 @@ test("un timeout o errore provider produce fallback senza esecuzione", async () 
   const esito = await selezionaStrumentiNativoPino(
     { ...BASE, limiti: null },
     async () => {
-      const errore = new Error("Timeout chiamata Gemini Function Calling");
+      const errore = new Error("Timeout chiamata Groq Function Calling");
       errore.name = "TimeoutError";
       throw errore;
     }
