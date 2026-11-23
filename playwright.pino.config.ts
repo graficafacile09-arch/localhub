@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Le suite Pino sono OFFLINE per contratto (docs/pino-relazione-finale-20261105.md):
-// senza GEMINI_API_KEY il planner usa il percorso locale deterministico, che è
+// senza GROQ_API_KEY il planner usa il percorso locale deterministico, che è
 // esattamente ciò che queste asserzioni verificano. In CI (Vercel) la chiave è
-// presente nell'ambiente e il planner AI live rispondeva in modo diverso,
-// facendo fallire l'intera build: qui la rimuoviamo prima di avviare i worker.
+// presente nell'ambiente e il planner AI live risponderebbe in modo diverso,
+// facendo fallire l'intera build: qui rimuoviamo le chiavi AI prima dei worker.
+delete process.env.GROQ_API_KEY;
 delete process.env.GEMINI_API_KEY;
 
 /**
