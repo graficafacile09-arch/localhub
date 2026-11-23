@@ -445,6 +445,8 @@ export interface SintesiVerificaWeb {
 }
 
 export interface SintesiFontiWeb {
+  /** Riconoscimento De.Co. comunale documentato da una fonte letta, se presente. */
+  decoComunale: SintesiVerificaWeb | null;
   /** A. Denominazione DOP/IGP registrata. */
   denominazione: SintesiVerificaWeb;
   /** B. Produttore collegato alla denominazione. */
