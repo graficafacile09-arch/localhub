@@ -4,6 +4,7 @@ import { erroreInput, erroreSchema } from "./errori";
 import type { FonteUfficiale } from "./fonti";
 import { componiEsito } from "./livelli";
 import { leggiEtichettaOcr, type MotoreOcr } from "./ocr";
+import type { EventoProgressivo } from "./progressivo";
 import { buildPromptRadiciScan, VERSIONE_PROMPT } from "./prompt";
 import { verificaProduttore } from "./produttore";
 import { ricercaNonDisponibile, ricercaNonEseguita } from "./ricerca";
@@ -85,6 +86,11 @@ export interface DipendenzeAnalisi {
   adesso?: Date;
   /** Interruzione richiesta dalla route (timeout complessivo). */
   signal?: AbortSignal;
+  /**
+   * Eventi progressivi: chiamata a ogni risultato realmente disponibile.
+   * Non altera la pipeline né l'esito; se assente il comportamento è identico.
+   */
+  onEvento?: (evento: EventoProgressivo) => void;
 }
 
 export interface RisultatoAnalisi {
@@ -135,6 +141,16 @@ export async function analizzaProdotto(
   }
 
   const riconoscimento = schema.valore.riconoscimento;
+  // Primo dato reale: l'ipotesi del modello. È preliminare per definizione,
+  // perché la verifica documentale non è ancora avvenuta.
+  dipendenze.onEvento?.({
+    evento: "riconoscimento",
+    preliminare: true,
+    riconoscimento,
+    provider: provider.nome,
+    modello: modelloUsato,
+    durataMs: identificazioneMs,
+  });
   const codiceBarre =
     ingresso.codiceBarre?.trim() ||
     (riconoscimento.codiceBarre ?? "").trim() ||
@@ -186,6 +202,26 @@ export async function analizzaProdotto(
         sintesi: null,
       }))
     : Promise.resolve(null);
+
+  // Documentale e web restano in parallelo e vengono emessi appena ciascuno
+  // è disponibile: nessuno dei due aspetta l'altro né il controllo finale.
+  if (dipendenze.onEvento) {
+    const emetti = dipendenze.onEvento;
+    void ricercaPromise.then((esitoRicerca) => {
+      emetti({
+        evento: "documentale",
+        preliminare: true,
+        ricerca: esitoRicerca,
+        durataMs: Date.now() - documentiAvvio,
+      });
+    });
+    void webPromise.then((esitoWeb) => {
+      if (!esitoWeb) return;
+      // La sintesi A-E dipende dalle prove documentali e viene calcolata dopo:
+      // qui si dichiara esplicitamente che non è ancora disponibile.
+      emetti({ evento: "web", preliminare: true, web: { ...esitoWeb, sintesi: null } });
+    });
+  }
 
   const barcodePromise =
     codiceBarre && dipendenze.cercaBarcode

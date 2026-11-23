@@ -17,7 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { EsitoAnalisi } from "@/lib/radiscan/tipi";
-import ScanRisultato from "./ScanRisultato";
+import ScanRisultato, { ScanRisultatoProgressivo } from "./ScanRisultato";
 import StoricoRadiciScan from "./StoricoRadiciScan";
 import {
   LATO_MASSIMO,
@@ -25,11 +25,14 @@ import {
   MAX_IMMAGINE_BYTES,
   calcolaLato,
   descriviQuota,
+  STATO_PROGRESSIVO_VUOTO,
   estraiErrore,
   estraiRisposta,
+  leggiEventiProgressivi,
   messaggioErrore,
   validaFileLocale,
   type ErroreApi,
+  type StatoProgressivo,
 } from "./logica";
 
 type Fase = "inizio" | "fotocamera" | "anteprima" | "analisi" | "esito" | "errore";
@@ -216,6 +219,11 @@ export default function RadiciScanStudio() {
   const [avvioFotocamera, setAvvioFotocamera] = useState(false);
   const [erroreFotocamera, setErroreFotocamera] = useState<string | null>(null);
   const [scattoDaFotocamera, setScattoDaFotocamera] = useState(false);
+  // Dati parziali già leggibili, tenuti separati dall'esito definitivo.
+  const [progressivo, setProgressivo] = useState<StatoProgressivo>(
+    STATO_PROGRESSIVO_VUOTO
+  );
+  const richiestaRef = useRef<AbortController | null>(null);
 
   const inputGalleria = useRef<HTMLInputElement | null>(null);
   const inputFotocamera = useRef<HTMLInputElement | null>(null);
@@ -239,6 +247,9 @@ export default function RadiciScanStudio() {
   useEffect(() => {
     return () => {
       fermaFotocamera();
+      // Uscendo dalla pagina la richiesta viene annullata: il server chiude
+      // lo stream e interrompe le operazioni ancora pendenti.
+      richiestaRef.current?.abort();
       if (anteprimaRef.current) {
         URL.revokeObjectURL(anteprimaRef.current);
         anteprimaRef.current = null;
@@ -452,6 +463,7 @@ export default function RadiciScanStudio() {
     setErrore(null);
     setErroreStato(0);
     setErroreLocale(null);
+    setProgressivo(STATO_PROGRESSIVO_VUOTO);
 
     const corpo = new FormData();
     corpo.append("immagine", file);
@@ -459,16 +471,71 @@ export default function RadiciScanStudio() {
     const codiceBarre = await rilevaCodiceBarre(file);
     if (codiceBarre) corpo.append("codiceBarre", codiceBarre);
 
+    // Un solo invio: se la pagina viene lasciata, la richiesta si annulla e il
+    // server interrompe le operazioni ancora pendenti.
+    const annulla = new AbortController();
+    richiestaRef.current = annulla;
+
     try {
       // Il Content-Type non viene impostato a mano: il browser aggiunge il
-      // boundary corretto per il multipart.
+      // boundary corretto per il multipart. Con Accept NDJSON il server manda
+      // un evento per riga appena il dato è realmente disponibile.
       const risposta = await fetch("/api/radiscan/analisi", {
         method: "POST",
         body: corpo,
         credentials: "same-origin",
-        headers: { Accept: "application/json" },
+        signal: annulla.signal,
+        headers: { Accept: "application/x-ndjson" },
       });
 
+      const tipoContenuto = (risposta.headers.get("content-type") ?? "").toLowerCase();
+
+      if (risposta.body && tipoContenuto.includes("application/x-ndjson")) {
+        let concluso = false;
+
+        for await (const evento of leggiEventiProgressivi(risposta.body)) {
+          if (evento.evento === "riconoscimento") {
+            setProgressivo((precedente) => ({
+              ...precedente,
+              riconoscimento: evento.riconoscimento,
+            }));
+          } else if (evento.evento === "documentale") {
+            setProgressivo((precedente) => ({
+              ...precedente,
+              documentale: evento.ricerca,
+            }));
+          } else if (evento.evento === "web") {
+            setProgressivo((precedente) => ({ ...precedente, web: evento.web }));
+          } else if (evento.evento === "esito") {
+            // Solo l'esito definitivo sostituisce la schermata: i parziali non
+            // vengono mai promossi a livello.
+            setEsito(evento.esito);
+            setDaCache(evento.cache);
+            setFase("esito");
+            window.dispatchEvent(new Event("radiscan:aggiorna-storico"));
+            concluso = true;
+          } else if (evento.evento === "errore") {
+            setErrore(evento.errore);
+            setErroreStato(evento.stato);
+            setFase("errore");
+            concluso = true;
+          }
+        }
+
+        if (!concluso) {
+          setErrore({
+            codice: "STREAM_INTERROTTO",
+            messaggio:
+              "Il collegamento si è interrotto prima dell'esito definitivo. I dati parziali restano quelli letti finora: riprova l'analisi.",
+          });
+          setErroreStato(0);
+          setFase("errore");
+        }
+        return;
+      }
+
+      // Risposta JSON: errore precedente all'analisi (quota, immagine,
+      // registro) oppure client che non ha chiesto lo stream.
       const dati: unknown = await risposta.json().catch(() => null);
 
       if (risposta.ok) {
@@ -502,12 +569,16 @@ export default function RadiciScanStudio() {
       setErroreStato(risposta.status);
       setFase("errore");
     } catch {
+      // Annullamento volontario (pagina lasciata): nessun errore da mostrare.
+      if (annulla.signal.aborted) return;
       setErrore({
         codice: "RETE",
         messaggio: "Connessione non disponibile.",
       });
       setErroreStato(0);
       setFase("errore");
+    } finally {
+      if (richiestaRef.current === annulla) richiestaRef.current = null;
     }
   }
 
@@ -531,6 +602,7 @@ export default function RadiciScanStudio() {
     setErrore(null);
     setErroreStato(0);
     setErroreLocale(null);
+    setProgressivo(STATO_PROGRESSIVO_VUOTO);
     setTrascinando(false);
     setFase("inizio");
 
@@ -779,20 +851,15 @@ export default function RadiciScanStudio() {
       ) : null}
 
       {fase === "analisi" ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mt-4 flex items-center gap-3 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-4"
-        >
-          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#24462f]" aria-hidden />
-          <div>
-            <p className="text-sm font-bold text-[#1b3624]">Analisi in corso</p>
-            <p className="text-xs leading-5 text-[#57534e]">
-              Sto leggendo l&apos;etichetta e confrontando la denominazione con le
-              fonti ufficiali.
-            </p>
-          </div>
-        </div>
+        <ScanRisultatoProgressivo stato={progressivo} inCorso />
+      ) : null}
+
+      {fase === "errore" && errore ? (
+        // Se lo stream si è rotto dopo un parziale, i dati già letti restano
+        // visibili e distinti dall'errore.
+        progressivo.riconoscimento || progressivo.documentale || progressivo.web ? (
+          <ScanRisultatoProgressivo stato={progressivo} inCorso={false} />
+        ) : null
       ) : null}
 
       {fase === "errore" && errore ? (

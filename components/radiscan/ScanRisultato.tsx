@@ -9,6 +9,7 @@ import {
   Globe,
   Info,
   Landmark,
+  Loader2,
   RotateCcw,
   Search,
   type LucideIcon,
@@ -27,6 +28,7 @@ import {
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
+  type StatoProgressivo,
 } from "./logica";
 
 const STILE: Record<
@@ -1178,5 +1180,172 @@ export default function ScanRisultato({
         </button>
       </div>
     </section>
+  );
+}
+
+/**
+ * Risultati parziali mentre l'analisi prosegue.
+ *
+ * Mostra soltanto dati già ricevuti dal server e li etichetta come
+ * preliminari: nessuna percentuale, nessun tempo stimato, nessun livello
+ * definitivo prima che la verifica sia conclusa.
+ */
+export function ScanRisultatoProgressivo({
+  stato,
+  inCorso,
+}: {
+  stato: StatoProgressivo;
+  inCorso: boolean;
+}) {
+  const { riconoscimento, documentale, web } = stato;
+  const prove = Array.isArray(documentale?.prove) ? documentale.prove : [];
+  const documenti: DocumentoLetto[] = Array.isArray(documentale?.lettura?.documenti)
+    ? documentale?.lettura?.documenti ?? []
+    : [];
+  const fonti = Array.isArray(web?.fonti) ? web.fonti : [];
+  const nessunDato = !riconoscimento && !documentale && !web;
+
+  return (
+    <div className="mt-4 space-y-3" aria-live="polite">
+      <div className="flex items-start gap-3 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-4">
+        {inCorso ? (
+          <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-[#24462f]" aria-hidden />
+        ) : (
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#7a5c1e]" aria-hidden />
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[#1b3624]">
+            {inCorso ? "Analisi in corso" : "Dati parziali già letti"}
+          </p>
+          <p className="text-xs leading-5 text-[#57534e]">
+            {!inCorso
+              ? "La verifica non è arrivata all'esito definitivo: questi dati non sono un esito."
+              : nessunDato
+                ? "Sto leggendo l'etichetta. I dati compaiono appena disponibili."
+                : "I dati qui sotto sono già letti ma non ancora verificati: puoi leggerli mentre il controllo continua."}
+          </p>
+        </div>
+      </div>
+
+      {riconoscimento ? (
+        <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-black text-[#1b3624]">Prodotto riconosciuto</p>
+            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
+              preliminare
+            </span>
+          </div>
+          <p className="mt-2 text-sm font-bold leading-6 text-[#1b3624] break-words">
+            {riconoscimento.prodotto || "Non leggibile"}
+          </p>
+          <dl className="mt-2 grid gap-x-4 gap-y-1 text-xs leading-5 text-[#57534e] sm:grid-cols-2">
+            {riconoscimento.produttore ? (
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#1b3624]">Produttore</dt>
+                <dd className="break-words">{riconoscimento.produttore}</dd>
+              </div>
+            ) : null}
+            {riconoscimento.denominazioneProposta ? (
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#1b3624]">Denominazione letta</dt>
+                <dd className="break-words">{riconoscimento.denominazioneProposta}</dd>
+              </div>
+            ) : null}
+            {riconoscimento.categoria ? (
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#1b3624]">Categoria</dt>
+                <dd className="break-words">{riconoscimento.categoria}</dd>
+              </div>
+            ) : null}
+            {typeof riconoscimento.confidenza === "number" ? (
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#1b3624]">Confidenza del modello</dt>
+                <dd>{riconoscimento.confidenza}%</dd>
+              </div>
+            ) : null}
+          </dl>
+        </div>
+      ) : null}
+
+      {documentale ? (
+        <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-black text-[#1b3624]">Verifica documentale</p>
+            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
+              preliminare
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[#57534e]">
+            {documentale.stato === "ok"
+              ? `${prove.length} riscontro/i nel registro ufficiale, ${documenti.length} documento/i letto/i.`
+              : documentale.messaggio ??
+                "La ricerca documentale non ha restituito un esito."}
+          </p>
+
+          {prove.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-[#57534e]">
+              {prove.slice(0, 3).map((prova) => (
+                <li key={prova.id} className="min-w-0 break-words">
+                  <span className="font-semibold text-[#1b3624]">{prova.denominazione}</span>
+                  {prova.ente ? ` — ${prova.ente}` : ""}
+                </li>
+              ))}
+              {prove.length > 3 ? (
+                <li className="text-[#7a5c1e]">e altre {prove.length - 3} prove.</li>
+              ) : null}
+            </ul>
+          ) : null}
+
+          {documenti.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-[#57534e]">
+              {documenti.slice(0, 3).map((documento) => (
+                <li key={documento.id} className="flex min-w-0 items-start gap-1">
+                  <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#24462f]" aria-hidden />
+                  <span className="break-words">{documento.titolo}</span>
+                </li>
+              ))}
+              {documenti.length > 3 ? (
+                <li className="text-[#7a5c1e]">e altri {documenti.length - 3} documenti.</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      {web ? (
+        <div className="rounded-xl border border-[#e8dfc9] bg-white p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-black text-[#1b3624]">Fonti web</p>
+            <span className="rounded-full bg-[#fbf6e8] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#7a5c1e]">
+              preliminare
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[#57534e]">
+            {web.stato === "ok"
+              ? `${fonti.length} fonte/i recuperata/e${web.motore ? ` con ${web.motore}` : ""}.`
+              : web.messaggio ?? "La ricerca web non ha restituito un esito."}
+          </p>
+          {fonti.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-[#57534e]">
+              {fonti.slice(0, 3).map((fonte) => (
+                <li key={fonte.id} className="min-w-0 break-words">
+                  <span className="font-semibold text-[#1b3624]">{fonte.titolo}</span>
+                  {fonte.dominio ? ` — ${fonte.dominio}` : ""}
+                </li>
+              ))}
+              {fonti.length > 3 ? (
+                <li className="text-[#7a5c1e]">e altre {fonti.length - 3} fonti.</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="text-xs leading-5 text-[#7a5c1e]">
+        {inCorso
+          ? "Il livello definitivo arriva solo alla fine delle verifiche."
+          : "Analisi interrotta: i dati sopra restano quelli letti fino a quel momento."}
+      </p>
+    </div>
   );
 }
