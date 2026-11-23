@@ -7,7 +7,7 @@ import { isBroadAttractionsRequest, isExplicitFoodProductRequest } from "../lib/
 /**
  * Read-only adapter over production's existing deterministic routing gates.
  * It deliberately does NOT pretend to execute the full production pipeline:
- * semantic Gemini planning, conversation state and retrieval are not invoked.
+ * semantic Groq planning, conversation state and retrieval are not invoked.
  */
 function classifyExistingDeterministicGates(text) {
   const local = pianoIntentoLocale(text);
@@ -43,7 +43,7 @@ test("Existing Pino deterministic gates — read-only benchmark on the same 165 
     correctOfAllCases: { correct: correct.length, total: rows.length, percent: Number((correct.length / rows.length * 100).toFixed(1)) },
     deferredByGroup: Object.fromEntries(Object.entries(deferredByGroup).map(([key, values]) => [key, values.length])),
     mismatches: errors,
-    scope: "Pure production routing helpers only; Gemini semantic planner, intent layer, conversation orchestration and catalog retrieval are intentionally not simulated.",
+    scope: "Pure production routing helpers only; Groq semantic planner, intent layer, conversation orchestration and catalog retrieval are intentionally not simulated.",
   }, null, 2));
   assert.equal(rows.length, 165);
 });
