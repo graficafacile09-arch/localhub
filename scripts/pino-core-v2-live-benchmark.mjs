@@ -6,7 +6,7 @@ import { planPinoCoreRequestWithAI } from "../lib/assistente/core-v2/ai-request-
 if (process.env.PINO_RUN_LIVE_BENCHMARK !== "1") {
   throw new Error("Live AI benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
 }
-if (!process.env.GROQ_API_KEY) {
+if (!process.env.GROQ_API_KEY?.trim()) {
   throw new Error("GROQ_API_KEY is missing; no live calls were made.");
 }
 
