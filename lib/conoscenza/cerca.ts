@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
-import { TERRITORI } from "@/lib/territori";
+import { TERRITORI, getTerritorio } from "@/lib/territori";
 import { FILIERE_EDITORIALI } from "@/lib/filiere-editoriali";
 import { FAQ_PINO } from "@/lib/assistente/faq";
 import { ATTRAZIONI_LUOGHI } from "@/lib/attrazioni-data";
@@ -158,6 +158,16 @@ function estrattoRicco(doc: DocumentoConoscenza, termini: string[], massimo = 14
   return scelte.join(" ").slice(0, massimo).trimEnd();
 }
 
+/**
+ * Comuni collegati a un parco o a un'area: quando la domanda riguarda il parco,
+ * i testi dei comuni (e i loro prodotti certificati) entrano tra le fonti.
+ */
+const COMUNI_PER_AREA: Record<string, string[]> = {
+  pollino: ["rotonda", "castrovillari", "morano-calabro", "mormanno"],
+  sila: [],
+  aspromonte: [],
+};
+
 /** I testi editoriali compilati nel repository. Costruiti una volta per processo. */
 let indiceStatico: DocumentoConoscenza[] | null = null;
 
@@ -167,6 +177,15 @@ function documentiStatici(): DocumentoConoscenza[] {
 
   // Parchi, aree e comuni: sommario, racconto integrale e riconoscimenti.
   for (const t of TERRITORI) {
+    // Per un parco o un'area con comuni collegati, i prodotti certificati del
+    // parco e dei suoi comuni entrano nello stesso documento del parco.
+    const comuni = COMUNI_PER_AREA[t.slug] ?? [];
+    const prodottiCertificati = [t.slug, ...comuni].flatMap((slug) => {
+      const sorgente = getTerritorio(slug);
+      return (sorgente?.prodotti ?? []).map(
+        (p) => `${p.slug} (${p.riconoscimento}) — comune: ${sorgente?.nome ?? slug}`
+      );
+    });
     documenti.push({
       chiave: `territorio:${t.slug}`,
       sezione: "territorio",
@@ -175,6 +194,9 @@ function documentiStatici(): DocumentoConoscenza[] {
         t.sommario,
         ...(t.racconto ?? []),
         ...t.riconoscimenti.map((r) => `${r.sigla}: ${r.descrizione}`),
+        prodottiCertificati.length
+          ? `Prodotti certificati (DOP, IGP, PAT) del ${t.nome} e dei comuni del parco: ${prodottiCertificati.join("; ")}.`
+          : "",
       ]
         .filter(Boolean)
         .join(" "),
@@ -207,8 +229,8 @@ function documentiStatici(): DocumentoConoscenza[] {
   documenti.push({
     chiave: "filiera:indice",
     sezione: "filiera",
-    titolo: "Le dieci filiere di Radici Calabria",
-    testo: `Radici Calabria raccoglie i prodotti tipici calabresi in dieci filiere agroalimentari: ${FILIERE_EDITORIALI.map(
+    titolo: "Le dieci filiere agroalimentari della Regione Calabria",
+    testo: `Le filiere agroalimentari della Regione Calabria sono dieci: Radici Calabria le valorizza raccogliendo i prodotti tipici calabresi in dieci filiere agroalimentari: ${FILIERE_EDITORIALI.map(
       (f) => `${f.nome} (${f.territorio})`
     ).join("; ")}. Ogni filiera riunisce i prodotti del catalogo che appartengono allo stesso ciclo produttivo e ne racconta territorio, lavorazione e stagionalità.`,
     url: "/filiere",

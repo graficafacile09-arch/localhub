@@ -55,6 +55,24 @@ test.describe("Ricerca unificata sui contenuti del sito", () => {
       expect(fonte.estratto.length).toBeGreaterThan(100);
     }
   });
+
+  test("«Parlami di filiera» presenta le filiere della Regione Calabria, non di Radici Calabria", () => {
+    const testi = cercaConoscenzaLocale("Parlami di filiera", 6)
+      .map((f) => f.estratto)
+      .join("\n");
+    expect(testi).toContain("Regione Calabria");
+    expect(testi).not.toMatch(/filiere di Radici Calabria/i);
+  });
+
+  test("«Quali sono i prodotti DOP del Pollino?» include i prodotti certificati dei comuni del Parco", () => {
+    const fonti = cercaConoscenzaLocale("Quali sono i prodotti DOP del Pollino?", 8);
+    const prodotti = fonti.find((f) => f.chiave === "territorio:pollino");
+    expect(prodotti).toBeDefined();
+    // Fagioli Bianchi di Rotonda DOP e Melanzana Rossa di Rotonda DOP.
+    expect(prodotti!.estratto).toMatch(/fagioli-bianchi/i);
+    expect(prodotti!.estratto).toMatch(/melanzana/i);
+    expect(prodotti!.estratto).toMatch(/DOP/);
+  });
 });
 
 test.describe("Modalità informativa vs attività", () => {
