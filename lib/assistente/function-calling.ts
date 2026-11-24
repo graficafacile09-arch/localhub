@@ -231,6 +231,36 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
     exposed: true,
   },
   {
+    name: "searchTerritorio",
+    description: "Cerca parchi, aree e comuni della Calabria, con i riconoscimenti DOP, IGP e PAT dei loro prodotti.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Parco, comune, area o prodotto riconosciuto da cercare; vuoto per l'elenco."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
+    name: "searchFiliere",
+    description: "Elenca le dieci filiere agroalimentari calabresi della homepage (olivicola, agrumicola, vitivinicola, ittica e altre), filtrabili per nome.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Nome o tema della filiera (es. olio, vino, ittica); vuoto per tutte."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
     name: "searchAll",
     description: "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.",
     parameters: {

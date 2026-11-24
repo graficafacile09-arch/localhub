@@ -240,12 +240,14 @@ test.describe("S1-A — contratto al confine", () => {
       "searchConoscenza",
       "searchContent",
       "searchEvents",
+      "searchFiliere",
       "searchGiftCategories",
       "searchNews",
       "searchOffers",
       "searchPharmacies",
       "searchProducts",
       "searchStores",
+      "searchTerritorio",
     ]);
     expect(nomeStrumentoPinoValido("searchServices")).toBe(false);
     expect(nomeStrumentoPinoValido("searchStores")).toBe(true);

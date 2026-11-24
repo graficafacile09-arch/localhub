@@ -26,10 +26,11 @@ import { chiediAPino } from "./pino-fetch";
 // ─── Suggerimenti iniziali ────────────────────────────────────────────────────
 
 const SUGGESTIONS = [
-  "Cerca una pizzeria vicino al centro",
-  "Ho mal di testa, dove posso trovare una farmacia?",
-  "Negozi di abbigliamento aperti oggi",
-  "Ristorante per una cena romantica",
+  "Esplora le filiere calabresi",
+  "Cerca un prodotto DOP o IGP",
+  "Scopri i parchi della Calabria",
+  "Ultime notizie sulle filiere",
+  "Produttori e eccellenze del territorio",
 ];
 
 // ─── ID univoci per i messaggi ────────────────────────────────────────────────

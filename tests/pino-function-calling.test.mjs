@@ -33,8 +33,8 @@ const run = (calls, text = "", extra = {}) =>
   );
 
 test("dichiara tutti gli strumenti esposti e lascia il regalo interno", () => {
-  assert.equal(TOOL_DEFINITIONS.length, 12);
-  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 11);
+  assert.equal(TOOL_DEFINITIONS.length, 14);
+  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 13);
 
   const dichiarazioni = buildNativeToolDeclarations();
   const nomi = dichiarazioni.map((d) => d.name).sort();
@@ -45,11 +45,13 @@ test("dichiara tutti gli strumenti esposti e lascia il regalo interno", () => {
     "searchConoscenza",
     "searchContent",
     "searchEvents",
+    "searchFiliere",
     "searchNews",
     "searchOffers",
     "searchPharmacies",
     "searchProducts",
     "searchStores",
+    "searchTerritorio",
   ]);
   assert.ok(!nomi.includes("searchGiftCategories"));
 

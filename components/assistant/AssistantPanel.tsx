@@ -14,10 +14,11 @@ import {
 import { chiediAPino } from "./pino-fetch";
 
 const SUGGESTIONS = [
-  "Pizzeria vicino al centro",
-  "Farmacia aperta adesso",
-  "Divano grigio per il salotto",
-  "Parrucchiere uomo Castrovillari",
+  "Esplora le filiere calabresi",
+  "Cerca un prodotto DOP o IGP",
+  "Scopri i parchi della Calabria",
+  "Ultime notizie sulle filiere",
+  "Produttori e eccellenze del territorio",
 ];
 
 let _idCounter = 0;
