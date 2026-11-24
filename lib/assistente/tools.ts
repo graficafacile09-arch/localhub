@@ -28,6 +28,8 @@ import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { getNotiziePubbliche, type NotiziaPubblica } from "@/lib/notizie-pubbliche";
 import { cercaContenutiPubblici } from "@/lib/contenuti-pubblici";
+import { TERRITORI_ORDINATI } from "@/lib/territori";
+import { ORDINE_FILIERE } from "@/lib/filiere-prodotti";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getFarmacieTurnoCastrovillari, inTurnoFarmacia, type FarmaciaTurno } from "@/lib/farmacie-turno";
 import {
@@ -161,6 +163,20 @@ export type NotiziaAssistente = {
   url: string;
 };
 
+export type FiliereAssistente = {
+  nome: string;
+  url: string;
+};
+
+export type TerritorioAssistente = {
+  slug: string;
+  nome: string;
+  gruppo: string;
+  sommario: string;
+  riconoscimenti: string[];
+  url: string;
+};
+
 export type ContenutoAssistente = {
   id: string;
   titolo: string;
@@ -242,6 +258,8 @@ export type RisultatoRicercaCompleta = {
   eventi: EventoAssistente[];
   notizie: NotiziaAssistente[];
   contenuti: ContenutoAssistente[];
+  territori?: TerritorioAssistente[];
+  filiere?: FiliereAssistente[];
   categorie: { nome: string; count: number }[];
   meteo: MeteoAssistente | null;
   farmacie: FarmaciaAssistente[];
@@ -268,6 +286,8 @@ export type StrumentoPino =
   | "searchEvents"
   | "searchNews"
   | "searchContent"
+  | "searchTerritorio"
+  | "searchFiliere"
   | "searchAll"
   | "getCategories"
   | "getWeather"
@@ -3515,6 +3535,40 @@ export async function searchContent(
     data: c.pubblicato_il ?? c.created_at,
     url: `/contenuti/${c.slug}`,
   }));
+}
+
+/**
+ * Parchi, aree e comuni del territorio, con i riconoscimenti DOP/IGP/PAT dei
+ * prodotti. Legge solo i dati editoriali di `lib/territori.ts`: nessuna query.
+ */
+export function searchTerritorio(query?: string, limit = 6): TerritorioAssistente[] {
+  const q = queryEditorialePino(query);
+  const corrispondenti = TERRITORI_ORDINATI.filter((t) =>
+    !q ||
+    testoContieneParolePino(
+      `${t.nome} ${t.gruppo} ${t.sommario} ${t.racconto.join(" ")} ${t.riconoscimenti
+        .map((r) => `${r.sigla} ${r.descrizione}`)
+        .join(" ")}`,
+      q
+    )
+  );
+
+  return corrispondenti.slice(0, limita(limit, 6, 8)).map((t) => ({
+    slug: t.slug,
+    nome: t.nome,
+    gruppo: t.gruppo,
+    sommario: t.sommario,
+    riconoscimenti: t.riconoscimenti.map((r) => `${r.sigla}: ${r.descrizione}`),
+    url: `/territorio/${t.slug}`,
+  }));
+}
+
+/** Le dieci filiere della homepage, nell'ordine della vetrina, filtrabili per nome. */
+export function searchFiliere(query?: string, limit = 10): FiliereAssistente[] {
+  const q = queryEditorialePino(query);
+  return ORDINE_FILIERE.filter((nome) => !q || testoContieneParolePino(nome, q))
+    .slice(0, limita(limit, 10, 10))
+    .map((nome) => ({ nome, url: "/filiere" }));
 }
 
 export async function searchOffers(

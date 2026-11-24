@@ -383,12 +383,14 @@ test.describe("S1-A — contratti per strumento", () => {
       "searchAll",
       "searchContent",
       "searchEvents",
+      "searchFiliere",
       "searchGiftCategories",
       "searchNews",
       "searchOffers",
       "searchPharmacies",
       "searchProducts",
       "searchStores",
+      "searchTerritorio",
     ]);
     // `searchServices` non esiste nel dispatcher: era un letterale morto.
     expect(Object.keys(CONTRATTI_STRUMENTO)).not.toContain("searchServices");

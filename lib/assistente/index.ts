@@ -68,6 +68,8 @@ import {
   searchEvents,
   searchNews,
   searchContent,
+  searchTerritorio,
+  searchFiliere,
   getCategoriesList,
   searchAll,
   getWeatherCastrovillari,
@@ -230,6 +232,9 @@ export interface RispostaAssistente {
   notizie?: Awaited<ReturnType<typeof searchNews>>;
   /** Contenuti editoriali pubblici restituiti dal tool. */
   contenuti?: Awaited<ReturnType<typeof searchContent>>;
+  /** Parchi e territori con riconoscimenti DOP/IGP/PAT. */
+  territori?: ReturnType<typeof searchTerritorio>;
+  filiere?: ReturnType<typeof searchFiliere>;
   processingMs: number;
   source: "assistente";
   /** Intento riconosciuto da Pino Intent Layer v1 (osservabilità/test). */
@@ -369,6 +374,8 @@ export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchEvents",
   "searchNews",
   "searchContent",
+  "searchTerritorio",
+  "searchFiliere",
   "searchAll",
   "getCategories",
   "getWeather",
@@ -726,6 +733,8 @@ async function eseguiTool(
   eventi: Awaited<ReturnType<typeof searchEvents>>;
   notizie: Awaited<ReturnType<typeof searchNews>>;
   contenuti: Awaited<ReturnType<typeof searchContent>>;
+  territori?: ReturnType<typeof searchTerritorio>;
+  filiere?: ReturnType<typeof searchFiliere>;
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
@@ -794,6 +803,17 @@ async function eseguiTool(
       return {
         ...vuoto,
         contenuti: await searchContent(params?.query?.trim() || fallbackQuery, limit),
+      };
+    case "searchFiliere":
+      return {
+        ...vuoto,
+        filiere: searchFiliere(params?.query?.trim() || fallbackQuery, limit),
+      };
+    case "searchTerritorio":
+      return {
+        ...vuoto,
+        territori: searchTerritorio(params?.query?.trim() || fallbackQuery, limit),
+        filiere: searchFiliere(params?.query?.trim() || fallbackQuery, limit),
       };
     case "searchAll": {
       const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
