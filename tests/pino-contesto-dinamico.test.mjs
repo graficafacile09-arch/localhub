@@ -142,7 +142,7 @@ test("Pino legge i dati della pagina Territorio dalla fonte condivisa", () => {
   assert.ok(blocco);
   assert.match(blocco, /<conoscenza_territorio>/);
   assert.match(blocco, /Pollino/);
-  assert.match(blocco, /Geoparco Mondiale UNESCO/);
+  assert.match(blocco, /192\.565 ettari/);
 });
 
 test("Pino legge il calendario stagionale e cita le fonti", () => {
