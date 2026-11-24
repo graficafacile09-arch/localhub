@@ -31,4 +31,8 @@ create index if not exists pino_conoscenza_stato_idx
 -- Accesso solo lato server (service role); nessuna lettura pubblica diretta.
 alter table public.pino_conoscenza enable row level security;
 
+-- Il codice server usa createAdminSupabaseClient (chiave secret / service_role).
+-- Nessun privilegio concesso ad anon o authenticated.
+grant select, insert, update, delete on public.pino_conoscenza to service_role;
+
 commit;
