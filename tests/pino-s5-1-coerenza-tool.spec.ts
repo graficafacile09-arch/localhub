@@ -237,6 +237,7 @@ test.describe("S1-A — contratto al confine", () => {
       "getCategories",
       "getWeather",
       "searchAll",
+      "searchConoscenza",
       "searchContent",
       "searchEvents",
       "searchGiftCategories",
