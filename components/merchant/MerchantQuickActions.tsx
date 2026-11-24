@@ -17,7 +17,7 @@ const azioni = [
   {
     key: "servizi",
     title: "Servizi offerti",
-    description: "I servizi che offri ai clienti.",
+    description: "I servizi che offri ai consumatori.",
     icon: ServiziIcon,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
   },

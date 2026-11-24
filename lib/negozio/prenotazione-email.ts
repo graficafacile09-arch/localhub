@@ -221,7 +221,7 @@ export async function inviaPrenotazioneEmail(
   try {
     const { data, error } = await conTimeout(
       inviatore.send({
-        from: process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>",
+        from: process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>",
         to: destinatario,
         subject: `Nuova prenotazione – ${dati.numero}`,
         html,

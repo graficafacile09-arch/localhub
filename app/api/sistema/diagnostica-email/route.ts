@@ -96,8 +96,8 @@ export async function GET(request: Request) {
       body: JSON.stringify({
         from,
         to: [testEmail],
-        subject: `Test email InCittà — ${new Date().toISOString()}`,
-        html: "<p>Questa è un'email di prova inviata da InCittà per verificare la configurazione Resend.</p>",
+        subject: `Test email Radici Calabria — ${new Date().toISOString()}`,
+        html: "<p>Questa è un'email di prova inviata da Radici Calabria per verificare la configurazione Resend.</p>",
       }),
     });
     return apiOk({

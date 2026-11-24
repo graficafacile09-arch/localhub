@@ -2,12 +2,13 @@ import { performance } from "node:perf_hooks";
 import { pinoBenchmarkCases } from "../tests/fixtures/pino-core-v2-benchmark-cases.mjs";
 import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.ts";
 import { planPinoCoreRequestWithAI } from "../lib/assistente/core-v2/ai-request-planner.ts";
+import { summarizePinoLiveBenchmarkDiagnostics } from "./pino-live-benchmark-metrics.mjs";
 
 if (process.env.PINO_RUN_LIVE_BENCHMARK !== "1") {
-  throw new Error("Live Gemini benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
+  throw new Error("Live AI benchmark is disabled. Set PINO_RUN_LIVE_BENCHMARK=1 to confirm paid/provider calls.");
 }
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY is missing; no live calls were made.");
+if (!process.env.GROQ_API_KEY?.trim()) {
+  throw new Error("GROQ_API_KEY is missing; no live calls were made.");
 }
 
 // Selezione del corpus: senza PINO_BENCHMARK_GROUPS si usano i primi N casi
@@ -48,9 +49,7 @@ if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 
 
 const cases = selectedCases.slice(0, requestedLimit);
 const results = [];
-let aiCalls = 0;
 let fallbacks = 0;
-let aiLatencyTotalMs = 0;
 
 for (const item of cases) {
   const deterministic = planPinoCoreRequest(item.text);
@@ -69,8 +68,7 @@ for (const item of cases) {
     ? diagnostic.outcome === "ai_accepted"
     : (typeof actual.reason === "string" && actual.reason.startsWith("ai:"));
   if (usedAI) {
-    aiCalls += 1;
-    aiLatencyTotalMs += elapsedMs;
+
   } else if (shouldCallAI) {
     fallbacks += 1;
   }
@@ -102,59 +100,30 @@ const mismatches = results.filter((r) =>
   r.actual.route !== r.expected.route || r.actual.surface !== r.expected.surface
 );
 
-// Aggregazione diagnostica: si contano solo i casi che hanno davvero tentato
-// la chiamata al provider per la percentuale di accettazione AI.
+// Aggregazione isolata e coperta da test: tentativi reali, non piani accettati.
 const diagnosticRows = results.map((r) => r.diagnostic).filter(Boolean);
-const attempts = diagnosticRows.filter((d) => d.attempted);
-const countOutcome = (outcome) => diagnosticRows.filter((d) => d.outcome === outcome).length;
-const aiAccepted = countOutcome("ai_accepted");
-const skipped = countOutcome("ai_skipped");
-const providerErrors = countOutcome("provider_error");
-const timeouts = countOutcome("timeout");
-const invalidJson = countOutcome("invalid_json");
-const invalidSchema = countOutcome("invalid_schema");
-const fallbackInvalidPlan = countOutcome("fallback_invalid_plan");
-const otherFallbacks = skipped + fallbackInvalidPlan;
-
-const errorDistribution = diagnosticRows.reduce((acc, d) => {
-  acc[d.outcome] = (acc[d.outcome] ?? 0) + 1;
-  return acc;
-}, {});
-const failureReasons = diagnosticRows
-  .filter((d) => d.outcome !== "ai_accepted")
-  .reduce((acc, d) => {
-    const chiave = `${d.outcome}: ${d.reason}`;
-    acc[chiave] = (acc[chiave] ?? 0) + 1;
-    return acc;
-  }, {});
+const metrics = summarizePinoLiveBenchmarkDiagnostics(diagnosticRows);
 
 console.log(JSON.stringify({
-  benchmark: "Pino Core v2 live Gemini planner",
-  model: process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash (fallback)",
+  benchmark: "Pino Core v2 live Groq planner",
+  model: process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b",
   cases: results.length,
   totalRequests: results.length,
-  aiAcceptedPlans: aiAccepted,
+  aiAcceptedPlans: metrics.aiAccepted,
   deterministicFallbacks: fallbacks,
-  providerErrors,
-  timeouts,
-  invalidJsonResponses: invalidJson,
-  invalidSchemaResponses: invalidSchema,
-  otherFallbacks,
-  aiAcceptancePercent: attempts.length
-    ? Number((aiAccepted / attempts.length * 100).toFixed(1))
-    : null,
-  aiCalls,
-  aiCallSuccessRatePercent: aiCalls + fallbacks
-    ? Number((aiCalls / (aiCalls + fallbacks) * 100).toFixed(1))
-    : null,
+  providerErrors: metrics.providerErrors,
+  timeouts: metrics.timeouts,
+  invalidJsonResponses: metrics.invalidJson,
+  invalidSchemaResponses: metrics.invalidSchema,
+  otherFallbacks: metrics.otherFallbacks,
+  aiAcceptancePercent: metrics.aiAcceptancePercent,
+  aiCalls: metrics.aiAttempts,
+  aiCallSuccessRatePercent: metrics.aiAcceptancePercent,
   fallbackCount: fallbacks,
-  averageAiLatencyMs: aiCalls ? Math.round(aiLatencyTotalMs / aiCalls) : null,
-  averageAiAttemptLatencyMs: attempts.length
-    ? Math.round(attempts.reduce((sum, d) => sum + (d.durationMs ?? 0), 0) / attempts.length)
-    : null,
-  aiAttempts: attempts.length,
-  errorDistribution,
-  failureReasons,
+  averageAiLatencyMs: metrics.averageAiLatencyMs,
+  aiAttempts: metrics.aiAttempts,
+  errorDistribution: metrics.errorDistribution,
+  failureReasons: metrics.failureReasons,
   routeAccuracyPercent: Number((routeCorrect / results.length * 100).toFixed(1)),
   surfaceAccuracyPercent: Number((surfaceCorrect / results.length * 100).toFixed(1)),
   combinedAccuracyPercent: Number((combinedCorrect / results.length * 100).toFixed(1)),
@@ -164,6 +133,6 @@ console.log(JSON.stringify({
     "Only route and surface are hand-labelled in the current corpus; query/subject/attributes require additional labels before those metrics can be scored.",
     "aiAcceptancePercent uses only requests that actually attempted a provider call (diagnostic.attempted), so it is not comparable with route/surface accuracy.",
     "Requests handled by deterministic special routes are reported as ai_skipped and never reach the provider by design.",
-    "Gemini token usage and monetary cost are not returned by the current callGeminiText wrapper.",
+    "Groq token usage and monetary cost are not returned by the current callGroqText wrapper.",
   ],
 }, null, 2));

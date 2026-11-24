@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Termini e condizioni",
-  description: "Termini e condizioni della piattaforma InCittà.",
+  description: "Termini e condizioni della piattaforma Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/termini`,
   },
@@ -47,10 +47,10 @@ const sezioni = [
       <>
         <p>
           I presenti Termini e condizioni descrivono le regole generali di utilizzo della
-          piattaforma InCittà e dei relativi strumenti tecnologici.
+          piattaforma Radici Calabria e dei relativi strumenti tecnologici.
         </p>
         <p>
-          L'utilizzo della piattaforma può coinvolgere rapporti distinti tra InCittà,
+          L'utilizzo della piattaforma può coinvolgere rapporti distinti tra Radici Calabria,
           i venditori e i clienti. Le condizioni applicabili alla singola vendita devono
           essere lette insieme alle informazioni e alle condizioni rese disponibili dal
           venditore.
@@ -62,22 +62,22 @@ const sezioni = [
     titolo: "3. Definizioni",
     contenuto: (
       <ul>
-        <li><strong>InCittà</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [Inserisci Nome Azienda/Ditta].</li>
+        <li><strong>Radici Calabria</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [Inserisci Nome Azienda/Ditta].</li>
         <li><strong>Gestore</strong>: [Inserisci Nome Azienda/Ditta], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
         <li><strong>Venditore</strong>: il soggetto che pubblica un'offerta e propone al cliente un prodotto, un servizio o altra prestazione.</li>
         <li><strong>Cliente</strong>: la persona che utilizza la piattaforma e può acquistare dal venditore.</li>
-        <li><strong>Piattaforma</strong>: il sito, il checkout, le aree account e gli strumenti tecnici collegati a InCittà.</li>
+        <li><strong>Piattaforma</strong>: il sito, il checkout, le aree account e gli strumenti tecnici collegati a Radici Calabria.</li>
         <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l'infrastruttura tecnica per il pagamento selezionato.</li>
         <li><strong>Ordine</strong>: la richiesta di acquisto o prenotazione riferita a un'offerta del venditore, secondo il flusso applicabile.</li>
       </ul>
     ),
   },
   {
-    titolo: "4. Cos'è InCittà",
+    titolo: "4. Cos'è Radici Calabria",
     contenuto: (
       <>
         <p>
-          InCittà è una piattaforma digitale orientata alla consultazione di offerte locali e
+          Radici Calabria è una piattaforma digitale orientata alla consultazione di offerte locali e
           alla gestione tecnica di alcune fasi del rapporto tra cliente e venditore.
         </p>
         <p>
@@ -89,11 +89,11 @@ const sezioni = [
     ),
   },
   {
-    titolo: "5. Ruolo di InCittà",
+    titolo: "5. Ruolo di Radici Calabria",
     contenuto: (
       <>
         <p>
-          InCittà mette a disposizione strumenti tecnologici per il funzionamento del
+          Radici Calabria mette a disposizione strumenti tecnologici per il funzionamento del
           marketplace, tra cui pubblicazione e consultazione delle offerte, checkout,
           gestione tecnica degli ordini, comunicazioni operative, strumenti per comunicazioni
           e reclami, sicurezza e supporto tecnico ai flussi di pagamento disponibili.
@@ -113,13 +113,13 @@ const sezioni = [
           intervenire sugli strumenti tecnici quando necessario.
         </p>
         <p>
-          InCittà può inoltre interfacciarsi tecnicamente con provider di pagamento e altri
+          Radici Calabria può inoltre interfacciarsi tecnicamente con provider di pagamento e altri
           fornitori necessari al funzionamento della piattaforma. Le attività tecniche svolte
           dalla piattaforma non modificano, da sole, la natura del rapporto commerciale tra
           Acquirente e Venditore.
         </p>
         <p>
-          Restano fermi gli obblighi eventualmente attribuiti direttamente a InCittà dalla
+          Restano fermi gli obblighi eventualmente attribuiti direttamente a Radici Calabria dalla
           normativa applicabile e i diritti inderogabili riconosciuti all'Acquirente.
         </p>
       </>
@@ -176,7 +176,7 @@ const sezioni = [
           Prezzi, disponibilità, caratteristiche dell'offerta, modalità di esecuzione,
           consegna, ritiro, recesso, resi, garanzia e conformità devono essere valutati in
           relazione al venditore e al prodotto o servizio interessato, fatti salvi gli obblighi
-          eventualmente applicabili a InCittà.
+          eventualmente applicabili a Radici Calabria.
         </p>
       </>
     ),
@@ -217,7 +217,7 @@ const sezioni = [
     titolo: "10. Utilizzo corretto della piattaforma",
     contenuto: (
       <p>
-        L'utente deve utilizzare InCittà in modo lecito, corretto e conforme alla sua
+        L'utente deve utilizzare Radici Calabria in modo lecito, corretto e conforme alla sua
         funzione. Non deve compromettere la sicurezza, aggirare i controlli, utilizzare dati
         altrui senza autorizzazione, introdurre contenuti dannosi o usare la piattaforma per
         attività fraudolente, illecite o non autorizzate.
@@ -234,7 +234,7 @@ const sezioni = [
           dall'utente prima dell'acquisto.
         </p>
         <p>
-          InCittà può adottare controlli tecnici, richiedere aggiornamenti o limitare la
+          Radici Calabria può adottare controlli tecnici, richiedere aggiornamenti o limitare la
           visibilità di contenuti e offerte nei casi previsti dalle regole della piattaforma,
           dagli accordi applicabili o dalla normativa.
         </p>\n        <p>\n          Per i prodotti soggetti a verifica della maggiore età, il Venditore è responsabile della liceità della vendita e dell'esecuzione dei controlli sull'età e sull'identità dell'Acquirente previsti dalla normativa applicabile. La Piattaforma registra, quando richiesto dal checkout, la conferma espressa dell'Acquirente relativa alla maggiore età e segnala al Venditore la necessità dei controlli applicabili. Tale conferma digitale non sostituisce l'esibizione o la verifica del documento di identità richiesta al Venditore dalla legge.\n        </p>
@@ -322,7 +322,7 @@ const sezioni = [
         </p>
         <p>
           La decisione commerciale su annullamenti, resi e rimborsi spetta al soggetto competente
-          nel rapporto tra Acquirente e Venditore. Quando previsto dal workflow, InCittà può
+          nel rapporto tra Acquirente e Venditore. Quando previsto dal workflow, Radici Calabria può
           eseguire tecnicamente un rimborso tramite il provider, registrare l'esito e fornire il
           supporto tecnico necessario, senza trasformare tale esecuzione nella decisione
           commerciale sul rimborso.
@@ -334,7 +334,7 @@ const sezioni = [
     titolo: "14. Comunicazioni relative agli ordini",
     contenuto: (
       <p>
-        InCittà può inviare comunicazioni tecniche relative alla ricezione, allo stato, al
+        Radici Calabria può inviare comunicazioni tecniche relative alla ricezione, allo stato, al
         pagamento, alla consegna, al ritiro o ad altri eventi dell'ordine. Le comunicazioni
         sono inviate anche dal venditore o da un provider coinvolto nel flusso.
         L'indirizzo e-mail o gli altri recapiti forniti devono essere verificati dall'utente.
@@ -424,7 +424,7 @@ const sezioni = [
     titolo: "19. Disponibilità e funzionamento tecnico della piattaforma",
     contenuto: (
       <p>
-        InCittà adotta misure ragionevoli per mantenere disponibili e sicuri i propri servizi,
+        Radici Calabria adotta misure ragionevoli per mantenere disponibili e sicuri i propri servizi,
         e il servizio è soggetto a manutenzioni, aggiornamenti, sospensioni, errori o interruzioni
         dovuti a fattori tecnici o a servizi di terzi. Gli interventi non incidono sui diritti
         inderogabili riconosciuti dalla normativa applicabile.
@@ -435,7 +435,7 @@ const sezioni = [
     titolo: "20. Collegamenti e servizi di terze parti",
     contenuto: (
       <p>
-        La Piattaforma integra e utilizza servizi, contenuti e strumenti informativi forniti da soggetti terzi, inclusi i componenti e i widget informativi resi disponibili all'interno della Piattaforma. I dati, le informazioni, gli aggiornamenti e i risultati visualizzati attraverso tali componenti sono forniti e gestiti dai rispettivi soggetti o servizi di origine. La responsabilità dell'esattezza, completezza, aggiornamento, disponibilità e continuità di tali dati e informazioni è a carico del relativo soggetto o servizio di origine, secondo le proprie condizioni e responsabilità. InCittà non modifica né garantisce autonomamente tali dati e non assume responsabilità per eventuali inesattezze, ritardi, omissioni, indisponibilità o interruzioni imputabili al servizio o al soggetto che li fornisce, fatti salvi gli obblighi inderogabili previsti dalla legge.
+        La Piattaforma integra e utilizza servizi, contenuti e strumenti informativi forniti da soggetti terzi, inclusi i componenti e i widget informativi resi disponibili all'interno della Piattaforma. I dati, le informazioni, gli aggiornamenti e i risultati visualizzati attraverso tali componenti sono forniti e gestiti dai rispettivi soggetti o servizi di origine. La responsabilità dell'esattezza, completezza, aggiornamento, disponibilità e continuità di tali dati e informazioni è a carico del relativo soggetto o servizio di origine, secondo le proprie condizioni e responsabilità. Radici Calabria non modifica né garantisce autonomamente tali dati e non assume responsabilità per eventuali inesattezze, ritardi, omissioni, indisponibilità o interruzioni imputabili al servizio o al soggetto che li fornisce, fatti salvi gli obblighi inderogabili previsti dalla legge.
       </p>
     ),
   },
@@ -444,7 +444,7 @@ const sezioni = [
     contenuto: (
       <p>
         I segni distintivi, il software, la struttura, i contenuti e gli elementi grafici di
-        InCittà sono utilizzabili nei limiti consentiti dalla piattaforma e dalla normativa
+        Radici Calabria sono utilizzabili nei limiti consentiti dalla piattaforma e dalla normativa
         applicabile. Gli utenti e i venditori conservano i diritti di cui dispongono sui propri
         contenuti, concedendo soltanto gli utilizzi tecnici necessari alla pubblicazione e al
         funzionamento dei servizi.
@@ -455,7 +455,7 @@ const sezioni = [
     titolo: "22. Protezione dei dati personali",
     contenuto: (
       <p>
-        Il trattamento dei dati personali è descritto nella Privacy Policy di InCittà.
+        Il trattamento dei dati personali è descritto nella Privacy Policy di Radici Calabria.
         Le informazioni presenti nei presenti Termini non sostituiscono l'informativa privacy
         né eventuali consensi separati richiesti dalla normativa.
       </p>
@@ -538,7 +538,7 @@ export default function TerminiPage() {
               Documentazione della piattaforma
             </p>
             <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
-              Termini e Condizioni della Piattaforma InCittà
+              Termini e Condizioni della Piattaforma Radici Calabria
             </h1>
           </header>
 

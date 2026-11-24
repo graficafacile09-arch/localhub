@@ -319,7 +319,7 @@ export default async function AdminOrdineDettaglioPage({
                 <RigaDettaglio etichetta="Totale ordine" valore={formattaEuro(ordine.totale)} />
                 <RigaDettaglio etichetta="Importo commissione" valore={formattaEuro(ordine.commissioneImporto)} />
                 <div className="mt-2 flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 ring-1 ring-blue-100">
-                  <span className="text-sm font-semibold text-blue-800">Netto venditore</span>
+                  <span className="text-sm font-semibold text-blue-800">Netto impresa</span>
                   <span className="text-sm font-bold text-blue-900">
                     {formattaEuro(ordine.nettoVenditore)}
                   </span>

@@ -121,9 +121,9 @@ export function messaggioCondizioneAlimentarePino(
         : condizione === "intolleranza al lattosio"
           ? "lactose intolerance"
           : "a food allergy or intolerance";
-    return `I can't verify from the InCittà catalogue that a food or a venue is suitable for someone with ${condizioneEn}. I won't show unverified options: check the label or certification, or contact the seller directly.${filtro}`;
+    return `I can't verify from the Radici Calabria catalogue that a food or a venue is suitable for someone with ${condizioneEn}. I won't show unverified options: check the label or certification, or contact the seller directly.${filtro}`;
   }
-  return `Non posso verificare dal catalogo InCittà che un alimento o un locale sia adatto a una persona con ${condizione}. Non ti mostro opzioni non verificate: controlla l'etichetta o la certificazione, oppure contatta direttamente il venditore.${filtro}`;
+  return `Non posso verificare dal catalogo Radici Calabria che un alimento o un locale sia adatto a una persona con ${condizione}. Non ti mostro opzioni non verificate: controlla l'etichetta o la certificazione, oppure contatta direttamente il venditore.${filtro}`;
 }
 
 /**
@@ -136,9 +136,9 @@ export function messaggioCondizioneAlimentarePino(
  */
 export function messaggioRistorazioneSenzaLocaliPino(lingua: LinguaPino): string {
   if (lingua === "en") {
-    return "No restaurants, pizzerias or trattorias are currently listed in the InCittà catalogue. For a quick bite, these food businesses are published — I'm showing them as what they are, not as restaurants:";
+    return "No restaurants, pizzerias or trattorias are currently listed in the Radici Calabria catalogue. For a quick bite, these food businesses are published — I'm showing them as what they are, not as restaurants:";
   }
-  return "Nel catalogo InCittà non risultano ristoranti, pizzerie o trattorie pubblicati. Per mangiare qualcosa al volo ci sono queste attività alimentari: te le mostro per quello che sono, non come ristoranti.";
+  return "Nel catalogo Radici Calabria non risultano ristoranti, pizzerie o trattorie pubblicati. Per mangiare qualcosa al volo ci sono queste attività alimentari: te le mostro per quello che sono, non come ristoranti.";
 }
 
 /**
@@ -152,13 +152,13 @@ export function messaggioBisognoSenzaLocaliPino(
 ): string {
   if (bisogno === "sete") {
     return lingua === "en"
-      ? "No bars, cafés or wine shops are currently listed in the InCittà catalogue. These food shops are published: I can't verify their drinks, so I'm listing them only as reference points:"
-      : "Nel catalogo InCittà non risultano bar, caffetterie o enoteche pubblicati. Ci sono queste attività alimentari: non posso verificare le bevande, quindi te le mostro solo come punti di riferimento.";
+      ? "No bars, cafés or wine shops are currently listed in the Radici Calabria catalogue. These food shops are published: I can't verify their drinks, so I'm listing them only as reference points:"
+      : "Nel catalogo Radici Calabria non risultano bar, caffetterie o enoteche pubblicati. Ci sono queste attività alimentari: non posso verificare le bevande, quindi te le mostro solo come punti di riferimento.";
   }
   if (bisogno === "cibo_pronto") {
     return lingua === "en"
-      ? "No delicatessens or ready-meal shops are currently listed in the InCittà catalogue. These food businesses are published, and I'm showing them for what they are:"
-      : "Nel catalogo InCittà non risultano gastronomie o rosticcerie pubblicate. Ci sono queste attività alimentari: te le mostro per quello che sono.";
+      ? "No delicatessens or ready-meal shops are currently listed in the Radici Calabria catalogue. These food businesses are published, and I'm showing them for what they are:"
+      : "Nel catalogo Radici Calabria non risultano gastronomie o rosticcerie pubblicate. Ci sono queste attività alimentari: te le mostro per quello che sono.";
   }
   return messaggioRistorazioneSenzaLocaliPino(lingua);
 }
@@ -170,13 +170,13 @@ export function messaggioBisognoVuotoPino(
 ): string {
   if (bisogno === "sete") {
     return lingua === "en"
-      ? "No bars, cafés or wine shops are currently listed in the InCittà catalogue, so I can't point you to a verified place to drink. I won't make one up: try again later or ask me about a specific product."
-      : "Nel catalogo InCittà non risultano bar, caffetterie o enoteche pubblicati, quindi non posso indicarti un locale verificato dove bere. Non ne invento: riprova più tardi oppure dimmi un prodotto specifico.";
+      ? "No bars, cafés or wine shops are currently listed in the Radici Calabria catalogue, so I can't point you to a verified place to drink. I won't make one up: try again later or ask me about a specific product."
+      : "Nel catalogo Radici Calabria non risultano bar, caffetterie o enoteche pubblicati, quindi non posso indicarti un locale verificato dove bere. Non ne invento: riprova più tardi oppure dimmi un prodotto specifico.";
   }
   if (bisogno === "cibo_pronto") {
     return lingua === "en"
-      ? "No shops selling ready-to-eat food are currently listed in the InCittà catalogue. I won't make one up: try again later or ask me about a specific food product."
-      : "Nel catalogo InCittà non risultano attività di cibo pronto pubblicate. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico.";
+      ? "No shops selling ready-to-eat food are currently listed in the Radici Calabria catalogue. I won't make one up: try again later or ask me about a specific food product."
+      : "Nel catalogo Radici Calabria non risultano attività di cibo pronto pubblicate. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico.";
   }
   return messaggioRistorazioneVuotaPino(lingua);
 }
@@ -191,13 +191,13 @@ export function messaggioVuotoConCatalogoPino(
 ): string {
   if (categorie.length === 0) {
     return lingua === "en"
-      ? "No businesses matching these criteria are listed in the InCittà catalogue. Try another category or area."
-      : "Non risultano attività con questi criteri nel catalogo InCittà. Prova con un'altra categoria o zona.";
+      ? "No businesses matching these criteria are listed in the Radici Calabria catalogue. Try another category or area."
+      : "Non risultano attività con questi criteri nel catalogo Radici Calabria. Prova con un'altra categoria o zona.";
   }
   const elenco = categorie.map((voce) => `${voce.categoria} (${voce.negozi})`).join(", ");
   return lingua === "en"
-    ? `No businesses matching these criteria are listed in the InCittà catalogue. The published categories are: ${elenco}. Try one of these or tell me what you're looking for.`
-    : `Nel catalogo InCittà non risultano attività con questi criteri. Le categorie pubblicate sono: ${elenco}. Prova con una di queste oppure dimmi cosa cerchi.`;
+    ? `No businesses matching these criteria are listed in the Radici Calabria catalogue. The published categories are: ${elenco}. Try one of these or tell me what you're looking for.`
+    : `Nel catalogo Radici Calabria non risultano attività con questi criteri. Le categorie pubblicate sono: ${elenco}. Prova con una di queste oppure dimmi cosa cerchi.`;
 }
 
 /**
@@ -206,9 +206,9 @@ export function messaggioVuotoConCatalogoPino(
  */
 export function messaggioRistorazioneVuotaPino(lingua: LinguaPino): string {
   if (lingua === "en") {
-    return "No restaurants, pizzerias, bakeries or food shops are currently listed in the InCittà catalogue, so I can't point you to a verified place to eat. I won't make one up: try again later or tell me a specific food product I can look for.";
+    return "No restaurants, pizzerias, bakeries or food shops are currently listed in the Radici Calabria catalogue, so I can't point you to a verified place to eat. I won't make one up: try again later or tell me a specific food product I can look for.";
   }
-  return "Nel catalogo InCittà non risultano al momento ristoranti, pizzerie, panifici o alimentari pubblicati, quindi non posso indicarti un posto verificato dove mangiare. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico che posso cercare.";
+  return "Nel catalogo Radici Calabria non risultano al momento ristoranti, pizzerie, panifici o alimentari pubblicati, quindi non posso indicarti un posto verificato dove mangiare. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico che posso cercare.";
 }
 
 /**
@@ -218,9 +218,9 @@ export function messaggioRistorazioneVuotaPino(lingua: LinguaPino): string {
  */
 export function messaggioNessunaAttivitaApertaPino(lingua: LinguaPino): string {
   if (lingua === "en") {
-    return "No business in the InCittà catalogue is open right now according to its published opening hours. I won't list closed shops as if they were open: try again later or ask me about a specific business.";
+    return "No business in the Radici Calabria catalogue is open right now according to its published opening hours. I won't list closed shops as if they were open: try again later or ask me about a specific business.";
   }
-  return "Secondo gli orari pubblicati, in questo momento non risulta aperta nessuna attività del catalogo InCittà. Non ti elenco negozi chiusi come se fossero aperti: riprova più tardi oppure chiedimi di un'attività specifica.";
+  return "Secondo gli orari pubblicati, in questo momento non risulta aperta nessuna attività del catalogo Radici Calabria. Non ti elenco negozi chiusi come se fossero aperti: riprova più tardi oppure chiedimi di un'attività specifica.";
 }
 
 /**

@@ -1,519 +1,893 @@
-@import "tailwindcss";
+@import "tailwindcss";
+
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * INCITTÀ — DESIGN SYSTEM (unica fonte grafica)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * Principio: BLU = struttura/navigazione, GIALLO = CTA/azione principale,
+ * BIANCO/neutro = superfici di lettura, COLORI SEMANTICI = significato reale
+ * (rosso = pericolo/eliminazione, verde WhatsApp = integrazione terza parte,
+ * verde/ambra = successo/attenzione). I colori semantici NON vengono mai
+ * riassorbiti nella palette di brand.
+ *
+ * Niente gradienti "rilievo", niente strisce arcobaleno, niente pseudo-elementi
+ * di lucentezza: superfici piatte, ombre sottili, radius coerenti.
+ */
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  /* ── Brand · struttura (blu) ─────────────────────────────────────────── */
+  --brand-blue: #2563eb;      /* blue-600 */
+  --brand-blue-dark: #1d4ed8; /* blue-700 */
+  --brand-blue-deep: #1e40af; /* blue-800 */
+  --brand-blue-50: #eff6ff;
+  --brand-blue-100: #dbeafe;
+  --brand-blue-200: #bfdbfe;
+
+  /* ── Brand · accento/CTA (giallo) ────────────────────────────────────── */
+  --brand-yellow: #facc15;        /* yellow-400 */
+  --brand-yellow-hover: #fde047;  /* yellow-300 */
+  --brand-yellow-active: #eab308; /* yellow-500 */
+
+  /* ── Semantico · WhatsApp (SOLO pulsante/collegamento WhatsApp) ───────── */
+  --brand-whatsapp: #25d366;
+  --brand-whatsapp-dark: #1da851;
+
+  /* ── Semantico · pericolo/distruttivo (SOLO azioni realmente pericolose) ─ */
+  --brand-danger: #dc2626;      /* red-600 */
+  --brand-danger-dark: #b91c1c; /* red-700 */
+  --brand-danger-50: #fef2f2;
+  --brand-danger-100: #fee2e2;
+  --brand-danger-200: #fecaca;
+
+  /* ── Brand Radici · declinazione editoriale (mockup header/hero) ──────── */
+  --brand-forest: #24462f;      /* verde bosco — navigazione attiva, titoli */
+  --brand-forest-deep: #1b3624; /* verde bosco scuro — hover */
+  --brand-gold: #d5a83a;        /* oro coordinato al logo — CTA/bordo */
+  --brand-gold-soft: #e0cc9a;   /* oro tenue — bordi delle pillole */
+  --brand-cream: #faf9f5;       /* avorio — sfondo delle pillole */
+
+  /* ── Superfici ────────────────────────────────────────────────────────── */
+  --surface-page: #eef3f8;
+  --surface-card: #ffffff;
+  --border-card: #e2e8f0; /* slate-200 */
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-sm: 0.5rem;   /* badge/icone compatte */
+  --radius-md: 0.75rem;  /* pulsanti, input, select */
+  --radius-lg: 1rem;     /* card, pannelli */
+
+  /* ── Ombre (sottili, mai pesanti) ─────────────────────────────────────── */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-card-hover: 0 10px 30px -18px rgb(37 99 235 / 0.35);
+  --shadow-cta-yellow: 0 4px 14px -4px rgb(202 138 4 / 0.45);
+  --shadow-cta-yellow-hover: 0 8px 22px -6px rgb(202 138 4 / 0.55);
+  --shadow-cta-blue: 0 4px 14px -4px rgb(37 99 235 / 0.4);
+  --shadow-cta-blue-hover: 0 8px 22px -6px rgb(37 99 235 / 0.5);
+  --shadow-cta-danger: 0 4px 14px -4px rgb(220 38 38 / 0.4);
+  --shadow-cta-danger-hover: 0 8px 22px -6px rgb(220 38 38 / 0.5);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair);
+
+  /* Palette editoriale del mockup, esposta come utility Tailwind. */
+  --color-forest: var(--brand-forest);
+  --color-forest-deep: var(--brand-forest-deep);
+  --color-gold: var(--brand-gold);
+  --color-gold-soft: var(--brand-gold-soft);
+  --color-cream: var(--brand-cream);
+
+  /* Token esposti come utility Tailwind (usati nei componenti). */
+  --color-brand: var(--brand-blue);
+  --color-brand-dark: var(--brand-blue-dark);
+  --color-brand-deep: var(--brand-blue-deep);
+  --color-brand-50: var(--brand-blue-50);
+  --color-brand-100: var(--brand-blue-100);
+  --color-accent: var(--brand-yellow);
+  --color-whatsapp: var(--brand-whatsapp);
+  --color-whatsapp-dark: var(--brand-whatsapp-dark);
+  --color-danger: var(--brand-danger);
+  --color-danger-dark: var(--brand-danger-dark);
+  --color-danger-50: var(--brand-danger-50);
+  --color-danger-100: var(--brand-danger-100);
+  --color-danger-200: var(--brand-danger-200);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--foreground);
+  /* Tipografia unica: Geist (già caricata da next/font) con fallback di sistema. */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * COMPONENTI — unica fonte per pulsanti, card, form, badge.
+ * I componenti usano queste classi; le utility Tailwind restano per il layout.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* ── Pulsanti ────────────────────────────────────────────────────────────
+     PRIMARY (.btn-cta)     → giallo, testo blu, ombra gialla.
+     SECONDARY (.btn-secondary) → bianco, bordo blu, testo blu.
+     DANGER  (.btn-danger)  → rosso (SOLO distruttivo).
+     WHATSAPP(.btn-whatsapp)→ verde WhatsApp (SOLO WhatsApp).
+     GHOST   (.btn-ghost)   → minimale, azioni secondarie.
+     ─────────────────────────────────────────────────────────────────────── */
+
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--brand-yellow);
+    color: var(--brand-blue-deep);
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: var(--shadow-cta-yellow);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+  .btn-cta:hover {
+    background-color: var(--brand-yellow-hover);
+    box-shadow: var(--shadow-cta-yellow-hover);
+  }
+  .btn-cta:active {
+    background-color: var(--brand-yellow-active);
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.1);
+  }
+  .btn-cta:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+  }
+  .btn-cta:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--shadow-cta-yellow);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--brand-blue-200);
+    background-color: #ffffff;
+    color: var(--brand-blue-dark);
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-secondary:hover {
+    background-color: var(--brand-blue-50);
+    border-color: #93c5fd;
+  }
+  .btn-secondary:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--brand-danger);
+    color: #ffffff;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: var(--shadow-cta-danger);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+  .btn-danger:hover {
+    background-color: var(--brand-danger-dark);
+    box-shadow: var(--shadow-cta-danger-hover);
+  }
+  .btn-danger:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-danger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-danger);
+  }
+  .btn-danger:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--brand-whatsapp);
+    color: #ffffff;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px -4px rgb(37 211 102 / 0.45);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-whatsapp:hover {
+    background-color: var(--brand-whatsapp-dark);
+  }
+  .btn-whatsapp:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-whatsapp);
+  }
+  .btn-whatsapp:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: #475569;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-ghost:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+  .btn-ghost:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+  }
+  .btn-ghost:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* ── Card / superfici ─────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .card-hover {
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .card-hover:hover {
+    border-color: var(--brand-blue-200);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* ── Form ─────────────────────────────────────────────────────────────── */
+  .input,
+  .select {
+    width: 100%;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    background-color: #ffffff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input::placeholder {
+    color: #94a3b8;
+  }
+  .input:focus,
+  .select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+  }
+  .input:disabled,
+  .select:disabled {
+    background-color: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .field-error {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--brand-danger);
+  }
+
+  /* ── Badge ────────────────────────────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1rem;
+    white-space: nowrap;
+  }
+  .badge-blue {
+    background: var(--brand-blue-50);
+    color: var(--brand-blue-dark);
+  }
+  .badge-yellow {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+  .badge-slate {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .badge-danger {
+    background: var(--brand-danger-50);
+    color: var(--brand-danger-dark);
+  }
+  .badge-success {
+    background: #ecfdf5;
+    color: #047857;
+  }
+
+  /* ── Etichetta di sezione (micro-caption) ─────────────────────────────── */
+  .section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #64748b;
+  }
+}
+
+/*
+ * Dialog "Correggi con AI": quando è aperto nasconde COMPLETAMENTE la
+ * bottom nav mobile (MerchantBottomNav). La classe viene aggiunta/rimossa
+ * sul <body> dal dialog stesso al mount/unmount, quindi alla chiusura la
+ * barra ricompare identica. display:none (non solo z-index): nessun
+ * elemento può sovrapporsi o intercettare il tocco sul pulsante
+ * "Conferma modifiche".
+ */
+body.correggi-ai-aperto .merchant-bottom-nav,
+body.correggi-ai-aperto .merchant-bottom-nav-spacer,
+body.merchant-image-editor-aperto .merchant-bottom-nav,
+body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
+  display: none !important;
+}
+
+/* Editor negozio — evidenziazione del blocco puntato dalla navigazione mirata (CTA). */
+.editor-blocco-target {
+  border-radius: 1rem;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
+  transition: box-shadow 0.15s ease;
+}
+
+/* Editor negozio — i figli diretti delle griglie dei moduli devono poter
+   restringersi sotto il proprio min-content (default CSS Grid: min-width:auto).
+   Senza questo, input/textarea w-full con placeholder lunghi gonfiano la
+   colonna implicita del grid oltre la larghezza del pannello su mobile,
+   creando overflow orizzontale interno all'editor. Vale per qualunque
+   modulo/negozio: fix generico a livello del container condiviso dei blocchi. */
+.editor-blocco .grid > * {
+  min-width: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * DESKTOP NAVIGATION SCALE
+ * Solo viewport desktop (>= 1024px).
+ *
+ * Obiettivo: aumentare leggibilità e area di clic dei menu che risultavano
+ * troppo piccoli sui monitor desktop, senza modificare in alcun modo il
+ * rendering mobile/tablet.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Sidebar venditore / cliente / navigazioni contestuali negozio. */
+  .incitta-desktop-area-nav .incitta-area-nav-item {
+    min-height: 3rem;
+    gap: 0.75rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-icon > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-label {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+  }
+
+  /* Sidebar amministratore: stessa scala, con gruppi più leggibili. */
+  .incitta-desktop-admin-nav .incitta-admin-nav-item {
+    min-height: 3rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .incitta-desktop-admin-nav .incitta-admin-nav-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .incitta-desktop-admin-nav .incitta-admin-group-button {
+    min-height: 3rem;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * NAVIGAZIONE PUBBLICA IN INGLESE
+ *
+ * "Businesses" e "Supply chains" sono molto più lunghe di "Aziende" e
+ * "Filiere": alla scala tipografica italiana sbordavano dalla cella della
+ * griglia e le due voci si toccavano. In inglese l'etichetta scende di uno o
+ * due punti e può andare a capo, così le cinque voci restano separate su
+ * mobile, tablet e desktop senza toccare la resa italiana.
+ * ═══════════════════════════════════════════════════════════════════════ */
+html[lang="en"] .incitta-public-nav-label {
+  font-size: 0.625rem;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+@media (min-width: 640px) {
+  html[lang="en"] .incitta-public-nav-label {
+    font-size: 0.6875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  html[lang="en"] .incitta-public-nav-label {
+    font-size: 0.75rem;
+    line-height: 1.1;
+  }
+}
+
+/* Ripristina l'indicatore animato mano + freccia dello swipe homepage. */
+.incitta-swipe-cue-hand {
+  animation: incitta-swipe-hand 3s ease-in-out infinite;
+}
+.incitta-swipe-cue-arrow {
+  transform: translateY(-50%);
+  clip-path: inset(0px 30px 0px 18px);
+  animation: incitta-swipe-arrow-grow 3s ease-in-out infinite;
+}
+@keyframes incitta-swipe-hand {
+  0%, 12% { transform: translateX(30px); }
+  42%, 56% { transform: translateX(0); }
+  88%, 100% { transform: translateX(30px); }
+}
+@keyframes incitta-swipe-arrow-grow {
+  0%, 12% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
+  42%, 56% { transform: translateY(-50%) translateX(0); clip-path: inset(0px); }
+  88%, 100% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .incitta-swipe-cue-hand, .incitta-swipe-cue-arrow { animation: none; }
+  .incitta-swipe-cue-hand { transform: none; }
+  .incitta-swipe-cue-arrow { transform: translateY(-50%); clip-path: none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * HERO — NUVOLA LUMINOSA
+ *
+ * Luce bianco-avorio che filtra tra le nuvole e illumina il paesaggio
+ * dietro la composizione testuale. Non è un pannello: sono tre gradienti
+ * radiali sovrapposti, senza bordi percepibili, sfumati nel blur.
+ * Lo strato sta sopra la fotografia e sotto i testi (z-index 0 contro 10).
+ * ═══════════════════════════════════════════════════════════════════════ */
+.incitta-hero-cloud {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  /* Area ridotta del ~25% mantenendo il centro luminoso dov'è:
+     prima il riquadro era 960×464 a (-17,193), ora 720×348 a (60,240). */
+  /* Riquadro 793×379 a (36,228): centro luminoso fermo a (290,383),
+     estensione +10% per contenere titolo, corsivo e sottotitolo. */
+  left: -11.5%;
+  top: -16%;
+  width: 156%;
+  max-width: 830px;
+  height: 152%;
+  background:
+    radial-gradient(
+      ellipse 54% 46% at 38.5% 49%,
+      rgba(255, 253, 245, 0.98) 0%,
+      rgba(255, 253, 245, 0.94) 26%,
+      rgba(255, 253, 245, 0.58) 48%,
+      rgba(255, 253, 245, 0.14) 68%,
+      rgba(255, 253, 245, 0) 100%
+    ),
+    radial-gradient(
+      ellipse 58% 46% at 33% 65%,
+      rgba(255, 255, 255, 0.34) 0%,
+      rgba(255, 252, 242, 0.16) 54%,
+      rgba(255, 252, 242, 0) 100%
+    ),
+    radial-gradient(
+      ellipse 48% 36% at 58% 34%,
+      rgba(255, 252, 242, 0.36) 0%,
+      rgba(255, 250, 238, 0.14) 58%,
+      rgba(255, 250, 238, 0) 100%
+    );
+  filter: blur(16px);
+}
+
+@media (max-width: 767px) {
+  .incitta-hero-cloud {
+    left: -17%;
+    top: -10%;
+    width: 158%;
+    height: 140%;
+    filter: blur(13px);
+  }
+}
+
+/* Homepage hero: fallback dedicato ai tablet Android, inclusi i browser
+   meno recenti che non riconoscono le media query pointer/hover. */
+.incitta-android-tablet .incitta-home-hero {
+  width: 100vw !important;
+  max-width: none !important;
+  position: relative;
+  left: calc(50% - 50vw) !important;
+  margin-left: 0 !important;
+  transform: none !important;
+}
 
-/*
- * ═══════════════════════════════════════════════════════════════════════════
- * INCITTÀ — DESIGN SYSTEM (unica fonte grafica)
- * ═══════════════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════
+ * PAGINE INTERNE — LINGUAGGIO EDITORIALE RADICI CALABRIA
+ * -----------------------------------------------------------------------
+ * Solo per le schermate che si aprono dalla homepage. La homepage non usa
+ * nessuna di queste classi: il restyling resta confinato alle pagine interne.
  *
- * Principio: BLU = struttura/navigazione, GIALLO = CTA/azione principale,
- * BIANCO/neutro = superfici di lettura, COLORI SEMANTICI = significato reale
- * (rosso = pericolo/eliminazione, verde WhatsApp = integrazione terza parte,
- * verde/ambra = successo/attenzione). I colori semantici NON vengono mai
- * riassorbiti nella palette di brand.
- *
- * Niente gradienti "rilievo", niente strisce arcobaleno, niente pseudo-elementi
- * di lucentezza: superfici piatte, ombre sottili, radius coerenti.
- */
-
+ * Registro: portale editoriale + piattaforma istituzionale agroalimentare.
+ * Verde bosco per struttura e titoli, oro per i dettagli, avorio per le
+ * superfici di lettura, terra per le note.
+ * ═══════════════════════════════════════════════════════════════════════ */
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-
-  /* ── Brand · struttura (blu) ─────────────────────────────────────────── */
-  --brand-blue: #2563eb;      /* blue-600 */
-  --brand-blue-dark: #1d4ed8; /* blue-700 */
-  --brand-blue-deep: #1e40af; /* blue-800 — testo su CTA gialla */
-  --brand-blue-50: #eff6ff;
-  --brand-blue-100: #dbeafe;
-  --brand-blue-200: #bfdbfe;
-
-  /* ── Brand · accento/CTA (giallo) ────────────────────────────────────── */
-  --brand-yellow: #facc15;        /* yellow-400 */
-  --brand-yellow-hover: #fde047;  /* yellow-300 */
-  --brand-yellow-active: #eab308; /* yellow-500 */
-
-  /* ── Semantico · WhatsApp (SOLO pulsante/collegamento WhatsApp) ───────── */
-  --brand-whatsapp: #25d366;
-  --brand-whatsapp-dark: #1da851;
-
-  /* ── Semantico · pericolo/distruttivo (SOLO azioni realmente pericolose) ─ */
-  --brand-danger: #dc2626;      /* red-600 */
-  --brand-danger-dark: #b91c1c; /* red-700 */
-  --brand-danger-50: #fef2f2;
-  --brand-danger-100: #fee2e2;
-  --brand-danger-200: #fecaca;
-
-  /* ── Superfici ────────────────────────────────────────────────────────── */
-  --surface-page: #eef3f8;
-  --surface-card: #ffffff;
-  --border-card: #e2e8f0; /* slate-200 */
-
-  /* ── Radius ───────────────────────────────────────────────────────────── */
-  --radius-sm: 0.5rem;   /* badge/icone compatte */
-  --radius-md: 0.75rem;  /* pulsanti, input, select */
-  --radius-lg: 1rem;     /* card, pannelli */
-
-  /* ── Ombre (sottili, mai pesanti) ─────────────────────────────────────── */
-  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-  --shadow-card-hover: 0 10px 30px -18px rgb(37 99 235 / 0.35);
-  --shadow-cta-yellow: 0 4px 14px -4px rgb(202 138 4 / 0.45);
-  --shadow-cta-yellow-hover: 0 8px 22px -6px rgb(202 138 4 / 0.55);
-  --shadow-cta-blue: 0 4px 14px -4px rgb(37 99 235 / 0.4);
-  --shadow-cta-blue-hover: 0 8px 22px -6px rgb(37 99 235 / 0.5);
-  --shadow-cta-danger: 0 4px 14px -4px rgb(220 38 38 / 0.4);
-  --shadow-cta-danger-hover: 0 8px 22px -6px rgb(220 38 38 / 0.5);
+  --brand-earth: #8a5a3b;
+  --brand-earth-soft: #b98f6b;
+  --surface-editorial: #fbf9f4;
+  --surface-editorial-2: #f4efe4;
+  --border-editorial: #e5ded0;
+  --border-editorial-strong: #d6cab2;
+  --shadow-editorial: 0 1px 2px rgb(27 54 36 / 0.04), 0 20px 44px -34px rgb(27 54 36 / 0.55);
+  --shadow-editorial-hover: 0 2px 4px rgb(27 54 36 / 0.05), 0 28px 54px -30px rgb(27 54 36 / 0.45);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-
-  /* Token esposti come utility Tailwind (usati nei componenti). */
-  --color-brand: var(--brand-blue);
-  --color-brand-dark: var(--brand-blue-dark);
-  --color-brand-deep: var(--brand-blue-deep);
-  --color-brand-50: var(--brand-blue-50);
-  --color-brand-100: var(--brand-blue-100);
-  --color-accent: var(--brand-yellow);
-  --color-whatsapp: var(--brand-whatsapp);
-  --color-whatsapp-dark: var(--brand-whatsapp-dark);
-  --color-danger: var(--brand-danger);
-  --color-danger-dark: var(--brand-danger-dark);
-  --color-danger-50: var(--brand-danger-50);
-  --color-danger-100: var(--brand-danger-100);
-  --color-danger-200: var(--brand-danger-200);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--surface-page);
-  color: var(--foreground);
-  /* Tipografia unica: Geist (già caricata da next/font) con fallback di sistema. */
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * COMPONENTI — unica fonte per pulsanti, card, form, badge.
- * I componenti usano queste classi; le utility Tailwind restano per il layout.
- * ═══════════════════════════════════════════════════════════════════════ */
 @layer components {
-  /* ── Pulsanti ────────────────────────────────────────────────────────────
-     PRIMARY (.btn-cta)     → giallo, testo blu, ombra gialla.
-     SECONDARY (.btn-secondary) → bianco, bordo blu, testo blu.
-     DANGER  (.btn-danger)  → rosso (SOLO distruttivo).
-     WHATSAPP(.btn-whatsapp)→ verde WhatsApp (SOLO WhatsApp).
-     GHOST   (.btn-ghost)   → minimale, azioni secondarie.
-     ─────────────────────────────────────────────────────────────────────── */
-
-  .btn-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: var(--brand-yellow);
-    color: var(--brand-blue-deep);
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    box-shadow: var(--shadow-cta-yellow);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
-  }
-  .btn-cta:hover {
-    background-color: var(--brand-yellow-hover);
-    box-shadow: var(--shadow-cta-yellow-hover);
-  }
-  .btn-cta:active {
-    background-color: var(--brand-yellow-active);
-    transform: translateY(0) scale(0.98);
-    box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.1);
-  }
-  .btn-cta:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
-  }
-  .btn-cta:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: var(--shadow-cta-yellow);
+  .rd-pagina {
+    background: linear-gradient(180deg, var(--surface-editorial) 0%, #f8f5ee 340px, #f6f3ec 100%);
+    color: #1f2937;
   }
 
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--brand-blue-200);
-    background-color: #ffffff;
-    color: var(--brand-blue-dark);
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    box-shadow: var(--shadow-card);
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .btn-secondary:hover {
-    background-color: var(--brand-blue-50);
-    border-color: #93c5fd;
-  }
-  .btn-secondary:active {
-    transform: translateY(0) scale(0.98);
-  }
-  .btn-secondary:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
-  }
-  .btn-secondary:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .btn-danger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: var(--brand-danger);
-    color: #ffffff;
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    box-shadow: var(--shadow-cta-danger);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
-  }
-  .btn-danger:hover {
-    background-color: var(--brand-danger-dark);
-    box-shadow: var(--shadow-cta-danger-hover);
-  }
-  .btn-danger:active {
-    transform: translateY(0) scale(0.98);
-  }
-  .btn-danger:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-danger);
-  }
-  .btn-danger:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-whatsapp {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: var(--brand-whatsapp);
-    color: #ffffff;
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 700;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    box-shadow: 0 4px 14px -4px rgb(37 211 102 / 0.45);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  .btn-whatsapp:hover {
-    background-color: var(--brand-whatsapp-dark);
-  }
-  .btn-whatsapp:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-whatsapp);
-  }
-  .btn-whatsapp:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: transparent;
-    color: #475569;
-    padding: 0.5rem 0.875rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-  .btn-ghost:hover {
-    background-color: #f1f5f9;
-    color: #0f172a;
-  }
-  .btn-ghost:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
-  }
-  .btn-ghost:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  /* ── Card / superfici ─────────────────────────────────────────────────── */
-  .card {
-    background: var(--surface-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-card);
-  }
-  .card-hover {
-    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  }
-  .card-hover:hover {
-    border-color: var(--brand-blue-200);
-    box-shadow: var(--shadow-card-hover);
-  }
-
-  /* ── Form ─────────────────────────────────────────────────────────────── */
-  .input,
-  .select {
+  .rd-guscio {
     width: 100%;
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    background-color: #ffffff;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
-    color: #0f172a;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 1rem;
   }
-  .input::placeholder {
-    color: #94a3b8;
-  }
-  .input:focus,
-  .select:focus {
-    outline: none;
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
-  }
-  .input:disabled,
-  .select:disabled {
-    background-color: #f8fafc;
-    color: #94a3b8;
-    cursor: not-allowed;
+  @media (min-width: 768px) {
+    .rd-guscio { padding-inline: 1.75rem; }
   }
 
-  .field-label {
-    display: block;
-    margin-bottom: 0.375rem;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #334155;
+  .rd-testa {
+    position: relative;
+    border-bottom: 1px solid var(--border-editorial);
+    background:
+      radial-gradient(120% 160% at 100% 0%, rgb(213 168 58 / 0.12) 0%, rgb(213 168 58 / 0) 58%),
+      linear-gradient(180deg, #fdfbf6 0%, var(--surface-editorial-2) 100%);
+  }
+  .rd-testa::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand-gold) 0%, rgb(213 168 58 / 0.35) 38%, rgb(213 168 58 / 0) 78%);
+  }
+  .rd-testa-interna { padding-block: 1.65rem 1.4rem; }
+  @media (min-width: 768px) {
+    .rd-testa-interna { padding-block: 2.4rem 2rem; }
   }
 
-  .field-error {
-    margin-top: 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--brand-danger);
-  }
-
-  /* ── Badge ────────────────────────────────────────────────────────────── */
-  .badge {
+  .rd-occhiello {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    border-radius: 9999px;
-    padding: 0.25rem 0.625rem;
+    gap: 0.45rem;
     font-size: 0.6875rem;
-    font-weight: 700;
-    line-height: 1rem;
-    white-space: nowrap;
-  }
-  .badge-blue {
-    background: var(--brand-blue-50);
-    color: var(--brand-blue-dark);
-  }
-  .badge-yellow {
-    background: #fef9c3;
-    color: #854d0e;
-  }
-  .badge-slate {
-    background: #f1f5f9;
-    color: #475569;
-  }
-  .badge-danger {
-    background: var(--brand-danger-50);
-    color: var(--brand-danger-dark);
-  }
-  .badge-success {
-    background: #ecfdf5;
-    color: #047857;
-  }
-
-  /* ── Etichetta di sezione (micro-caption) ─────────────────────────────── */
-  .section-label {
-    font-size: 0.6875rem;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: #64748b;
+    color: var(--brand-earth);
   }
-}
+  @media (min-width: 768px) {
+    .rd-occhiello { font-size: 0.75rem; }
+  }
+  .rd-occhiello > svg { width: 0.9rem; height: 0.9rem; }
 
-/*
- * Dialog "Correggi con AI": quando è aperto nasconde COMPLETAMENTE la
- * bottom nav mobile (MerchantBottomNav). La classe viene aggiunta/rimossa
- * sul <body> dal dialog stesso al mount/unmount, quindi alla chiusura la
- * barra ricompare identica. display:none (non solo z-index): nessun
- * elemento può sovrapporsi o intercettare il tocco sul pulsante
- * "Conferma modifiche".
- */
-body.correggi-ai-aperto .merchant-bottom-nav,
-body.correggi-ai-aperto .merchant-bottom-nav-spacer,
-body.merchant-image-editor-aperto .merchant-bottom-nav,
-body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
-  display: none !important;
-}
-
-/* Editor negozio — evidenziazione del blocco puntato dalla navigazione mirata (CTA). */
-.editor-blocco-target {
-  border-radius: 1rem;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
-  transition: box-shadow 0.15s ease;
-}
-
-/* Editor negozio — i figli diretti delle griglie dei moduli devono poter
-   restringersi sotto il proprio min-content (default CSS Grid: min-width:auto).
-   Senza questo, input/textarea w-full con placeholder lunghi gonfiano la
-   colonna implicita del grid oltre la larghezza del pannello su mobile,
-   creando overflow orizzontale interno all'editor. Vale per qualunque
-   modulo/negozio: fix generico a livello del container condiviso dei blocchi. */
-.editor-blocco .grid > * {
-  min-width: 0;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
- * DESKTOP NAVIGATION SCALE
- * Solo viewport desktop (>= 1024px).
- *
- * Obiettivo: aumentare leggibilità e area di clic dei menu che risultavano
- * troppo piccoli sui monitor desktop, senza modificare in alcun modo il
- * rendering mobile/tablet.
- * ═══════════════════════════════════════════════════════════════════════ */
-@media (min-width: 1024px) {
-  /* Navigazione pubblica: icone, etichette e celle più leggibili. */
-  .incitta-desktop-public-nav .incitta-public-nav-item {
-    min-width: 84px;
-    margin-inline: 0.35rem;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+  .rd-titolo {
+    margin-top: 0.5rem;
+    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    line-height: 1.06;
+    letter-spacing: -0.032em;
+    font-weight: 800;
+    color: var(--brand-forest-deep);
+    text-wrap: balance;
   }
 
-  .incitta-desktop-public-nav .incitta-public-nav-icon {
+  .rd-regola {
+    display: block;
     width: 3rem;
-    height: 3rem;
+    height: 2px;
+    margin-top: 1rem;
+    background: linear-gradient(90deg, var(--brand-gold) 0%, rgb(213 168 58 / 0.25) 100%);
   }
 
-  .incitta-desktop-public-nav .incitta-public-nav-icon > svg {
-    width: 1.5rem;
-    height: 1.5rem;
+  .rd-sommario {
+    margin-top: 0.9rem;
+    max-width: 62ch;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #57534e;
+  }
+  @media (min-width: 768px) {
+    .rd-sommario { font-size: 0.975rem; line-height: 1.7; color: #52525b; }
   }
 
-  .incitta-desktop-public-nav .incitta-public-nav-label {
-    font-size: 0.9375rem;
-    line-height: 1.15rem;
+  .rd-titolo-sezione {
+    font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    font-weight: 800;
+    color: var(--brand-forest-deep);
+    text-wrap: balance;
+  }
+  .rd-titolo-sezione::after {
+    content: "";
+    display: block;
+    width: 2.25rem;
+    height: 2px;
+    margin-top: 0.7rem;
+    background: var(--brand-gold);
   }
 
-  /* Sidebar venditore / cliente / navigazioni contestuali negozio. */
-  .incitta-desktop-area-nav .incitta-area-nav-item {
-    min-height: 3rem;
-    gap: 0.75rem;
-    padding: 0.75rem 0.875rem;
+  .rd-titolo-scheda {
+    font-size: 1.0625rem;
+    line-height: 1.32;
+    letter-spacing: -0.015em;
+    font-weight: 800;
+    color: #1c2b22;
   }
 
-  .incitta-desktop-area-nav .incitta-area-nav-icon {
-    width: 2.75rem;
-    height: 2.75rem;
+  .rd-testo { color: #57534e; font-size: 0.9rem; line-height: 1.7; }
+
+  .rd-scheda {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-editorial);
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: var(--shadow-editorial);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+  a.rd-scheda:hover,
+  .rd-scheda--interattiva:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-editorial-strong);
+    box-shadow: var(--shadow-editorial-hover);
+  }
+  .rd-scheda--interattiva:focus-visible,
+  a.rd-scheda:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px var(--brand-gold);
   }
 
-  .incitta-desktop-area-nav .incitta-area-nav-icon > svg {
-    width: 1.25rem;
-    height: 1.25rem;
+  .rd-pannello {
+    border: 1px solid var(--border-editorial);
+    border-left: 3px solid var(--brand-gold);
+    border-radius: 0 1rem 1rem 0;
+    background: #ffffff;
+    box-shadow: var(--shadow-editorial);
   }
 
-  .incitta-desktop-area-nav .incitta-area-nav-label {
-    font-size: 0.9375rem;
-    line-height: 1.25rem;
+  .rd-fascia {
+    border: 1px solid var(--border-editorial);
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fdfbf6 100%);
+    box-shadow: var(--shadow-editorial);
   }
 
-  /* Sidebar amministratore: stessa scala, con gruppi più leggibili. */
-  .incitta-desktop-admin-nav .incitta-admin-nav-item {
-    min-height: 3rem;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
+  .rd-nota {
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: #8a8378;
   }
 
-  .incitta-desktop-admin-nav .incitta-admin-nav-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+  .rd-et {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: var(--surface-editorial-2);
+    color: var(--brand-forest);
+    border: 1px solid var(--border-editorial);
   }
 
-  .incitta-desktop-admin-nav .incitta-admin-group-button {
-    min-height: 3rem;
-    gap: 0.625rem;
-    padding: 0.75rem 1rem;
+  .rd-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-radius: 9999px;
+    border: 1px solid var(--border-editorial);
+    background: #ffffff;
+    padding: 0.42rem 0.8rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+    color: #57534e;
+    transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+  }
+  .rd-filtro:hover {
+    border-color: var(--brand-gold-soft);
+    color: var(--brand-forest);
+    background: #fffdf7;
+  }
+  .rd-filtro[aria-current="page"] {
+    border-color: var(--brand-forest);
+    background: var(--brand-forest);
+    color: #ffffff;
+  }
+  .rd-filtro[aria-current="page"]:hover { background: var(--brand-forest-deep); }
+
+  .rd-azione {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.65rem;
+    background: var(--brand-forest);
+    padding: 0.65rem 1.15rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #ffffff;
+    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    box-shadow: 0 10px 22px -16px rgb(27 54 36 / 0.9);
+  }
+  .rd-azione:hover { background: var(--brand-forest-deep); }
+  .rd-azione:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-gold); }
+
+  .rd-azione-tenue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-editorial-strong);
+    background: #ffffff;
+    padding: 0.6rem 1.05rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--brand-forest);
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+  }
+  .rd-azione-tenue:hover {
+    border-color: var(--brand-gold);
+    background: #fffdf7;
+  }
+  .rd-azione-tenue:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-gold); }
+
+  .rd-link-freccia {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--brand-forest);
+    transition: gap 0.16s ease, color 0.16s ease;
   }
+  .rd-link-freccia:hover { gap: 0.5rem; color: var(--brand-forest-deep); }
 }
 
-/* Ripristina l'indicatore animato mano + freccia dello swipe homepage. */
-.incitta-swipe-cue-hand {
-  animation: incitta-swipe-hand 3s ease-in-out infinite;
+@keyframes rd-entra {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.incitta-swipe-cue-arrow {
-  transform: translateY(-50%);
-  clip-path: inset(0px 30px 0px 18px);
-  animation: incitta-swipe-arrow-grow 3s ease-in-out infinite;
-}
-@keyframes incitta-swipe-hand {
-  0%, 12% { transform: translateX(30px); }
-  42%, 56% { transform: translateX(0); }
-  88%, 100% { transform: translateX(30px); }
-}
-@keyframes incitta-swipe-arrow-grow {
-  0%, 12% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
-  42%, 56% { transform: translateY(-50%) translateX(0); clip-path: inset(0px); }
-  88%, 100% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
-}
+.rd-entra { animation: rd-entra 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 @media (prefers-reduced-motion: reduce) {
-  .incitta-swipe-cue-hand, .incitta-swipe-cue-arrow { animation: none; }
-  .incitta-swipe-cue-hand { transform: none; }
-  .incitta-swipe-cue-arrow { transform: translateY(-50%); clip-path: none; }
+  .rd-entra { animation: none; }
+  .rd-scheda { transition: none; }
+  a.rd-scheda:hover,
+  .rd-scheda--interattiva:hover { transform: none; }
 }
 
-
-/* Homepage hero: fallback dedicato ai tablet Android, inclusi i browser
-   meno recenti che non riconoscono le media query pointer/hover. */
-.incitta-android-tablet .incitta-home-hero {
-  width: 100vw !important;
-  max-width: none !important;
-  position: relative;
-  left: calc(50% - 50vw) !important;
-  margin-left: 0 !important;
-  transform: none !important;
+.rd-dato {
+  border: 1px solid var(--border-editorial);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0.85rem;
+}
+.rd-dato-valore {
+  font-size: 1.4rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--brand-forest-deep);
+  font-variant-numeric: tabular-nums;
+}
+.rd-dato-etichetta {
+  margin-top: 0.4rem;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: #6b6459;
 }

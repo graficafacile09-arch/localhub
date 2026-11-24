@@ -1,6 +1,6 @@
 export default function MerchantLoading() {
   return (
-    <div className="space-y-5" aria-busy="true" aria-label="Caricamento area venditore">
+    <div className="space-y-5" aria-busy="true" aria-label="Caricamento area imprese e operatori">
       <div className="card p-6 shadow-sm">
         <div className="h-3 w-28 animate-pulse rounded-full bg-slate-200" />
         <div className="mt-3 h-8 w-56 animate-pulse rounded-full bg-slate-200" />

@@ -132,24 +132,24 @@ test("diagnostic: valid JSON with disallowed route/surface emits invalid_schema"
 
 test("diagnostic: simulated HTTP 503 emits provider_error with the status code", async () => {
   const { plan, diagnostica } = await esegui("Cerco pasta sotto 5 euro", async () => {
-    throw Object.assign(new Error("Errore server Gemini (HTTP 503, UNAVAILABLE)."), { status: 503 });
+    throw Object.assign(new Error("Errore server Groq (HTTP 503, UNAVAILABLE)."), { status: 503 });
   });
   assert.equal(diagnostica.outcome, "provider_error");
   assert.equal(diagnostica.attempted, true);
   assert.equal(diagnostica.httpStatus, 503);
-  assert.match(diagnostica.reason, /gemini_provider_error/);
+  assert.match(diagnostica.reason, /groq_provider_error/);
   assert.equal(plan.maxPrice, 5);
   assert.equal(plan.reason.startsWith("ai:"), false);
 });
 
 test("diagnostic: simulated timeout is reported separately from provider errors", async () => {
-  const timeoutError = new Error("Timeout chiamata Gemini (12s).");
+  const timeoutError = new Error("Timeout chiamata Groq (12s).");
   timeoutError.name = "TimeoutError";
   const { plan, diagnostica } = await esegui("Cerco pasta", async () => { throw timeoutError; });
   assert.equal(diagnostica.outcome, "timeout");
   assert.equal(diagnostica.attempted, true);
   assert.equal(diagnostica.httpStatus, undefined);
-  assert.match(diagnostica.reason, /gemini_timeout/);
+  assert.match(diagnostica.reason, /groq_timeout/);
   assert.equal(plan.reason.startsWith("ai:"), false);
 
   const abortError = new DOMException("The operation was aborted.", "AbortError");
@@ -272,7 +272,7 @@ test("accepted AI plan keeps deterministic price bounds with the model query and
   }
 });
 
-test("Gemini cannot overwrite, clear or invert deterministic price bounds", async () => {
+test("Groq cannot overwrite, clear or invert deterministic price bounds", async () => {
   const tentativi = [
     ["Cerco pasta sotto 5 euro", "pasta", { minPrice: 0, maxPrice: 9999 }, null, 5],
     ["Vorrei scarpe tra 50 e 120 euro", "scarpe", { minPrice: 120, maxPrice: 50 }, 50, 120],

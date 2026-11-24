@@ -247,7 +247,7 @@ export function getMerchantTopTitle(
   if (pathname === MERCHANT_BASE) return "I tuoi negozi";
 
   const withStore = /^\/merchant\/([^/]+)(\/.*)?$/.exec(pathname);
-  if (!withStore) return isAdmin ? "Amministratore" : "Venditore";
+  if (!withStore) return isAdmin ? "Amministratore" : "Imprese e operatori";
 
   const suffix = withStore[2] ?? "";
 
@@ -266,5 +266,5 @@ export function getMerchantTopTitle(
   if (suffix === "/impostazioni") return "Impostazioni negozio";
   if (suffix === "/edit") return "Editor negozio";
 
-  return storeName ?? "Venditore";
+  return storeName ?? "Imprese e operatori";
 }

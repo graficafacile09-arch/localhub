@@ -11,7 +11,8 @@ import {
 /**
  * PRODOTTI — azioni rapide amministrative sul catalogo globale.
  *
- * PATCH  — toggle dei flag gestiti dal back office (senza rifare il form):
+ * PATCH  — rinomina rapida + toggle dei flag gestiti dal back office:
+ *          - nome              → modifica del nome del prodotto (validato, max 120 caratteri);
  *          - attivo            → attiva/disattiva la pubblicazione;
  *          - prodottoTipico    → vetrina "Prodotti tipici";
  *          - prodottoOfferta   → vetrina "Offerte".
@@ -72,7 +73,7 @@ async function leggiProdottoEnegozio(productId: string) {
   };
 }
 
-/** PATCH — aggiornamento rapido dei SOLI flag amministrativi. */
+/** PATCH — aggiornamento rapido del nome e dei SOLI flag amministrativi. */
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ productId: string }> }
@@ -88,6 +89,23 @@ export async function PATCH(
     return apiError("VALIDATION_ERROR", "Corpo della richiesta non valido.", 422);
   }
 
+  // Nome prodotto: unica modifica testuale ammessa da questa route rapida.
+  // Lo slug NON viene rigenerato: i link pubblici del prodotto restano validi.
+  let nuovoNome: string | undefined;
+  if (body.nome !== undefined) {
+    if (typeof body.nome !== "string") {
+      return apiError("VALIDATION_ERROR", "Il nome del prodotto deve essere una stringa.", 422);
+    }
+    const pulito = body.nome.trim().replace(/\s+/g, " ");
+    if (pulito.length < 2) {
+      return apiError("VALIDATION_ERROR", "Il nome del prodotto deve avere almeno 2 caratteri.", 422);
+    }
+    if (pulito.length > 120) {
+      return apiError("VALIDATION_ERROR", "Il nome del prodotto non può superare 120 caratteri.", 422);
+    }
+    nuovoNome = pulito;
+  }
+
   // Solo i flag noti sono modificabili; ogni altra chiave viene ignorata.
   const aggiornamenti: Partial<Record<string, boolean>> = {};
   for (const [chiave, colonna] of Object.entries(FLAG)) {
@@ -98,7 +116,7 @@ export async function PATCH(
     aggiornamenti[colonna] = body[chiave] as boolean;
   }
 
-  if (Object.keys(aggiornamenti).length === 0) {
+  if (Object.keys(aggiornamenti).length === 0 && nuovoNome === undefined) {
     return apiError("VALIDATION_ERROR", "Nessun flag valido da aggiornare.", 422);
   }
 
@@ -111,7 +129,11 @@ export async function PATCH(
     prodottoTipico: prodotto.prodottoTipico,
     prodottoOfferta: prodotto.prodottoOfferta,
   };
+  const nomeCambia = nuovoNome !== undefined && nuovoNome !== prodotto.nome;
   const variazioni: string[] = [];
+  if (nomeCambia) {
+    variazioni.push(`nome: «${prodotto.nome}» → «${nuovoNome}»`);
+  }
   for (const [chiave, colonna] of Object.entries(FLAG) as [keyof typeof FLAG, string][]) {
     const nuovoValore = aggiornamenti[colonna];
     if (nuovoValore === undefined) continue;
@@ -125,9 +147,12 @@ export async function PATCH(
     return apiError("VALIDATION_ERROR", "Nessuna modifica effettiva da applicare.", 422);
   }
 
+  const modifiche: Record<string, unknown> = { ...aggiornamenti };
+  if (nomeCambia) modifiche.nome = nuovoNome;
+
   const { error: updateError } = await db
     .from("prodotti")
-    .update({ ...aggiornamenti, updated_at: new Date().toISOString() })
+    .update({ ...modifiche, updated_at: new Date().toISOString() })
     .eq("id", productId);
 
   if (updateError) {
@@ -149,7 +174,8 @@ export async function PATCH(
 
   // Ritorna SOLO gli aggiornamenti applicati (chiavi API del client): la UI
   // li fonde nel record locale senza bisogno di una nuova lettura.
-  const risposta: Record<string, boolean> = {};
+  const risposta: Record<string, boolean | string> = {};
+  if (nomeCambia) risposta.nome = String(nuovoNome);
   for (const [chiave, colonna] of Object.entries(FLAG) as [keyof typeof FLAG, string][]) {
     const valore = aggiornamenti[colonna];
     if (valore !== undefined) risposta[chiave] = valore;

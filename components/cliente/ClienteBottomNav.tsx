@@ -61,7 +61,7 @@ export default function ClienteBottomNav() {
       {/* ── Bottom Navigation Bar ─────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-[60] md:hidden"
-        aria-label="Navigazione area clienti mobile"
+        aria-label="Navigazione area consumatori mobile"
       >
         <div
           className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Pagina "Ordini" dell'area venditore.
- * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
+ * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini Radici Calabria":
  * numero + sintesi prodotto, cliente, data/ora, foto prodotto, totale,
  * stato. KPI per stato + banner "NUOVI ORDINI" + filtri (incluso Reclami,
  * che filtra in memoria su haReclamoAperto). OWNERSHIP server-side
@@ -98,7 +98,7 @@ export default async function MerchantOrdiniPage({
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area venditore
+              Area imprese e operatori
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
               Ordini di {storeResult.data.nome}
@@ -150,7 +150,7 @@ export default async function MerchantOrdiniPage({
           title={filtro === "tutti" ? "Nessun ordine ricevuto" : "Nessun ordine in questo filtro"}
           description={
             filtro === "tutti"
-              ? "Quando un cliente effettua un acquisto dal sito, l'ordine comparirà qui con tutti i dettagli da gestire."
+              ? "Quando un consumatore effettua un acquisto dal sito, l'ordine comparirà qui con tutti i dettagli da gestire."
               : "Non ci sono ordini nello stato selezionato. Prova un altro filtro."
           }
           action={
@@ -170,7 +170,7 @@ export default async function MerchantOrdiniPage({
           title={filtro === "reclami" ? "Nessun reclamo aperto" : "Nessun ordine in questo filtro"}
           description={
             filtro === "reclami"
-              ? "Quando un cliente segnala un problema su un ordine, il reclamo comparirà qui."
+              ? "Quando un consumatore segnala un problema su un ordine, il reclamo comparirà qui."
               : "Non ci sono ordini nello stato selezionato. Prova un altro filtro."
           }
           action={

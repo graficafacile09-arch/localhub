@@ -17,7 +17,7 @@ export function InformazioniCliente({
   email: string | null;
 }) {
   return (
-    <Sezione icon={User} titolo="Cliente">
+    <Sezione icon={User} titolo="Consumatore">
       <div className="space-y-1.5">
         <p className="text-lg font-black tracking-tight text-slate-900">
           {nome} {cognome}

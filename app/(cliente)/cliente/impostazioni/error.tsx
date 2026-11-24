@@ -39,7 +39,7 @@ export default function ImpostazioniClienteError({
         Riprova
       </button>
       <div className="mt-3">
-        <BackButton label="Torna all'area clienti" />
+        <BackButton label="Torna all'area consumatori" />
       </div>
     </div>
   );

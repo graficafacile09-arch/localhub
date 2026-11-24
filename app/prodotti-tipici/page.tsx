@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
+import IntestazionePagina from "@/components/editoriale/IntestazionePagina";
 import ProductCard from "@/components/home/ProductCard";
 import { getProdottiTipici } from "@/lib/negozi";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -18,26 +19,26 @@ export const dynamic = "force-dynamic";
 // nel title/description sia nell'Open Graph (URL assoluti su incitta.online).
 export async function generateMetadata(): Promise<Metadata> {
   const canonical = `${getSiteUrl()}/prodotti-tipici`;
-  // title/og:title senza suffisso "| InCittà": il template del layout lo
-  // aggiunge (title: { template: "%s | InCittà" }), evitando il duplicato.
+  // title/og:title senza suffisso "| Radici Calabria": il template del layout lo
+  // aggiunge (title: { template: "%s | Radici Calabria" }), evitando il duplicato.
   return {
     title: "Eccellenze Calabresi",
     description:
-      "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+      "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dalle filiere del territorio.",
     alternates: { canonical },
     openGraph: {
       title: "Eccellenze Calabresi",
       description:
-        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dalle filiere del territorio.",
       url: canonical,
       type: "website",
-      siteName: "InCittà",
+      siteName: "Radici Calabria",
     },
     twitter: {
       card: "summary_large_image",
       title: "Eccellenze Calabresi",
       description:
-        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dalle filiere del territorio.",
     },
   };
 }
@@ -49,42 +50,37 @@ export default async function ProdottiTipiciPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="rd-pagina min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl">
-              ECCELLENZE CALABRESI
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Le eccellenze di Castrovillari e del Pollino, selezionate dai negozi della tua città.
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold text-slate-500 transition hover:text-blue-600"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+      <IntestazionePagina
+        occhiello="Vetrina territoriale"
+        titolo="Eccellenze Calabresi"
+        icona={Wheat}
+        sommario="Le eccellenze di Castrovillari e del Pollino, selezionate dalle filiere del territorio."
+        azione={
+          <Link href="/" className="rd-azione-tenue">
+            <ArrowLeft className="h-4 w-4" aria-hidden />
             Home
           </Link>
-        </div>
+        }
+      />
 
+      <div className="rd-guscio py-7 md:py-10">
         {prodottiTipici.length === 0 ? (
-          <div className="mt-6 flex flex-col items-center justify-center rounded-[2rem] border border-white/70 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-              <Wheat className="h-8 w-8 text-blue-500" aria-hidden />
+          <div className="rd-fascia flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f4efe4] ring-1 ring-[#e5ded0]">
+              <Wheat className="h-8 w-8 text-[#8a5a3b]" aria-hidden />
             </div>
-            <h2 className="mt-4 text-lg font-black tracking-tight text-slate-900">
+            <h2 className="rd-titolo-scheda mt-4 text-lg">
               Nessun prodotto tipico al momento
             </h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
-              Non ci sono ancora prodotti nella vetrina territoriale. Esplora i negozi della tua città.
+            <p className="mt-1 max-w-sm text-sm leading-6 text-[#57534e]">
+              Non ci sono ancora prodotti nella vetrina territoriale. Esplora i negozi e le produzioni del territorio.
             </p>
             <Link
               href="/negozi"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+              className="rd-azione mt-6"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               Vedi i negozi
@@ -93,7 +89,7 @@ export default async function ProdottiTipiciPage() {
         ) : (
           <>
             <h2 className="sr-only">Prodotti tipici del territorio</h2>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {prodottiTipici.map((prodotto) => {
               const prodottoId = String(prodotto.id);
               return (

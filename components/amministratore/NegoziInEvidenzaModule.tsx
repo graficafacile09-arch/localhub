@@ -139,13 +139,13 @@ export default function NegoziInEvidenzaModule({
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
-              Homepage InCittà
+              Homepage Radici Calabria
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
               Negozi in evidenza
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Scegli i negozi da mettere in evidenza nella home di InCittà. I
+              Scegli i negozi da mettere in evidenza nella home di Radici Calabria. I
               negozi selezionati compaiono nella sezione &ldquo;In evidenza&rdquo;
               della homepage pubblica.
             </p>

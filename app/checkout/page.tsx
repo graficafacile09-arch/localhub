@@ -8,7 +8,8 @@ import { permanentRedirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Completa il tuo ordine su InCittà: ritiro o spedizione dai negozi della tua città.",
+  description:
+    "Completa il tuo ordine su Radici Calabria: ritiro o spedizione dai produttori e dai negozi del territorio.",
 };
 
 /**

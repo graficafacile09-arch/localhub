@@ -203,7 +203,7 @@ export default function IncassiClient({
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Rendicontazione economica degli ordini: totale pagato,
-              commissioni piattaforma, rimborsi e netto venditore. Tutti gli
+              commissioni piattaforma, rimborsi e netto impresa. Tutti gli
               importi sono calcolati dal sistema sugli snapshot dell&apos;ordine.
             </p>
             {riepilogo && (
@@ -398,7 +398,7 @@ function RigaCard({
           <Cella label="Pagato" valore={formattaEuro(e.importoPagato)} />
           <Cella label="Commissione" valore={formattaEuro(e.commissioneEffettiva)} colore="text-blue-700" />
           <Cella label="Rimborsato" valore={formattaEuro(e.importoRimborsato)} colore={e.importoRimborsato > 0 ? "text-red-600" : undefined} />
-          <Cella label="Netto venditore" valore={formattaEuro(e.nettoVenditoreEffettivo)} colore="text-emerald-700" />
+          <Cella label="Netto impresa" valore={formattaEuro(e.nettoVenditoreEffettivo)} colore="text-emerald-700" />
         </div>
       </div>
     </Link>

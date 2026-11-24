@@ -703,7 +703,7 @@ export async function creaOrdine(
 
   // Causale deterministica, derivata dall'identificativo definitivo dell'ordine.
   if (esito.ordine?.id && input.spedizione?.metodoPagamento === "bonifico_diretto_venditore") {
-    const causale = `Ordine #${esito.ordine.numero} - Marketplace InCittà`;
+    const causale = `Ordine #${esito.ordine.numero} - Marketplace Radici Calabria`;
     await db.from("ordini").update({ bonifico_causale: causale }).eq("id", esito.ordine.id);
   }
 

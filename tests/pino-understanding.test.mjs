@@ -77,7 +77,7 @@ test("Pino identifies itself consistently in Italian and English", () => {
 });
 
 test("Pino system prompt defines identity and proactive grounded behavior", () => {
-  assert.match(promptSource, /Sei Pino, l'assistente AI ufficiale di InCittà\.online/);
+  assert.match(promptSource, /Sei Pino, l'assistente AI ufficiale di Radici Calabria/);
   assert.match(promptSource, /Non inventare mai negozi, prodotti, prezzi/);
   assert.match(promptSource, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
 });
@@ -531,11 +531,11 @@ test("professional searches use a deterministic business-only fast path", () => 
     assert.ok(intentSource.includes(`"${profession}"`), profession);
   }
   const fastPathStart = assistantSource.indexOf("Professioni riconosciute con certezza");
-  const attractionsStart = assistantSource.indexOf("Guida turistica InCittà");
+  const attractionsStart = assistantSource.indexOf("Guida turistica Radici Calabria");
   assert.ok(fastPathStart >= 0);
   assert.ok(attractionsStart > fastPathStart);
   const fastPath = assistantSource.slice(fastPathStart, attractionsStart);
   assert.match(fastPath, /await searchStores\(professione, \{ limit: 8 \}\)/);
-  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
-  assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo InCittà/);
+  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGroqText|recuperaMemoria/);
+  assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo Radici Calabria/);
 });

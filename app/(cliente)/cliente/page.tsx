@@ -12,7 +12,7 @@ import NegoziPreferitiCard from "@/components/cliente/dashboard/NegoziPreferitiC
 import EventiConsigliatiCard from "@/components/cliente/dashboard/EventiConsigliatiCard";
 
 export const metadata = {
-  title: "Dashboard — Area Clienti",
+  title: "Dashboard — Area consumatori",
 };
 
 // La dashboard rifletterà in tempo reale i dati dell'utente nelle fasi
@@ -54,13 +54,13 @@ export default async function ClienteDashboardPage() {
               </span>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-                  Area Clienti
+                  Area consumatori
                 </p>
                 <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
                   Il mio account
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-                  Il riepilogo della tua attività su InCittà: ordini, preferiti
+                  Il riepilogo della tua attività su Radici Calabria: ordini, preferiti
                   e ultimi acquisti, sempre a portata di mano.
                 </p>
               </div>

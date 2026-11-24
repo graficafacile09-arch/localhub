@@ -36,8 +36,8 @@ export default function ShareActivityButton({ title, description = "", url }: Pr
   const menuId = useId();
 
   const getShareData = () => ({
-    title: title + " | InCittà",
-    text: description ? title + " — " + description : "Scopri " + title + " su InCittà.",
+    title: title + " | Radici Calabria",
+    text: description ? title + " — " + description : "Scopri " + title + " su Radici Calabria.",
     url: risolviUrl(url),
   });
 

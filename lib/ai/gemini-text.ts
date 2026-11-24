@@ -42,6 +42,12 @@ export type CallGeminiTextParams = {
   timeoutMs?: number;
   /** Retry con backoff su 429/402 (quota). Default 3. */
   retries?: number;
+  /**
+   * Scadenza assoluta (epoch ms) condivisa con il resto del flusso AI.
+   * Il timeout della singola chiamata si riduce al tempo restante e i retry
+   * con attesa non partono se non c'è più margine.
+   */
+  deadlineMs?: number;
 };
 
 /**
@@ -100,6 +106,7 @@ export async function callGeminiText({
   json = false,
   timeoutMs = TIMEOUT_DEFAULT_MS,
   retries = TENTATIVI_DEFAULT,
+  deadlineMs,
 }: CallGeminiTextParams): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -111,8 +118,18 @@ export async function callGeminiText({
   let tentativi503 = 0;
 
   for (let tentativo = 1; tentativo <= retries; tentativo++) {
+    const restanteMs = deadlineMs === undefined ? Infinity : deadlineMs - Date.now();
+    if (restanteMs <= 0) {
+      throw new Error("Budget AI esaurito prima della chiamata Gemini.");
+    }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      Math.min(timeoutMs, restanteMs)
+    );
+    // Un retry con attesa ha senso solo se resta tempo per attendere e riprovare.
+    const haTempoPerRetry = (attesaMs: number) =>
+      tentativo < retries && restanteMs - attesaMs > 1500;
 
     try {
       // Ruoli Gemini: user/model (niente "assistant"); l'ultima parte è sempre
@@ -150,7 +167,7 @@ export async function callGeminiText({
         const errorBody = await response.text().catch(() => "unknown");
         if (response.status === 429 || response.status === 402) {
           ultimoErrore = new Error(`Quota Gemini superata (HTTP ${response.status}).`);
-          if (tentativo < retries) {
+          if (haTempoPerRetry(tentativo * 1500)) {
             await new Promise((r) => setTimeout(r, tentativo * 1500));
             continue;
           }
@@ -163,7 +180,7 @@ export async function callGeminiText({
           const dettaglio = estraiErroreGemini(errorBody, apiKey);
           const etichetta = dettaglio.stato ? `HTTP 503, ${dettaglio.stato}` : "HTTP 503";
           const coda = dettaglio.messaggio ? `: ${dettaglio.messaggio}` : ".";
-          if (tentativo < retries && tentativi503 < MAX_RETRY_503) {
+          if (haTempoPerRetry(ATTESA_RETRY_503_MS) && tentativi503 < MAX_RETRY_503) {
             tentativi503 += 1;
             await new Promise((r) => setTimeout(r, ATTESA_RETRY_503_MS));
             continue;

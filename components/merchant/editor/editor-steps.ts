@@ -66,7 +66,7 @@ export const EDITOR_STEPS: EditorStep[] = [
     id: "anteprima",
     numero: "07",
     titolo: "Anteprima",
-    sottotitolo: "Come vedono il negozio i clienti",
+    sottotitolo: "Come vedono il negozio i consumatori",
   },
   {
     id: "pubblicazione",

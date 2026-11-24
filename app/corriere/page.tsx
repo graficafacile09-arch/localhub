@@ -18,7 +18,7 @@ export default async function CorrierePage() {
   const nome =
     String(sessione.user.user_metadata?.full_name ?? "").trim() ||
     sessione.user.email ||
-    "Corriere";
+    "Operatore logistico";
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8">
@@ -29,8 +29,8 @@ export default async function CorrierePage() {
               <Truck className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">InCittà</p>
-              <h1 className="text-xl font-extrabold text-slate-900">Area Corriere Locale</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Radici Calabria</p>
+              <h1 className="text-xl font-extrabold text-slate-900">Area logistica e consegne</h1>
               <p className="text-sm text-slate-500">Ciao {nome}, ecco il tuo centro di lavoro.</p>
             </div>
           </div>
@@ -41,7 +41,7 @@ export default async function CorrierePage() {
           </form>
         </header>
 
-        <nav className="sticky top-2 z-20 mt-4 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur" aria-label="Menu corriere">
+        <nav className="sticky top-2 z-20 mt-4 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur" aria-label="Menu logistica e consegne">
           <a href="#dashboard" className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-800"><LayoutDashboard className="h-4 w-4" />Dashboard</a>
           <a href="#consegne" className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"><PackageCheck className="h-4 w-4" />Consegne</a>
           <a href="#comunicazioni" className="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"><MessageCircle className="h-4 w-4" />Comunicazioni</a>
@@ -52,7 +52,7 @@ export default async function CorrierePage() {
           <p className="text-sm font-bold text-emerald-800">Centro operativo</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
             Da qui controlli le consegne assegnate, accetti o aggiorni gli stati, apri la navigazione,
-            comunichi con cliente e venditore e ritrovi le consegne concluse.
+            comunichi con consumatori e imprese e ritrovi le consegne concluse.
           </p>
         </section>
 

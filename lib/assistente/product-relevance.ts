@@ -2,7 +2,7 @@ import { normalizza, estraiToken, formaCompatta, equivalenzaSigla } from "../tex
 // Estensione esplicita: questo modulo è caricato anche dalla suite node
 // (`node --experimental-strip-types --test`), che non risolve gli alias.
 import { refusoPlausibile } from "./understanding.ts";
-import { SOTTOTIPI_PRODOTTO } from "../sottotipi-prodotto.ts";
+import { appartieneCategoriaGenericaProdotto } from "../sottotipi-prodotto.ts";
 
 // Parole chiave che descrivono una categoria, un attributo o una provenienza:
 // non sono un'identità di marca. Servono a impedire che una keyword isolata
@@ -12,6 +12,7 @@ import { SOTTOTIPI_PRODOTTO } from "../sottotipi-prodotto.ts";
 const CHIAVI_GENERICHE_NON_IDENTITARIE = new Set([
   "alimentare", "alimentari", "pasta", "pane", "pizza", "dolce", "dolci",
   "biscotti", "formaggio", "salumi", "carne", "pesce", "verdura", "frutta",
+  "fungo", "funghi",
   "olio", "miele", "conserve", "farina", "riso", "cipolla", "pomodoro",
   "artigianale", "artigianali", "tipico", "tipica", "tipici", "tipiche",
   "tradizionale", "tradizionali", "calabrese", "calabresi", "italiano",
@@ -37,10 +38,12 @@ export type ProdottoIdentificabile = {
 
 function tokenCompatibile(termine: string, token: string[]): boolean {
   if (termine.length < 4) return false;
-  const radiceTermine = termine.replace(/[aeiou]+$/i, "");
+  // «gh» davanti a vocale è il plurale duro di «g» («funghi» → «fungo»): senza
+  // questa normalizzazione le due forme avevano radici diverse.
+  const radiceTermine = termine.replace(/gh/i, "g").replace(/[aeiou]+$/i, "");
   if (radiceTermine.length < 4) return false;
   return token.some(
-    (t) => t.length >= 4 && t.replace(/[aeiou]+$/i, "") === radiceTermine
+    (t) => t.length >= 4 && t.replace(/gh/i, "g").replace(/[aeiou]+$/i, "") === radiceTermine
   );
 }
 
@@ -200,19 +203,9 @@ export function prodottoIdentificaCategoriaGenerica(
   prodotto: ProdottoIdentificabile,
   soggetto: string | undefined
 ): boolean {
-  const chiave = normalizza(soggetto ?? "").trim();
-  if (!chiave) return false;
-  const sottotipi = SOTTOTIPI_PRODOTTO[chiave] ?? [];
-  if (sottotipi.length === 0) return false;
-  // Confronto per parola intera: "toma" non deve agganciare "automatico".
-  const tokenIdentita = estraiToken(identitaProdotto(prodotto));
-  const tokenChiavi = paroleChiaveProdotto(prodotto).flatMap((chiaveProdotto) =>
-    estraiToken(chiaveProdotto)
-  );
-  return sottotipi.some((sottotipo) => {
-    const voce = normalizza(sottotipo).trim();
-    return Boolean(voce) && (tokenIdentita.includes(voce) || tokenChiavi.includes(voce));
-  });
+  // Una sola implementazione, condivisa con la ricerca pubblica: metadati
+  // identitari, sottotipi reali del catalogo e definizione nella descrizione.
+  return appartieneCategoriaGenericaProdotto(prodotto, soggetto);
 }
 
 /**

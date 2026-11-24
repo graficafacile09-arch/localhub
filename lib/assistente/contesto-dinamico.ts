@@ -24,6 +24,7 @@
 import { search } from "@/lib/search-service";
 import { normalizza } from "@/lib/text-utils";
 import { pianoIntentoLocale, richiestaOraDataPino } from "./local-intents";
+import { costruisciContestoSitoPino } from "./contesto-sito";
 
 /** Quanti prodotti allegare: pochi, reali e leggibili. */
 export const MASSIMO_PRODOTTI_CONTESTO_PINO = 5;
@@ -188,10 +189,17 @@ export async function costruisciContestoDinamicoPino(
 ): Promise<EsitoContestoDinamicoPino | null> {
   const testo = ultimoMessaggioUtente(messaggi);
   if (!testo) return null;
-  // Meteo, farmacie, ora e data non sono catalogo: una ricerca qui sarebbe
-  // una query sprecata a ogni turno (e «che ore sono» contiene «ore»).
+  // Meteo, farmacie, ora e data non sono catalogo né conoscenza editoriale.
   if (pianoIntentoLocale(testo) || richiestaOraDataPino(testo)) return null;
-  if (!richiedeCatalogoPino(testo)) return null;
+
+  // Fonti editoriali condivise con le pagine pubbliche: non dipendono dal DB.
+  const contestoSito = costruisciContestoSitoPino(testo);
+  const cercaCatalogo = richiedeCatalogoPino(testo);
+  if (!cercaCatalogo) {
+    return contestoSito
+      ? { blocco: contestoSito, prodotti: 0 }
+      : null;
+  }
 
   const query = testo.slice(0, 300);
 
@@ -214,13 +222,19 @@ export async function costruisciContestoDinamicoPino(
       "[pino-contesto-dinamico]",
       JSON.stringify({ prodotti: prodotti.length })
     );
-    return { blocco: comporreBloccoContestoPino(prodotti), prodotti: prodotti.length };
+    const blocchi = [
+      comporreBloccoContestoPino(prodotti),
+      contestoSito,
+    ].filter((blocco): blocco is string => Boolean(blocco?.trim()));
+    return { blocco: blocchi.join("\n\n"), prodotti: prodotti.length };
   } catch (errore) {
-    // Micro-down o lentezza del database: la chat prosegue senza contesto.
+    // Se il DB non risponde, le fonti editoriali locali restano consultabili.
     console.warn(
-      "[pino-contesto-dinamico] ricerca non disponibile, invio il messaggio originale:",
+      "[pino-contesto-dinamico] ricerca non disponibile:",
       errore instanceof Error ? errore.message : String(errore)
     );
-    return null;
+    return contestoSito
+      ? { blocco: contestoSito, prodotti: 0 }
+      : null;
   }
 }

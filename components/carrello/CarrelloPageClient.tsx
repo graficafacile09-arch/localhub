@@ -22,7 +22,7 @@ export default function CarrelloPageClient() {
           </div>
           <h1 className="mt-4 text-3xl font-black text-slate-900">Il tuo carrello è vuoto</h1>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Sfoglia i negozi della tua città e aggiungi i prodotti che ti interessano.
+            Sfoglia i negozi e le produzioni del territorio e aggiungi i prodotti che ti interessano.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
@@ -169,7 +169,7 @@ export default function CarrelloPageClient() {
         </div>
 
         {/* Riepilogo */}
-        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+        <aside className="h-fit rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-20">
           <h2 className="text-sm font-black uppercase tracking-wide text-slate-500">Riepilogo</h2>
           <dl className="mt-3 space-y-1.5 text-sm">
             <div className="flex items-center justify-between">

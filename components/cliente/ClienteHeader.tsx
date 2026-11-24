@@ -14,12 +14,12 @@ export default function ClienteHeader() {
         <div className="flex items-center gap-5">
           <Link
             href="/"
-            aria-label="LocalHub — torna al sito"
+            aria-label="Radici Calabria — torna al sito"
             className="flex items-center rounded-2xl bg-white p-2 shadow-sm transition hover:bg-blue-50"
           >
             <Image
               src="/logo-transparent.png"
-              alt="LocalHub"
+              alt="Radici Calabria"
               width={1536}
               height={1024}
               preload
@@ -33,11 +33,11 @@ export default function ClienteHeader() {
             <div className="flex items-center gap-2.5">
               <ShoppingBasket className="h-5 w-5 text-blue-200" aria-hidden />
               <span className="text-2xl font-black tracking-tight text-white">
-                Area Clienti
+                Area consumatori
               </span>
             </div>
             <p className="mt-1 text-sm text-blue-100">
-              La tua area personale su LocalHub
+              La tua area personale su Radici Calabria
             </p>
           </div>
         </div>

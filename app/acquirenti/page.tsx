@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Termini per gli Acquirenti",
-  description: "Termini per gli Acquirenti che utilizzano la piattaforma InCittà.",
+  description: "Termini per gli Acquirenti che utilizzano la piattaforma Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/acquirenti`,
   },
@@ -16,7 +16,7 @@ const sezioni = [
     titolo: "1. Oggetto",
     contenuto: (
       <p>
-        I presenti Termini descrivono le regole di utilizzo della piattaforma InCittà da parte
+        I presenti Termini descrivono le regole di utilizzo della piattaforma Radici Calabria da parte
         degli Acquirenti. La piattaforma consente di consultare offerte e di utilizzare
         strumenti tecnici per avviare e seguire ordini relativi a prodotti, servizi o altre
         prestazioni proposte dai Venditori.
@@ -24,18 +24,18 @@ const sezioni = [
     ),
   },
   {
-    titolo: "2. Ruolo di InCittà",
+    titolo: "2. Ruolo di Radici Calabria",
     contenuto: (
       <>
         <p>
-          InCittà è una piattaforma e un'infrastruttura tecnologica che mette a disposizione
+          Radici Calabria è una piattaforma e un'infrastruttura tecnologica che mette a disposizione
           strumenti di marketplace, consultazione delle offerte, checkout, gestione tecnica
           degli ordini, comunicazioni e strumenti tecnici per reclami e segnalazioni.
         </p>
         <p>
-          Le funzioni tecniche della piattaforma non fanno apparire InCittà come il venditore
+          Le funzioni tecniche della piattaforma non fanno apparire Radici Calabria come il venditore
           dei prodotti o dei servizi pubblicati dai Venditori. Restano fermi gli obblighi
-          eventualmente attribuiti direttamente a InCittà dalla normativa applicabile.
+          eventualmente attribuiti direttamente a Radici Calabria dalla normativa applicabile.
         </p>
       </>
     ),
@@ -114,7 +114,7 @@ const sezioni = [
           un ordine.
         </p>
         <p>
-          InCittà può eseguire controlli tecnici e aggiornare la presentazione delle offerte,
+          Radici Calabria può eseguire controlli tecnici e aggiornare la presentazione delle offerte,
           senza sostituire le informazioni e le responsabilità commerciali del Venditore.
         </p>
       </>
@@ -168,9 +168,9 @@ const sezioni = [
           finanziamento o altre operazioni relative al metodo secondo le proprie condizioni.
         </p>
         <p>
-          InCittà può trasmettere al provider i dati necessari e aggiornare tecnicamente lo
+          Radici Calabria può trasmettere al provider i dati necessari e aggiornare tecnicamente lo
           stato del checkout o dell'ordine sulla base delle informazioni ricevute. Il ruolo
-          tecnico di InCittà non la rende il Venditore del prodotto o del servizio. Eventuali
+          tecnico di Radici Calabria non la rende il Venditore del prodotto o del servizio. Eventuali
           commissioni della piattaforma sono distinte dal prezzo della vendita secondo la
           configurazione applicabile e gli accordi con il Venditore.
         </p>
@@ -194,7 +194,7 @@ const sezioni = [
       <p>
         Il Venditore cura la consegna, il ritiro o l'esecuzione della prestazione secondo quanto
         indicato nell'offerta e nell'ordine. Tempi, modalità, disponibilità e impedimenti
-        devono essere verificati con il Venditore, salvo le comunicazioni tecniche che InCittà
+        devono essere verificati con il Venditore, salvo le comunicazioni tecniche che Radici Calabria
         può trasmettere attraverso la piattaforma.
       </p>
     ),
@@ -203,7 +203,7 @@ const sezioni = [
     titolo: "15. Comunicazioni relative all'ordine",
     contenuto: (
       <p>
-        InCittà può inviare comunicazioni tecniche sulla ricezione, sul pagamento e sullo stato
+        Radici Calabria può inviare comunicazioni tecniche sulla ricezione, sul pagamento e sullo stato
         dell'ordine. Il Venditore può inviare comunicazioni operative o commerciali relative
         all'offerta e alla sua esecuzione. L'Acquirente deve controllare i recapiti forniti e i
         messaggi ricevuti nei canali indicati.
@@ -215,7 +215,7 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          InCittà può mettere a disposizione strumenti tecnici per aprire un reclamo, conservare
+          Radici Calabria può mettere a disposizione strumenti tecnici per aprire un reclamo, conservare
           le comunicazioni e consentire lo scambio di messaggi con il Venditore.
         </p>
         <p>
@@ -232,7 +232,7 @@ const sezioni = [
       <p>
         Recesso, resi e rimborsi sono disciplinati dalle relative Condizioni di vendita, dalle
         informazioni dell'offerta e dalla normativa applicabile. Le richieste commerciali
-        devono essere rivolte al Venditore secondo i canali indicati. InCittà può eseguire
+        devono essere rivolte al Venditore secondo i canali indicati. Radici Calabria può eseguire
         tecnicamente operazioni di rimborso tramite il provider quando previsto dal workflow e
         dopo le autorizzazioni necessarie, senza sostituire la decisione commerciale del
         soggetto competente.
@@ -247,7 +247,7 @@ const sezioni = [
         disciplinati dalle relative Condizioni di vendita, dalle informazioni dell'offerta e
         dalla normativa applicabile. L'Acquirente deve rivolgersi al Venditore per la gestione
         commerciale della richiesta, fatti salvi gli obblighi direttamente applicabili a
-        InCittà.
+        Radici Calabria.
       </p>
     ),
   },
@@ -267,7 +267,7 @@ const sezioni = [
     contenuto: (
       <p>
         In presenza di attività sospette, frodi, utilizzi abusivi o contestazioni di pagamento,
-        InCittà può effettuare verifiche tecniche, coinvolgere il provider e adottare le misure
+        Radici Calabria può effettuare verifiche tecniche, coinvolgere il provider e adottare le misure
         previste dai propri flussi e dalla normativa applicabile. L'Acquirente deve collaborare
         alle verifiche richieste e utilizzare i canali appropriati per eventuali contestazioni.
       </p>
@@ -279,7 +279,7 @@ const sezioni = [
       <p>
         Quando la piattaforma consente di pubblicare recensioni o altri contenuti, l'Acquirente
         deve utilizzare informazioni pertinenti, corrette e lecite e deve disporre dei diritti
-        necessari sui materiali condivisi. InCittà può applicare controlli tecnici o limitare
+        necessari sui materiali condivisi. Radici Calabria può applicare controlli tecnici o limitare
         contenuti nei casi previsti dalle regole della piattaforma o dalla normativa applicabile.
       </p>
     ),

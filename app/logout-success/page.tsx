@@ -25,7 +25,7 @@ export default async function LogoutSuccessPage() {
           <CheckCircle2 className="h-9 w-9" aria-hidden />
         </span>
         <h1 className="mt-6 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-          Grazie per aver utilizzato InCittà.
+          Grazie per aver utilizzato Radici Calabria.
           <span className="mt-2 block text-2xl md:text-3xl">
             A presto! 👋
           </span>

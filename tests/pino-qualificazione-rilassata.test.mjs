@@ -261,7 +261,7 @@ test("le azioni non eseguibili sono riconosciute prima delle FAQ", () => {
     rilevaAzioneNonDisponibilePino("Qual è il tuo numero di telefono?"),
     "contatto"
   );
-  assert.equal(rilevaAzioneNonDisponibilePino("Come posso contattare InCittà?"), "contatto");
+  assert.equal(rilevaAzioneNonDisponibilePino("Come posso contattare Radici Calabria?"), "contatto");
   // Le domande informative restano alle FAQ pubblicate.
   assert.equal(rilevaAzioneNonDisponibilePino("Come faccio un ordine?"), null);
   assert.equal(

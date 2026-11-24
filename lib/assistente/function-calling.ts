@@ -1,19 +1,18 @@
 /**
- * LocalHub — Pino: contratto centrale dei tool e Function Calling Gemini.
+ * LocalHub — Pino: contratto centrale dei tool e Function Calling provider-neutral.
  *
  * Questo modulo è la sola fonte per:
  * - nome, descrizione e JSON Schema dei parametri;
  * - chiavi ammesse dal validatore;
  * - elenco degli strumenti esposti al modello e strumenti interni;
- * - dichiarazioni native Gemini (`tools.functionDeclarations`);
+ * - dichiarazioni native compatibili con il provider;
  * - menu testuale usato dal percorso JSON legacy.
  *
  * Il percorso nativo è sperimentale e non viene attivato di default. Il
- * contratto non esegue tool, non accede a Supabase e non chiama Gemini.
+ * contratto non esegue tool, non accede a Supabase e non chiama provider AI.
  *
  * @module lib/assistente/function-calling
  */
-import type { FunctionDeclaration } from "@google/genai";
 import type { StrumentoPino, ToolParams } from "./tools";
 
 export type TipoParametroFunctionCalling =
@@ -46,7 +45,7 @@ export type DefinizioneStrumentoPino = {
   parameters: SchemaParametriFunctionCalling;
   /** Chiavi ammesse dal validatore, incluse quelle interne non esposte. */
   allowedParams: readonly (keyof ToolParams)[];
-  /** true = dichiarato a Gemini; false = solo uso interno/deterministico. */
+  /** true = dichiarato al provider AI; false = solo uso interno/deterministico. */
   exposed: boolean;
 };
 
@@ -111,6 +110,9 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
         categoria: PARAMETRI_COMUNI_CATALOGO.categoria,
         tipo: testo("Tipo di attività o profilo professionale."),
         servizio: testo("Servizio richiesto dell'attività."),
+        serviziTutti: booleano(
+          "True per elencare tutti i servizi pubblicati dall'attività, quando la richiesta è generica."
+        ),
         citta: PARAMETRI_COMUNI_CATALOGO.citta,
         termini: lista("Parole chiave e sinonimi utili al recupero."),
         esclusioni: PARAMETRI_COMUNI_CATALOGO.esclusioni,
@@ -121,7 +123,7 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
       additionalProperties: false,
     },
     allowedParams: [
-      "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
+      "query", "limit", "categoria", "tipo", "servizio", "serviziTutti", "citta", "termini",
       "esclusioni", "escludiNomi", "apertiOra",
     ],
     exposed: true,
@@ -184,8 +186,53 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
     exposed: true,
   },
   {
+    name: "searchNews",
+    description: "Cerca le ultime notizie pubblicate su Radici Calabria, con fonte e link.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o persona delle notizie; vuoto per le ultime pubblicate."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
+    name: "searchContent",
+    description: "Cerca articoli e contenuti editoriali pubblicati su Radici Calabria.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o parola chiave dei contenuti; vuoto per i più recenti."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
+    name: "searchConoscenza",
+    description: "Cerca nelle informazioni del sito su territorio, località, filiere e produttori, stagionalità, FAQ, attrazioni e pagine informative. Non cerca prodotti, negozi, prezzi, offerte o eventi.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o parola chiave da cercare nelle informazioni del sito."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
     name: "searchAll",
-    description: "Cerca trasversalmente negozi, prodotti, offerte, eventi e categorie.",
+    description: "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.",
     parameters: {
       type: "object",
       properties: {
@@ -283,6 +330,13 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
   },
 ] as const;
 
+/** Dichiarazione provider-neutral degli strumenti esposti a Pino. */
+export type PinoToolDeclaration = {
+  name: string;
+  description: string;
+  parametersJsonSchema: SchemaParametriFunctionCalling;
+};
+
 /** Chiavi ammesse dal validatore, derivate dallo stesso contratto. */
 export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolParams)[]> =
   TOOL_DEFINITIONS.reduce(
@@ -293,8 +347,8 @@ export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolPara
     {} as Record<StrumentoPino, readonly (keyof ToolParams)[]>
   );
 
-/** Strumenti dichiarati a Gemini: il fan-out regalo resta interno. */
-export function buildNativeToolDeclarations(): FunctionDeclaration[] {
+/** Strumenti dichiarati al provider AI: il fan-out regalo resta interno. */
+export function buildNativeToolDeclarations(): PinoToolDeclaration[] {
   return TOOL_DEFINITIONS.filter((definizione) => definizione.exposed).map((definizione) => ({
     name: definizione.name,
     description: definizione.description,

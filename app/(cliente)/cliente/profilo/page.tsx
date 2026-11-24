@@ -1,7 +1,7 @@
 import ClienteProfiloModule from "@/components/cliente/profilo/ClienteProfiloModule";
 
 export const metadata = {
-  title: "Profilo — Area Clienti",
+  title: "Profilo — Area consumatori",
 };
 
 export const dynamic = "force-dynamic";

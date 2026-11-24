@@ -36,7 +36,7 @@ export default function BackupModule() {
                   Backup piattaforma
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-50">
-                  Crea un backup locale del database InCittà usando Supabase CLI e
+                  Crea un backup locale del database Radici Calabria usando Supabase CLI e
                   Docker Desktop. I file restano sul tuo PC, fuori dai limiti di
                   spazio del progetto Supabase.
                 </p>

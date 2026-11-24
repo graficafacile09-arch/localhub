@@ -1,5 +1,16 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { toSlug } from "@/lib/slug";
+import { sincronizzaContenuto, rimuoviContenuto } from "@/lib/conoscenza/raccolta";
+
+/** Aggiornamento indice non bloccante: un errore viene solo registrato. */
+function aggiornaIndiceSicuro(operazione: Promise<void>, slug: string): void {
+  operazione.catch((err) =>
+    console.error(
+      `[conoscenza] aggiornamento indice fallito per "${slug}":`,
+      err instanceof Error ? err.message : String(err)
+    )
+  );
+}
 
 /**
  * CONTENUTI EDITORIALI — helper server-side del pannello Amministratore.
@@ -312,7 +323,9 @@ export async function creaContenutoAdmin(
     if (error || !data) {
       return { ok: false, errore: error?.message ?? "Impossibile creare il contenuto." };
     }
-    return { ok: true, data: assumiContenuto(data as Record<string, unknown>) };
+    const creato = assumiContenuto(data as Record<string, unknown>);
+    aggiornaIndiceSicuro(sincronizzaContenuto(creato), creato.slug);
+    return { ok: true, data: creato };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";
     return { ok: false, errore: message };
@@ -377,7 +390,9 @@ export async function aggiornaContenutoAdmin(
     if (error || !data) {
       return { ok: false, errore: error?.message ?? "Impossibile aggiornare il contenuto." };
     }
-    return { ok: true, data: assumiContenuto(data as Record<string, unknown>) };
+    const aggiornato = assumiContenuto(data as Record<string, unknown>);
+    aggiornaIndiceSicuro(sincronizzaContenuto(aggiornato), aggiornato.slug);
+    return { ok: true, data: aggiornato };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";
     return { ok: false, errore: message };
@@ -392,10 +407,12 @@ export async function eliminaContenutoAdmin(
   if (!db) return { ok: false, errore: DB_NON_DISPONIBILE };
 
   try {
+    const corrente = await getContenutoAdminById(id);
     const { error } = await db.from("contenuti").delete().eq("id", id);
     if (error) {
       return { ok: false, errore: error.message ?? "Impossibile eliminare il contenuto." };
     }
+    if (corrente) aggiornaIndiceSicuro(rimuoviContenuto(corrente.slug), corrente.slug);
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";

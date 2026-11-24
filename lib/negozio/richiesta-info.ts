@@ -158,7 +158,7 @@ ${righe
     const resend = new Resend(apiKey);
     const { data, error } = await conTimeout(
       resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>",
+        from: process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>",
         to: destinatario,
         subject: `Nuova richiesta di informazioni — ${negozioNome}`,
         html,

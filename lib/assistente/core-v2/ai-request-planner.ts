@@ -1,12 +1,12 @@
 /**
  * Pino Core v2 — AI structured request planner.
  *
- * Experimental only: never imported by the production assistant. Gemini turns
+ * Experimental only: never imported by the production assistant. Groq turns
  * natural, misspelled or colloquial requests into a typed search plan. The
  * deterministic planner remains the safe fallback and the source of truth for
  * mechanically detectable constraints (prices, open-now and exclusions).
  */
-import { callGeminiText } from "../../ai/gemini-text.ts";
+import { callGroqText } from "../../ai/groq.ts";
 import {
   planPinoCoreRequest,
   type PinoCorePlan,
@@ -14,6 +14,9 @@ import {
   type PinoCoreSurface,
   type PinoCoreConfidence,
 } from "./request-planner.ts";
+
+/** Tempo massimo del planner dentro il budget AI di Pino (vedi budget-ai.ts). */
+const BUDGET_PLANNER_CORE_MS = 8_500;
 
 export type PinoPlannerContextMessage = {
   role: "user" | "model";
@@ -65,7 +68,7 @@ const ROUTES = new Set<PinoCoreRoute>([
 const SURFACES = new Set<PinoCoreSurface>(["products", "stores", "both", "none"]);
 const CONFIDENCES = new Set<PinoCoreConfidence>(["high", "medium", "low"]);
 const SYSTEM_PROMPT = `
-Sei il planner strutturato di Pino, assistente del marketplace locale InCittà.
+Sei il planner strutturato di Pino, assistente del marketplace locale Radici Calabria.
 Il tuo unico compito è trasformare il messaggio dell'utente in un piano JSON
 per instradare la richiesta. NON rispondere all'utente, NON inventare prodotti,
 negozi, eventi, prezzi, orari o informazioni locali.
@@ -311,6 +314,7 @@ export async function planPinoCoreRequestWithAI(
     history?: PinoPlannerContextMessage[];
     plannerCall?: (prompt: string) => Promise<string>;
     requestId?: string;
+    deadlineMs?: number;
     onDiagnostic?: (diagnostic: PinoPlannerDiagnostic) => void;
   } = {},
 ): Promise<PinoCorePlan> {
@@ -365,14 +369,15 @@ export async function planPinoCoreRequestWithAI(
   try {
     raw = options.plannerCall
       ? await options.plannerCall(prompt)
-      : await callGeminiText({
+      : await callGroqText({
           systemPrompt: SYSTEM_PROMPT,
           userPrompt: prompt,
           json: true,
           temperature: 0,
           maxTokens: 450,
           timeoutMs: 12_000,
-          retries: 1,
+          // Scadenza assoluta: il planner non può superare il budget AI di Pino.
+          deadlineMs: options.deadlineMs ?? inizio + BUDGET_PLANNER_CORE_MS,
         });
   } catch (errore) {
     // Provider outage, missing key, timeout, quota or malformed output must
@@ -382,7 +387,7 @@ export async function planPinoCoreRequestWithAI(
       emetti("timeout", {
         attempted: true,
         durationMs,
-        reason: `gemini_timeout: ${(errore as Error | null)?.message ?? "aborted"}`,
+        reason: `groq_timeout: ${(errore as Error | null)?.message ?? "aborted"}`,
       });
     } else {
       const httpStatus = statoHttpErrore(errore);
@@ -390,7 +395,7 @@ export async function planPinoCoreRequestWithAI(
         attempted: true,
         durationMs,
         httpStatus,
-        reason: `gemini_provider_error: ${(errore as Error | null)?.message ?? "unknown"}`,
+        reason: `groq_provider_error: ${(errore as Error | null)?.message ?? "unknown"}`,
       });
     }
     return deterministic;

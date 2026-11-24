@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { after } from "next/server";
-import { ArrowUpRight, Newspaper } from "lucide-react";
+import { Newspaper } from "lucide-react";
 import Header from "@/components/Header/Header";
+import IntestazionePagina from "@/components/editoriale/IntestazionePagina";
+import ArchivioNotizie from "@/components/Notizie/ArchivioNotizie";
 import {
-  formattaDataNotizia,
-  getNotiziePubbliche,
+  cercaNotiziePubbliche,
+  NOTIZIE_PER_PAGINA,
 } from "@/lib/notizie-pubbliche";
 import { CATEGORIE_NOTIZIE } from "@/lib/notizie/types";
+import { isCategoriaNotizia } from "@/lib/notizie/filtro";
 import { aggiornaNotizieSeNecessario } from "@/lib/notizie/aggiornamento";
 import { getSiteUrl } from "@/lib/site";
 
@@ -15,123 +18,103 @@ import { getSiteUrl } from "@/lib/site";
 export const maxDuration = 60;
 
 export const metadata: Metadata = {
-  // title senza suffisso "| InCittà": lo aggiunge il template del layout.
-  title: "Notizie CV",
+  // title senza suffisso "| Radici Calabria": lo aggiunge il template del layout.
+  title: "Notizie: agricoltura calabrese",
   description:
-    "Le notizie di Castrovillari raccolte automaticamente da fonti istituzionali e pubbliche: Comune, Provincia, Regione, Parco del Pollino e Protezione Civile.",
+    "Notizie, eventi, fiere e bandi su agricoltura, filiere agroalimentari, olio, vino, agrumi e prodotti tipici della Calabria, aggiornati automaticamente da fonti ufficiali e testate specializzate.",
   alternates: {
     canonical: `${getSiteUrl()}/notizie`,
   },
 };
 
-export default async function NotiziePage() {
-  const notizie = await getNotiziePubbliche();
+/** Chip dei filtri: forma e colori da `.rd-filtro`, stato attivo da aria-current. */
+const CLASSE_CHIP = "rd-filtro md:px-3.5 md:py-1.5 md:text-xs";
+/** Numero di contenuti accanto al nome della categoria. */
+const CLASSE_CONTEGGIO =
+  "ml-1.5 inline-block rounded-full px-1.5 text-[10px] font-bold tabular-nums";
+
+export default async function NotiziePage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    categoria?: string | string[];
+    pagina?: string | string[];
+  }>;
+}) {
+  const sp = await searchParams;
+  const categoriaRaw = Array.isArray(sp.categoria)
+    ? sp.categoria[0]
+    : sp.categoria;
+  const categoria = isCategoriaNotizia(categoriaRaw) ? categoriaRaw : null;
+  const paginaRaw = Array.isArray(sp.pagina) ? sp.pagina[0] : sp.pagina;
+  const paginaRichiesta = Number.parseInt(paginaRaw ?? "1", 10) || 1;
+
+  const esito = await cercaNotiziePubbliche({
+    categoria,
+    pagina: paginaRichiesta,
+    perPagina: NOTIZIE_PER_PAGINA,
+  });
 
   // Se lo scheduler esterno è fermo, l'import riparte da qui dopo la risposta:
-  // la visita successiva trova già le notizie aggiornate.
+  // la visita successiva trova già i contenuti aggiornati.
   after(aggiornaNotizieSeNecessario);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="rd-pagina min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 md:max-w-6xl md:px-6 md:py-10">
-        {/* ── Intestazione ─────────────────────────────────────────────── */}
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
-            Notizie <span className="text-yellow-500">CV</span>
-          </h1>
-          <p className="mt-1 text-xs text-slate-500 md:text-sm md:leading-6">
-            Aggregatore automatico di notizie su Castrovillari da fonti
-            istituzionali e pubbliche. Ogni notizia rimanda alla fonte
-            originale.
-          </p>
-        </div>
-
-        {/* ── Categorie ───────────────────────────────────────────────── */}
-        <div className="mt-6 flex flex-wrap gap-2 md:mt-7 md:gap-2.5">
-          <span className="rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-900 md:px-3.5 md:py-1.5 md:text-xs">
-            Tutte
-          </span>
-          {CATEGORIE_NOTIZIE.map((categoria) => (
-            <span
-              key={categoria}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 md:px-3.5 md:py-1.5 md:text-xs"
-            >
-              {categoria}
-            </span>
-          ))}
-        </div>
-
-        {/* ── Elenco notizie ──────────────────────────────────────────── */}
-        {notizie.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center rounded-[2rem] border border-white/70 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-yellow-50">
-              <Newspaper className="h-8 w-8 text-yellow-500" aria-hidden />
-            </div>
-            <h2 className="mt-4 text-lg font-black tracking-tight text-slate-900">
-              Non ci sono ancora notizie disponibili.
-            </h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
-              L&apos;aggregatore raccoglie le notizie di Castrovillari
-              periodicamente. Torna presto a trovarci.
-            </p>
+      <IntestazionePagina
+        occhiello="Agricoltura calabrese"
+        titolo="Notizie"
+        icona={Newspaper}
+        sommario="Agricoltura e agroalimentare calabrese: notizie, fiere, bandi e bollettini da fonti ufficiali e testate specializzate. Ogni contenuto rimanda alla fonte originale."
+      >
+        {/* ── Categorie con numero di contenuti ────────────────────────
+            Una sola riga con scorrimento orizzontale: i filtri non rubano
+            altezza all'elenco, che parte subito sotto. */}
+        <div className="relative">
+          <nav
+            aria-label="Categorie delle notizie"
+            className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             <Link
-              href="/"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-slate-900 transition hover:bg-yellow-300"
+              href="/notizie"
+              aria-current={categoria === null ? "page" : undefined}
+              className={CLASSE_CHIP}
             >
-              Torna alla home
+              Tutte
+              <span
+                className={`${CLASSE_CONTEGGIO} ${categoria === null ? "bg-white/25 text-white" : "bg-[#efe8d8] text-[#6b6459]"}`}
+              >
+                {esito.totaleArchivio}
+              </span>
             </Link>
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 md:gap-6">
-            {notizie.map((notizia) => {
-              const data = formattaDataNotizia(notizia.publishedAt);
-              return (
-                <article
-                  key={notizia.id}
-                  className="flex flex-col rounded-[2rem] border border-white/70 bg-white p-5 shadow-sm transition md:p-6 hover:-translate-y-0.5 hover:border-yellow-200 hover:shadow-md"
+            {CATEGORIE_NOTIZIE.map((c) => (
+              <Link
+                key={c}
+                href={`/notizie?categoria=${encodeURIComponent(c)}`}
+                aria-current={categoria === c ? "page" : undefined}
+                className={CLASSE_CHIP}
+              >
+                {c}
+                <span
+                  className={`${CLASSE_CONTEGGIO} ${categoria === c ? "bg-white/25 text-white" : "bg-[#efe8d8] text-[#6b6459]"}`}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    {notizia.category && (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
-                        {notizia.category}
-                      </span>
-                    )}
-                    {data && (
-                      <span className="text-[11px] text-slate-400">{data}</span>
-                    )}
-                  </div>
+                  {esito.conteggi[c] ?? 0}
+                </span>
+              </Link>
+            ))}
+          </nav>
+          {/* Sfumatura: segnala che i chip continuano oltre il bordo. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f4efe4] to-transparent"
+          />
+        </div>
+      </IntestazionePagina>
 
-                  <h2 className="mt-3 text-base font-black leading-snug tracking-tight text-slate-900 md:text-xl md:leading-7">
-                    {notizia.title}
-                  </h2>
-
-                  {notizia.excerpt && (
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600 md:text-base md:leading-7">
-                      {notizia.excerpt}
-                    </p>
-                  )}
-
-                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-                    <span className="min-w-0 truncate text-[11px] font-semibold text-slate-400 md:text-xs">
-                      {notizia.sourceName}
-                    </span>
-                    <a
-                      href={notizia.originalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-yellow-400 px-3.5 py-2 text-[11px] font-bold text-slate-900 transition hover:bg-yellow-300 md:px-4 md:py-2.5 md:text-xs"
-                    >
-                      Leggi la fonte
-                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                    </a>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+      <div className="rd-guscio py-8 md:py-10">
+        <ArchivioNotizie esito={esito} categoria={categoria} />
       </div>
     </main>
   );

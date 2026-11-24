@@ -34,7 +34,7 @@ import StatoSpedizioneLive from "@/components/ordini/StatoSpedizioneLive";
 type Params = { ordineId: string };
 
 export const metadata = {
-  title: "Dettaglio ordine — Area Clienti",
+  title: "Dettaglio ordine — Area consumatori",
 };
 
 export const dynamic = "force-dynamic";
@@ -138,7 +138,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         totale={ordine.totale}
         createdAt={ordine.createdAt}
         modalita={ordine.modalita}
-        eyebrow="Area Clienti"
+        eyebrow="Area consumatori"
         identita={
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>
@@ -163,7 +163,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
       {ordine.richiedeVerificaEta ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <p className="font-black">18+ — ordine con prodotti soggetti a verifica dell'età</p>
-          <p className="mt-1 text-xs leading-5 text-amber-800">La maggiore età è stata confermata al checkout. Il venditore resta tenuto a effettuare gli eventuali controlli dell'identità previsti dalla legge.</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">La maggiore età è stata confermata al checkout. L&apos;impresa resta tenuta a effettuare gli eventuali controlli dell'identità previsti dalla legge.</p>
         </div>
       ) : null}
 

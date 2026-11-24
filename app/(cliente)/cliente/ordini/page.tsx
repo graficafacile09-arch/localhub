@@ -12,14 +12,14 @@ import ClienteEmptyState from "@/components/cliente/ClienteEmptyState";
 import { OrderCard } from "@/components/ordini/OrderCard";
 
 export const metadata = {
-  title: "I miei ordini — Area Clienti",
+  title: "I miei ordini — Area consumatori",
 };
 
 export const dynamic = "force-dynamic";
 
 /**
  * Pagina "I miei ordini" — Area Clienti.
- * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
+ * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini Radici Calabria":
  * numero + sintesi prodotto, negozio, data/ora, foto prodotto, totale e
  * stato. Dati REALI da Supabase, filtrati per cliente_user_id (server-side).
  * Filtri di presentazione (Tutti / In corso / Completati / Annullati):
@@ -68,7 +68,7 @@ export default async function OrdiniPage({
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area Clienti
+              Area consumatori
             </p>
             <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
               I miei ordini

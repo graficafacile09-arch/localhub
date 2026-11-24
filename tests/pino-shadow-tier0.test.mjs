@@ -20,7 +20,7 @@ import {
 // ─── Shadow Adapter Tier 0 — modulo isolato ────────────────────────────────
 //
 // Il modulo non è collegato al runtime: questi test verificano i confini di
-// sicurezza e la logica di osservazione, senza Gemini, Supabase o rete.
+// sicurezza e la logica di osservazione, senza provider AI, Supabase o rete.
 
 const sorgente = (percorso) =>
   readFileSync(join(process.cwd(), percorso), "utf8").replace(/\r\n/g, "\n");
@@ -48,7 +48,7 @@ test("il modulo importa solo il planner deterministico", () => {
 
   for (const vietato of [
     /@google\/genai/,
-    /\bcallGeminiText\s*\(/,
+    /\bcallGroqText\s*\(/,
     /\bcreateClient\s*\(/,
     /\bfetch\s*\(/,
     /\baxios\b/,
@@ -80,7 +80,7 @@ test("le dipendenze transitive del planner non toccano rete o provider", () => {
     "lib/assistente/routing-policy.ts",
   ]) {
     const src = sorgente(file);
-    for (const vietato of ["callGeminiText(", "createClient(", "supabase", "fetch(", "@google/genai"]) {
+    for (const vietato of ["callGroqText(", "createClient(", "supabase", "fetch(", "@google/genai"]) {
       assert.equal(src.includes(vietato), false, `${file}: ${vietato}`);
     }
   }
@@ -678,11 +678,11 @@ test("F2: nei log non finisce il testo della conversazione", () => {
   assert.equal(/Mario|segreto|regalo|Cerco/.test(log.join(" ")), false);
 });
 
-test("F2: tutte le 29 uscite di index.ts passano dall'osservatore", () => {
+test("F2: tutte le 30 uscite di index.ts passano dall'osservatore", () => {
   const src = sorgente("lib/assistente/index.ts");
   const motivi = [...src.matchAll(/return esci\(\s*"([a-z_]+)"/g)].map((match) => match[1]);
 
-  assert.equal(motivi.length, 29, motivi.join(","));
+  assert.equal(motivi.length, 30, motivi.join(","));
   assert.deepEqual(
     new Set(motivi),
     new Set([
@@ -714,6 +714,7 @@ test("F2: tutte le 29 uscite di index.ts passano dall'osservatore", () => {
       "ora_data",
       "orari",
       "servizio_assente",
+      "varianti_prodotto",
       "finale",
     ])
   );

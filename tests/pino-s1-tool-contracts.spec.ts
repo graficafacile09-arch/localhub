@@ -210,6 +210,8 @@ test.describe("S1 — validazione dei ToolParams", () => {
       prodotti: [],
       offerte: [],
       eventi: [],
+      notizie: [],
+      contenuti: [],
       categorie: [],
       meteo: null,
       farmacie: [],
@@ -379,8 +381,11 @@ test.describe("S1-A — contratti per strumento", () => {
       "getCategories",
       "getWeather",
       "searchAll",
+      "searchConoscenza",
+      "searchContent",
       "searchEvents",
       "searchGiftCategories",
+      "searchNews",
       "searchOffers",
       "searchPharmacies",
       "searchProducts",
@@ -397,7 +402,7 @@ test.describe("S1-A — contratti per strumento", () => {
   test("nessuna chiave realmente letta da un tool viene esclusa", () => {
     const attese: Record<string, string[]> = {
       searchStores: [
-        "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
+        "query", "limit", "categoria", "tipo", "servizio", "serviziTutti", "citta", "termini",
         "esclusioni", "escludiNomi", "apertiOra",
       ],
       searchProducts: [
@@ -406,6 +411,8 @@ test.describe("S1-A — contratti per strumento", () => {
       ],
       searchOffers: ["query", "limit"],
       searchEvents: ["query", "limit"],
+      searchNews: ["query", "limit"],
+      searchContent: ["query", "limit"],
       searchAll: [
         "query", "limit", "categoria", "tipo", "servizio", "citta",
         "termini", "esclusioni", "colori", "materiali", "escludiNomi", "minPrice",

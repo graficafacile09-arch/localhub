@@ -351,7 +351,7 @@ export default function RegistroAttivitaModule() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/50">
                     <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Data/Ora</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Admin</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Amministratore</th>
                     <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Operazione</th>
                     <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Risorsa</th>
                     <th className="text-left px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Negozio</th>

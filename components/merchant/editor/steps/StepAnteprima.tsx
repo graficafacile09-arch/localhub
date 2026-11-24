@@ -10,7 +10,7 @@ export default function StepAnteprima({ store }: StepProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-slate-500">
-          Ecco come i clienti vedono il tuo negozio. Salva le modifiche negli step precedenti
+          Ecco come i consumatori vedono il tuo negozio. Salva le modifiche negli step precedenti
           prima di controllare qui.
         </p>
         <a

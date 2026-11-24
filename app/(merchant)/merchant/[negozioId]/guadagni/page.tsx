@@ -27,7 +27,7 @@ export default async function MerchantGuadagniPage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area venditore."}
+        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area imprese e operatori."}
       />
     );
   }
@@ -51,7 +51,7 @@ export default async function MerchantGuadagniPage({
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area venditore
+              Area imprese e operatori
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
               Guadagni

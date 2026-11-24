@@ -18,15 +18,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const contenuto = await getContenutoPubblicoBySlug(slug);
-  if (!contenuto) return { title: "Contenuto non trovato | InCittà" };
+  if (!contenuto) return { title: "Contenuto non trovato | Radici Calabria" };
 
   const titolo = contenuto.titolo || "Contenuto";
   const descrizione =
-    (contenuto.riassunto ?? "").slice(0, 155) || `Leggi ${titolo} su InCittà.`;
+    (contenuto.riassunto ?? "").slice(0, 155) || `Leggi ${titolo} su Radici Calabria.`;
   const canonical = `${getSiteUrl()}/contenuti/${contenuto.slug}`;
 
   return {
-    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    // title senza suffisso "| Radici Calabria": lo aggiunge il template del layout.
     title: titolo,
     description: descrizione,
     alternates: { canonical },
@@ -35,7 +35,7 @@ export async function generateMetadata({
       description: descrizione,
       url: canonical,
       type: "article",
-      siteName: "InCittà",
+      siteName: "Radici Calabria",
       ...(contenuto.immagine_url ? { images: [contenuto.immagine_url] } : {}),
     },
   };

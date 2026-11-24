@@ -73,7 +73,7 @@ export const clienteNavItems: ClienteNavItem[] = [
 export function getClienteNavItem(href: string): ClienteNavItem {
   const item = clienteNavItems.find((entry) => entry.href === href);
   if (!item) {
-    throw new Error(`Voce di navigazione Area Clienti non trovata: ${href}`);
+    throw new Error(`Voce di navigazione Area consumatori non trovata: ${href}`);
   }
   return item;
 }

@@ -7,21 +7,21 @@ import { validaToolParams } from "../lib/assistente/tools.ts";
 // ─── Budget esplicito nel percorso REALE ────────────────────────────────────
 //
 // Il test attraversa orchestratore → costruzione parametri → contratto dei tool
-// → `searchProducts` → Search Service. Gemini è simulato per dimostrare che il
+// → `searchProducts` → Search Service. Groq è simulato per dimostrare che il
 // modello non può introdurre né togliere un vincolo; Supabase è il client finto
 // dell'hook di test, che registra tabelle e filtri `gte`/`lte` realmente usati.
 
-process.env.GEMINI_API_KEY = "test-budget-pino";
-process.env.GEMINI_MODEL = "gemini-test";
+process.env.GROQ_API_KEY = "test-budget-pino";
+process.env.GROQ_MODEL = "openai/gpt-oss-120b";
 
-let pianoGemini = null;
+let pianoGroq = null;
 
 globalThis.fetch = async (url, init) => {
-  assert.match(String(url), /generativelanguage\.googleapis\.com/);
+  assert.match(String(url), /api\.groq\.com\/openai\/v1\/chat\/completions/);
   assert.equal(init?.method, "POST");
   const corpo = JSON.parse(init.body);
-  assert.ok(Array.isArray(corpo.contents) && corpo.contents.length > 0);
-  const piano = pianoGemini ?? {
+  assert.ok(Array.isArray(corpo.messages) && corpo.messages.length > 0);
+  const piano = pianoGroq ?? {
     surface: "products",
     intent: "food",
     query: "pasta",
@@ -35,7 +35,7 @@ globalThis.fetch = async (url, init) => {
   };
   return new Response(
     JSON.stringify({
-      candidates: [{ content: { parts: [{ text: JSON.stringify(piano) }] } }],
+      choices: [{ message: { content: JSON.stringify(piano) } }],
     }),
     { status: 200, headers: { "content-type": "application/json" } }
   );
@@ -81,7 +81,7 @@ test("lo zero esplicito non viene scartato dal contratto dei parametri", () => {
 
 test("«entro 0 euro»: tetto zero vincolante, nessun prodotto positivo", async () => {
   // Il modello prova ad allargare il tetto: non deve riuscirci.
-  pianoGemini = pianoPasta({ minPrice: null, maxPrice: 999 });
+  pianoGroq = pianoPasta({ minPrice: null, maxPrice: 999 });
   azzeraSpia();
 
   const r = await rispondi("Cerco pasta entro 0 euro");
@@ -98,7 +98,7 @@ test("«entro 0 euro»: tetto zero vincolante, nessun prodotto positivo", async 
 
 test("«senza budget»: lo zero inventato dal modello non diventa un limite", async () => {
   // Il modello restituisce 0/0 pur non essendoci alcun budget nella richiesta.
-  pianoGemini = pianoPasta({ minPrice: 0, maxPrice: 0 });
+  pianoGroq = pianoPasta({ minPrice: 0, maxPrice: 0 });
   azzeraSpia();
 
   const r = await rispondi("Cerco pasta senza budget");
@@ -122,7 +122,7 @@ const CASI_POSITIVI = [
 for (const [richiesta, maxAtteso, minAtteso] of CASI_POSITIVI) {
   test(`${richiesta} → limiti deterministici ${minAtteso ?? "-"} / ${maxAtteso ?? "-"}`, async () => {
     // Valori ostili dal modello: devono essere sostituiti dall'estrazione.
-    pianoGemini = pianoPasta({ minPrice: 1, maxPrice: 1 });
+    pianoGroq = pianoPasta({ minPrice: 1, maxPrice: 1 });
     azzeraSpia();
 
     const r = await rispondi(richiesta);

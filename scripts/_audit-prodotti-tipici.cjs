@@ -99,16 +99,16 @@ async function rest(pathname) {
   report('INDICE prodotti_tipici_attivi_idx', indexOk, indexDetail);
 
   // ── 3) NEGOZI demo ──
-  const slugs = ['demo-bottega-pollino', 'demo-terre-pollino', 'demo-sapori-castrovillari'];
+  const slugs = ['demo-bottega-pollino', 'demo-terre-pollino', 'demo-sapori-castrovillari', 'demo-enoteca-pollino'];
   const negoziResp = await rest(
     `/rest/v1/negozi?select=id,nome,slug,owner_user_id,attivo,deleted_at&slug=in.(${slugs.join(',')})`
   );
   let negozi = [];
   if (negoziResp.ok) { try { negozi = JSON.parse(negoziResp.text); } catch {} }
   const ownerTarget = '3ec07260-d0c0-4097-b1f1-8a30536fd868';
-  report(`NEGOZI demo (${negozi.length}/3)`, negozi.length === 3,
+  report(`NEGOZI demo (${negozi.length}/4)`, negozi.length === 4,
     negozi.map((n) => `${n.slug}:${n.owner_user_id ? 'owner' : 'NULL'}`).join(', '));
-  const ownersOk = negozi.length === 3 && negozi.every((n) => n.owner_user_id === ownerTarget);
+  const ownersOk = negozi.length === 4 && negozi.every((n) => n.owner_user_id === ownerTarget);
   report('owner_user_id corretto', ownersOk);
 
   // ── 4) PRODOTTI tipici ──

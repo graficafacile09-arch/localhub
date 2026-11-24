@@ -1,7 +1,7 @@
 import PreferitiModule from "@/components/cliente/preferiti/PreferitiModule";
 
 export const metadata = {
-  title: "Preferiti — Area Clienti",
+  title: "Preferiti — Area consumatori",
 };
 
 /**

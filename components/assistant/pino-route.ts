@@ -45,6 +45,27 @@ export function isPinoTransactionalRoute(pathname: string | null | undefined): b
   return RE_DETTAGLIO_PRODOTTO.test(percorso) || RE_ACQUISTA.test(percorso);
 }
 
+/**
+ * Sezioni del sito in cui Pino non deve comparire anche se la pagina è
+ * pubblica: la sezione Territorio è una guida redazionale (territori,
+ * prodotti tipici, riconoscimenti) e il widget coprirebbe le card e le
+ * didascalie delle foto, senza aggiungere nulla all'esperienza. La sezione
+ * Notizie è un archivio editoriale: il widget coprirebbe le schede e la
+ * lettura, quindi resta fuori anche lì.
+ */
+const PREFIXI_SEZIONI_NASCOSTE = ["/territorio", "/filiere", "/notizie", "/prodotti"] as const;
+
+/** `true` quando la rotta appartiene a una sezione in cui Pino resta nascosto. */
+export function isPinoSezioneNascosta(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+
+  const percorso = (pathname.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+
+  return PREFIXI_SEZIONI_NASCOSTE.some(
+    (prefisso) => percorso === prefisso || percorso.startsWith(prefisso + "/")
+  );
+}
+
 /** Aree personali: nessun Pino nei menù né nelle pagine dell'area. */
 const PREFIXI_AREE_RISERVATE = ["/merchant", "/cliente", "/corriere", "/amministratore"] as const;
 

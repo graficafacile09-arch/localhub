@@ -11,7 +11,7 @@ import { Bell, BellRing, Loader2 } from "lucide-react";
  *   mostrare "già iscritto".
  * - Se guest: mostra un campo email (validato client + server).
  * - Stati: idle → email (solo guest) → success / already; loading dedicato,
- *   gestione errori chiara. Coerente con lo stile InCittà (desktop/mobile).
+ *   gestione errori chiara. Coerente con lo stile Radici Calabria (desktop/mobile).
  */
 export default function AvvisamiDisponibilitaButton({
   prodottoId,

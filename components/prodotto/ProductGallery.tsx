@@ -16,9 +16,26 @@ type Props = {
   altText?: string | null;
   /** Nome del prodotto, usato come alt di fallback. */
   nomeProdotto?: string;
+  /** Sigla del riconoscimento (DOP, IGP, PAT, DE.CO.) legata al prodotto. */
+  marchio?: string | null;
+  /** Logo ufficiale già risolto lato server; null quando non esiste un asset. */
+  logoMarchio?: { src: string; alt: string } | null;
 };
 
-export default function ProductGallery({ immagini, fallbackUrl, altText, nomeProdotto }: Props) {
+/**
+ * Galleria della scheda prodotto aperta.
+ * Cornice editoriale (bordo avorio, filetto oro sulle miniature) e stessa
+ * logica di prima: immagine principale, miniature, lightbox con frecce e
+ * tastiera, marchio di riconoscimento sovrapposto.
+ */
+export default function ProductGallery({
+  immagini,
+  fallbackUrl,
+  altText,
+  nomeProdotto,
+  marchio,
+  logoMarchio,
+}: Props) {
   const lista = useMemo(() => immagini.filter((img) => img.url), [immagini]);
   const primaria =
     lista.find((img) => img.role === "primary") ?? lista[0] ?? null;
@@ -59,8 +76,8 @@ export default function ProductGallery({ immagini, fallbackUrl, altText, nomePro
 
   return (
     <div>
-      <div className="overflow-hidden rounded-xl">
-        <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
+      <div className="rd-scheda overflow-hidden">
+        <div className="relative aspect-square max-h-[520px] overflow-hidden bg-[#f4efe4]">
           {immagineAttiva?.url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -77,21 +94,41 @@ export default function ProductGallery({ immagini, fallbackUrl, altText, nomePro
               style={{ backgroundImage: `url(${fallbackUrl})` }}
             />
           )}
+          {logoMarchio ? (
+            /* Marchio ufficiale del riconoscimento sull'immagine principale. */
+            <span className="absolute bottom-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 py-1 pl-1 pr-2.5 shadow-md ring-1 ring-[#e5ded0]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoMarchio.src}
+                alt={logoMarchio.alt}
+                width={56}
+                height={56}
+                className="h-9 w-9 shrink-0 object-contain"
+              />
+              <span className="text-[11px] font-black uppercase leading-none tracking-[0.06em] text-[#24462f]">
+                {marchio}
+              </span>
+            </span>
+          ) : marchio ? (
+            <span className="absolute bottom-3 left-3 z-10 rounded-full bg-[#d5a83a] px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-[#16281c] shadow-md">
+              {marchio}
+            </span>
+          ) : null}
         </div>
       </div>
 
       {lista.length > 1 && (
-        <div className="mt-2 grid grid-cols-5 gap-2">
+        <div className="mt-2.5 grid grid-cols-5 gap-2">
           {lista.map((img) => (
             <button
               key={img.id}
               type="button"
               onClick={() => setSelezionata(img)}
               aria-label={`Mostra immagine ${altCorrente(img)}`}
-              className={`overflow-hidden rounded-lg border-2 transition ${
+              className={`overflow-hidden rounded-lg border-2 bg-[#f4efe4] transition ${
                 immagineAttiva?.id === img.id
-                  ? "border-blue-600 ring-1 ring-blue-300"
-                  : "border-transparent opacity-80 hover:opacity-100"
+                  ? "border-[#24462f] ring-1 ring-[#d5a83a]"
+                  : "border-transparent opacity-80 hover:border-[#d5a83a] hover:opacity-100"
               }`}
             >
               {img.url ? (

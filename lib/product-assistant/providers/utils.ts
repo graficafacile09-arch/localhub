@@ -25,6 +25,8 @@ export class ProviderError extends Error {
 
 export type ProviderResult = {
   suggestion: ProductVisionSuggestion;
+  /** Testo originale del modello, utile a pipeline con schemi diversi. */
+  rawText?: string;
   model: string;
   latencyMs: number;
   tokenCount?: { input?: number; output?: number; total?: number };

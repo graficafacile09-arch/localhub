@@ -19,7 +19,13 @@ import {
   X,
 } from "lucide-react";
 import type { RuoloUtente, Utente } from "@/lib/amministratore/types";
-import { RUOLI_UTENTE, STATO_ACCOUNT } from "@/lib/amministratore/types";
+import {
+  ORDINE_RUOLI,
+  RUOLI_UTENTE,
+  STATO_ACCOUNT,
+  etichettaRuoli,
+  ordinaRuoli,
+} from "@/lib/amministratore/types";
 
 const formatDataOra = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
@@ -117,7 +123,7 @@ export default function UtentiDettaglioModal({
   // permanente: non compare MAI tra i ruoli aggiungibili.
   const ruoliMancanti = useMemo(() => {
     const posseduti = new Set(utente.ruoli);
-    return (["amministratore", "commerciante", "corriere", "utente"] as RuoloUtente[]).filter(
+    return ORDINE_RUOLI.filter(
       (ruolo) =>
         !posseduti.has(ruolo) &&
         !(utente.protetto && ruolo === "amministratore")
@@ -311,14 +317,26 @@ export default function UtentiDettaglioModal({
             <span className={`h-1.5 w-1.5 rounded-full ${statoCorrente.dot}`} aria-hidden />
             Account {statoCorrente.label.toLowerCase()}
           </span>
-          {utente.ruoli.map((ruolo) => (
-            <span
-              key={ruolo}
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${RUOLI_UTENTE[ruolo].chip}`}
-            >
-              {RUOLI_UTENTE[ruolo].label}
+          {utente.ruoli.length === 0 ? (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
+              {etichettaRuoli(utente.ruoli)}
             </span>
-          ))}
+          ) : (
+            ordinaRuoli(utente.ruoli).map((ruolo, indice) => (
+              <span key={ruolo} className="inline-flex items-center gap-1.5">
+                {indice > 0 && (
+                  <span aria-hidden className="text-slate-300">
+                    ·
+                  </span>
+                )}
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${RUOLI_UTENTE[ruolo].chip}`}
+                >
+                  {RUOLI_UTENTE[ruolo].label}
+                </span>
+              </span>
+            ))
+          )}
           {utente.emailVerificata ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
               <BadgeCheck className="h-3 w-3" aria-hidden /> Email verificata
@@ -421,7 +439,7 @@ export default function UtentiDettaglioModal({
             <p className="leading-6">
               Questo è l&apos;account amministratore autorizzato della piattaforma:
               il ruolo Amministratore è permanente e l&apos;account non può essere
-              eliminato. I ruoli Cliente e Venditore restano gestibili.
+              eliminato. I ruoli Consumatore e Impresa e operatore restano gestibili.
             </p>
           </div>
         )}
@@ -491,7 +509,12 @@ export default function UtentiDettaglioModal({
               Ruoli
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
-              {utente.ruoli.map((ruolo) => (
+              {utente.ruoli.length === 0 && (
+                <p className="text-xs font-semibold text-slate-400">
+                  {etichettaRuoli(utente.ruoli)}
+                </p>
+              )}
+              {ordinaRuoli(utente.ruoli).map((ruolo) => (
                 <span
                   key={ruolo}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 ${RUOLI_UTENTE[ruolo].chip}`}

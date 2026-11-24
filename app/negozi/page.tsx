@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
+import IntestazionePagina from "@/components/editoriale/IntestazionePagina";
 import { getNegozi, getNegoziInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -8,7 +9,7 @@ import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star, Tag } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Store, Tag } from "lucide-react";
 import { puoUsareNextImage } from "@/lib/immagini-remote";
 import { getSiteUrl } from "@/lib/site";
 
@@ -33,44 +34,44 @@ export default async function NegoziPage({
   const soloEvidenziati = featured === "1";
 
   // Tre letture indipendenti: in parallelo costano un round-trip, in serie tre.
-  const [impostazioni, negozi, statoPreferiti] = await Promise.all([
-    getImpostazioniPubbliche(),
+  const [negozi, statoPreferiti] = await Promise.all([
     soloEvidenziati ? getNegoziInEvidenza() : getNegozi(),
     getStatoPreferitiPerPagina(),
   ]);
 
-  const citta = impostazioni.city_name?.trim() || "Castrovillari";
-
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="rd-pagina min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-900">
-          {soloEvidenziati ? "⭐ Negozi in evidenza" : `Negozi di ${citta}`}
-        </h1>
+      <IntestazionePagina
+        occhiello="Aziende del territorio"
+        titolo={soloEvidenziati ? "Negozi in evidenza" : "Aziende"}
+        icona={Store}
+        sommario="Negozi e attività del territorio: orari, contatti, prodotti e servizi delle imprese locali."
+      />
 
+      <div className="rd-guscio py-7 md:py-10">
         {soloEvidenziati && negozi.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-[2rem] border border-white/70 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
-              <Star className="h-8 w-8 text-blue-500" />
+          <div className="rd-fascia flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f4efe4] ring-1 ring-[#e5ded0]">
+              <Star className="h-8 w-8 text-[#8a5a3b]" />
             </div>
-            <h2 className="mt-4 text-lg font-black tracking-tight text-slate-900">
+            <h2 className="rd-titolo-scheda mt-4 text-lg">
               Nessun negozio in evidenza
             </h2>
-            <p className="mt-1 max-w-sm text-sm text-slate-500">
-              Al momento non ci sono negozi in evidenza. Esplora tutte le attività della tua città.
+            <p className="mt-1 max-w-sm text-sm leading-6 text-[#57534e]">
+              Al momento non ci sono negozi in evidenza. Esplora tutte le attività del territorio.
             </p>
             <Link
               href="/negozi"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+              className="rd-azione mt-6"
             >
               <ArrowLeft className="h-4 w-4" />
               Vedi tutti i negozi
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-2 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
                 copertina_url: negozio.copertina_url,
@@ -81,10 +82,10 @@ export default async function NegoziPage({
               return (
                 <div
                   key={negozio.id}
-                  className="relative overflow-visible rounded-2xl border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                  className="rd-scheda rd-scheda--interattiva relative overflow-visible"
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-slate-100">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-[1rem] bg-[#f4efe4]">
                       {/* Copertina tramite next/image: resize + cache immutabile
                           al posto del PNG originale senza cache CDN. */}
                       {puoUsareNextImage(imageUrl) ? (
@@ -106,7 +107,7 @@ export default async function NegoziPage({
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                         {negozio.categoria && (
-                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm sm:text-[10px] whitespace-nowrap">
+                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-[#d5a83a] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-[#1b3624] shadow-sm sm:text-[10px] whitespace-nowrap">
                             <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden />
                             {negozio.categoria}
                           </span>
@@ -137,7 +138,7 @@ export default async function NegoziPage({
                     </div>
 
                     {negozio.indirizzo && (
-                      <p className="flex items-center gap-1 px-3 pb-1 pt-1.5 text-[10px] text-slate-400">
+                      <p className="flex items-center gap-1 px-3 pb-1 pt-1.5 text-[10px] text-[#8a8378]">
                         <MapPin className="h-2.5 w-2.5 shrink-0" />
                         <span className="truncate">{negozio.indirizzo}</span>
                       </p>

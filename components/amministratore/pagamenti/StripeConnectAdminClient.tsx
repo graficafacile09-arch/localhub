@@ -181,7 +181,7 @@ export default function StripeConnectAdminClient() {
               Supervisione dei connected account Stripe dei negozi: stato di
               onboarding, incassi e payout abilitati, verifica live e riapertura
               del flusso. L&apos;account Stripe della piattaforma (credenziali
-              env) resta di proprietà di InCittà; ogni negozio ha il proprio
+              env) resta di proprietà di Radici Calabria; ogni negozio ha il proprio
               connected account e i pagamenti restano direct charge. La verifica
               dei dati (KYC/IBAN) avviene nel portale hosted Stripe da parte del
               negoziante, mai qui.

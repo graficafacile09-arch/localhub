@@ -6,7 +6,7 @@ import { getSiteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Domande frequenti su InCittà, acquisti, ordini, pagamenti, venditori e utilizzo della piattaforma.",
+    "Domande frequenti su Radici Calabria, acquisti, ordini, pagamenti, venditori e utilizzo della piattaforma.",
   alternates: {
     canonical: `${getSiteUrl()}/faq`,
   },
@@ -14,20 +14,20 @@ export const metadata: Metadata = {
 
 const categorie = [
   {
-    titolo: "InCittà",
+    titolo: "Radici Calabria",
     domande: [
       {
-        domanda: "Che cos'è InCittà?",
+        domanda: "Che cos'è Radici Calabria?",
         risposta:
-          "InCittà è una piattaforma digitale dedicata al commercio e ai servizi locali. Permette di cercare negozi, prodotti, professionisti, offerte e servizi della propria città e, quando il Venditore lo rende disponibile, di effettuare ordini tramite il checkout della piattaforma.",
+          "Radici Calabria è una piattaforma digitale dedicata al commercio e ai servizi locali. Permette di cercare negozi, prodotti, professionisti, offerte e servizi della propria città e, quando il Venditore lo rende disponibile, di effettuare ordini tramite il checkout della piattaforma.",
       },
       {
-        domanda: "InCittà è il venditore dei prodotti che trovo sul sito?",
+        domanda: "Radici Calabria è il venditore dei prodotti che trovo sul sito?",
         risposta:
-          "No. I prodotti, i servizi e le altre prestazioni sono proposti dai singoli Venditori. Il rapporto commerciale relativo all'acquisto o alla prestazione è tra Acquirente e Venditore. InCittà mette a disposizione l'infrastruttura tecnologica e gli strumenti digitali della piattaforma, fermo restando quanto previsto dalla normativa applicabile.",
+          "No. I prodotti, i servizi e le altre prestazioni sono proposti dai singoli Venditori. Il rapporto commerciale relativo all'acquisto o alla prestazione è tra Acquirente e Venditore. Radici Calabria mette a disposizione l'infrastruttura tecnologica e gli strumenti digitali della piattaforma, fermo restando quanto previsto dalla normativa applicabile.",
       },
       {
-        domanda: "Posso usare InCittà anche senza registrarmi?",
+        domanda: "Posso usare Radici Calabria anche senza registrarmi?",
         risposta:
           "Alcune funzioni possono essere utilizzate senza account. Quando il checkout lo consente, è possibile effettuare un acquisto come ospite fornendo i dati necessari per l'ordine, il pagamento e le comunicazioni.",
       },
@@ -64,12 +64,12 @@ const categorie = [
       {
         domanda: "Quali metodi di pagamento posso utilizzare?",
         risposta:
-          "I metodi disponibili dipendono dal negozio e dalla configurazione del checkout. InCittà può offrire, quando disponibili, carta, Klarna, Scalapay, PayPal e SEPA Direct Debit; alcuni flussi possono prevedere anche il bonifico istantaneo. Il metodo effettivamente utilizzabile è quello mostrato nel checkout per quello specifico ordine.",
+          "I metodi disponibili dipendono dal negozio e dalla configurazione del checkout. Radici Calabria può offrire, quando disponibili, carta, Klarna, Scalapay, PayPal e SEPA Direct Debit; alcuni flussi possono prevedere anche il bonifico istantaneo. Il metodo effettivamente utilizzabile è quello mostrato nel checkout per quello specifico ordine.",
       },
       {
-        domanda: "InCittà riceve direttamente i dati della mia carta?",
+        domanda: "Radici Calabria riceve direttamente i dati della mia carta?",
         risposta:
-          "Il pagamento elettronico viene gestito tramite i provider di pagamento integrati nella piattaforma. InCittà può ricevere dal provider le informazioni tecniche necessarie per aggiornare lo stato del pagamento e dell'ordine, secondo il flusso utilizzato.",
+          "Il pagamento elettronico viene gestito tramite i provider di pagamento integrati nella piattaforma. Radici Calabria può ricevere dal provider le informazioni tecniche necessarie per aggiornare lo stato del pagamento e dell'ordine, secondo il flusso utilizzato.",
       },
       {
         domanda: "Perché un metodo di pagamento può non comparire?",
@@ -94,7 +94,7 @@ const categorie = [
       {
         domanda: "Cosa faccio se il mio ordine ha un problema?",
         risposta:
-          "Controlla innanzitutto le informazioni e le comunicazioni relative all'ordine. Per problemi relativi al prodotto, al servizio, alla consegna, al ritiro, a un reso, a un rimborso o alla conformità dell'acquisto, puoi utilizzare i canali disponibili sulla piattaforma e contattare il Venditore. InCittà può fornire supporto tecnico sui servizi della piattaforma.",
+          "Controlla innanzitutto le informazioni e le comunicazioni relative all'ordine. Per problemi relativi al prodotto, al servizio, alla consegna, al ritiro, a un reso, a un rimborso o alla conformità dell'acquisto, puoi utilizzare i canali disponibili sulla piattaforma e contattare il Venditore. Radici Calabria può fornire supporto tecnico sui servizi della piattaforma.",
       },
       {
         domanda: "Come funzionano resi, rimborsi e recesso?",
@@ -109,7 +109,7 @@ const categorie = [
       {
         domanda: "Come posso creare un account?",
         risposta:
-          "Puoi registrarti attraverso il flusso di autenticazione disponibile sul sito. InCittà supporta la registrazione con email e password e può offrire autenticazione tramite Google e altri provider quando disponibili.",
+          "Puoi registrarti attraverso il flusso di autenticazione disponibile sul sito. Radici Calabria supporta la registrazione con email e password e può offrire autenticazione tramite Google e altri provider quando disponibili.",
       },
       {
         domanda: "Posso acquistare senza creare un account?",
@@ -127,7 +127,7 @@ const categorie = [
     titolo: "Per i Venditori",
     domande: [
       {
-        domanda: "Come posso aprire un negozio su InCittà?",
+        domanda: "Come posso aprire un negozio su Radici Calabria?",
         risposta:
           "Dalla piattaforma puoi accedere all'area Venditore e seguire il percorso di registrazione e attivazione previsto. L'accesso alle funzioni operative può dipendere dal completamento delle informazioni e delle verifiche richieste.",
       },
@@ -139,7 +139,7 @@ const categorie = [
       {
         domanda: "Chi gestisce gli ordini ricevuti?",
         risposta:
-          "Il Venditore gestisce l'esecuzione dei propri ordini e delle proprie prestazioni, compresi gli aspetti operativi come preparazione, consegna, ritiro o erogazione del servizio quando applicabili. InCittà fornisce gli strumenti tecnici della piattaforma.",
+          "Il Venditore gestisce l'esecuzione dei propri ordini e delle proprie prestazioni, compresi gli aspetti operativi come preparazione, consegna, ritiro o erogazione del servizio quando applicabili. Radici Calabria fornisce gli strumenti tecnici della piattaforma.",
       },
     ],
   },
@@ -168,7 +168,7 @@ export default function FAQPage() {
       <section className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
         <div className="mx-auto max-w-4xl px-5 py-14 text-center sm:px-8 md:py-18">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">
-            InCittà
+            Radici Calabria
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
             Domande frequenti
@@ -241,7 +241,7 @@ export default function FAQPage() {
             href="/"
             className="text-sm font-semibold text-blue-700 underline-offset-2 hover:underline"
           >
-            ← Torna a InCittà
+            ← Torna a Radici Calabria
           </Link>
         </div>
       </div>

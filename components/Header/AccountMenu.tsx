@@ -42,10 +42,10 @@ type VoceMenu = {
 
 /** Etichette del profilo commerciale, distinto dai ruoli tecnici. */
 const ETICHETTE_PROFILO: Record<ProfiloCommerciale, string> = {
-  acquirente: "Acquirente",
-  venditore: "Venditore",
+  acquirente: "Consumatore",
+  venditore: "Impresa e operatore",
   amministratore: "Amministratore",
-  corriere: "Corriere locale",
+  corriere: "Logistica e consegne",
 };
 
 /**
@@ -97,7 +97,7 @@ export default function AccountMenu({
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label="Accedi"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-yellow-400 shadow-md transition-colors hover:bg-blue-700 active:scale-95 max-[374px]:h-9 max-[374px]:w-9"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest text-cream shadow-sm transition-colors hover:bg-forest-deep active:scale-95 max-sm:h-9 max-sm:w-9 max-sm:text-xs lg:h-11 lg:w-11"
         >
           <User className="h-6 w-6" aria-hidden />
         </button>
@@ -115,7 +115,7 @@ export default function AccountMenu({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
             >
               <ShoppingBasket className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
-              Entra come Cliente
+              Consumatori
             </Link>
             <Link
               href="/login?area=merchant"
@@ -124,7 +124,7 @@ export default function AccountMenu({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
             >
               <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
-              Entra come Venditore
+              Imprese e operatori
             </Link>
             <Link
               href="/login?area=courier"
@@ -133,7 +133,7 @@ export default function AccountMenu({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
             >
               <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-              Area Corriere Locale
+              Logistica e consegne
             </Link>
           </div>
         )}
@@ -158,11 +158,11 @@ export default function AccountMenu({
           aria-haspopup="menu"
           aria-label="Modalità ospite attiva: stai acquistando senza account"
           data-testid="ospite-indicatore"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-blue-300 hover:shadow"
+          className="inline-flex items-center gap-1.5 rounded-full border border-gold-soft bg-cream px-2.5 py-1.5 text-sm font-bold text-forest shadow-sm transition hover:border-gold hover:shadow"
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-forest/10 text-forest"
           >
             <User className="h-4 w-4" />
           </span>
@@ -218,7 +218,7 @@ export default function AccountMenu({
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
               >
                 <ShoppingBasket className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
-                Entra come Cliente
+                Consumatori
               </Link>
               <Link
                 href="/login?area=merchant"
@@ -227,7 +227,7 @@ export default function AccountMenu({
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
               >
                 <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
-                Entra come Venditore
+                Imprese e operatori
               </Link>
               <Link
                 href="/login?area=courier"
@@ -236,7 +236,7 @@ export default function AccountMenu({
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
               >
                 <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-                Area Corriere Locale
+                Logistica e consegne
               </Link>
             </div>
           </div>
@@ -270,11 +270,11 @@ export default function AccountMenu({
   if (area === "admin") {
     voci.push({ label: "Area Amministratore", href: "/amministratore", icon: ShieldCheck });
   } else if (area === "merchant") {
-    voci.push({ label: "Area Venditore", href: storeBase, icon: Store });
+    voci.push({ label: "Area imprese e operatori", href: storeBase, icon: Store });
   } else if (area === "cliente") {
-    voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
+    voci.push({ label: "Area consumatori", href: "/cliente", icon: ShoppingBasket });
   } else if (area === "courier") {
-    voci.push({ label: "Area Corriere Locale", href: "/corriere", icon: Truck });
+    voci.push({ label: "Area logistica e consegne", href: "/corriere", icon: Truck });
   }
 
   return (
@@ -285,11 +285,11 @@ export default function AccountMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Menu utente di ${nome || email}`}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm shadow-md transition hover:bg-blue-700 hover:shadow max-[374px]:h-9 max-[374px]:w-9"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest text-sm shadow-sm transition hover:bg-forest-deep hover:shadow max-sm:h-9 max-sm:w-9 max-sm:text-xs lg:h-11 lg:w-11"
       >
         <span
           aria-hidden
-          className="flex h-full w-full items-center justify-center rounded-xl bg-transparent text-xl font-black leading-none text-yellow-400 max-[374px]:text-lg"
+          className="flex h-full w-full items-center justify-center rounded-full bg-transparent text-xl font-black leading-none text-cream max-[374px]:text-lg"
         >
           {iniziale}
         </span>

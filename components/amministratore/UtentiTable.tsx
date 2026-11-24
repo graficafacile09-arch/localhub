@@ -7,7 +7,12 @@ import {
   Clock3,
 } from "lucide-react";
 import type { RuoloUtente, Utente } from "@/lib/amministratore/types";
-import { RUOLI_UTENTE, STATO_ACCOUNT } from "@/lib/amministratore/types";
+import {
+  RUOLI_UTENTE,
+  STATO_ACCOUNT,
+  etichettaRuoli,
+  ordinaRuoli,
+} from "@/lib/amministratore/types";
 import UtentiActionsMenu from "./UtentiActionsMenu";
 
 const formatData = new Intl.DateTimeFormat("it-IT", {
@@ -163,10 +168,28 @@ export default function UtentiTable({
                   </span>
                 </td>
                 <td className="px-5 py-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {utente.ruoli.map((ruolo) => (
-                      <ChipRuolo key={ruolo} ruolo={ruolo} />
-                    ))}
+                  {/* Etichette visibili dei ruoli: ordine fisso e separatore,
+                      così le combinazioni non si leggono come una parola sola. */}
+                  <div
+                    className="flex flex-wrap items-center gap-1.5"
+                    title={etichettaRuoli(utente.ruoli)}
+                  >
+                    {utente.ruoli.length === 0 ? (
+                      <span className="text-xs font-semibold text-slate-400">
+                        {etichettaRuoli(utente.ruoli)}
+                      </span>
+                    ) : (
+                      ordinaRuoli(utente.ruoli).map((ruolo, indice) => (
+                        <span key={ruolo} className="inline-flex items-center gap-1.5">
+                          {indice > 0 && (
+                            <span aria-hidden className="text-slate-300">
+                              ·
+                            </span>
+                          )}
+                          <ChipRuolo ruolo={ruolo} />
+                        </span>
+                      ))
+                    )}
                   </div>
                 </td>
                 <td className="px-5 py-4">

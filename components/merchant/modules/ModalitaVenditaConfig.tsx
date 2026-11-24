@@ -79,7 +79,7 @@ export default function ModalitaVenditaConfig({ storeId, store, onDataChanged }:
     <ModuleShell
       icon={<Store className="h-4 w-4 text-blue-600" />}
       title="Modalità di vendita"
-      subtitle="Come i clienti ricevono i tuoi prodotti"
+      subtitle="Come i consumatori ricevono i tuoi prodotti"
       id="modalita-vendita"
     >
       {loading ? (
@@ -91,7 +91,7 @@ export default function ModalitaVenditaConfig({ storeId, store, onDataChanged }:
           <ModalitaToggle
             icon={<Store className="h-4 w-4 text-slate-500" />}
             label="Ritiro in negozio"
-            description="Il cliente passa a ritirare l'ordine nel tuo punto vendita."
+            description="Il consumatore passa a ritirare l'ordine nel tuo punto vendita."
             checked={modalita.ritiro}
             busy={saving}
             onChange={(v) => toggle("ritiro", v)}
@@ -99,7 +99,7 @@ export default function ModalitaVenditaConfig({ storeId, store, onDataChanged }:
           <ModalitaToggle
             icon={<PackageOpen className="h-4 w-4 text-slate-500" />}
             label="Consegna a domicilio"
-            description="Consegni tu, direttamente al cliente."
+            description="Consegni tu, direttamente al consumatore."
             checked={modalita.consegna}
             busy={saving}
             onChange={(v) => toggle("consegna", v)}

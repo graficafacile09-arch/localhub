@@ -3,25 +3,25 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
-  chiamataGeminiConBudgetPino,
-  creaBudgetGeminiPino,
-  ErroreBudgetGeminiPino,
-  MASSIMO_CHIAMATE_GEMINI_PINO,
-  prelevaChiamataGeminiPino,
-} from "../lib/assistente/budget-gemini";
+  chiamataAIConBudgetPino,
+  creaBudgetAIPino,
+  ErroreBudgetPinoAI,
+  MASSIMO_CHIAMATE_AI_PINO,
+  prelevaChiamataAIPino,
+} from "../lib/assistente/budget-ai";
 import {
   conScadenzaPino,
   ErroreTimeoutPino,
   eseguiFallbackConScadenzaPino,
   fallbackSelezioneVuotaPino,
-  messaggioIndisponibilitaGemini,
+  messaggioIndisponibilitaAI,
   SCADENZA_INVOCAZIONE_PINO_MS,
 } from "../lib/assistente/index";
 
-// ─── M6-B1: fallback protetto e budget Gemini condiviso ─────────────────────
+// ─── M6-B1: fallback protetto e budget AI condiviso ─────────────────────
 //
 // 1) Il fallback `searchAll` non era coperto dalla scadenza di 20s.
-// 2) Il limite di 2 chiamate Gemini per richiesta non era imposto: ogni modulo
+// 2) Il limite di 2 chiamate Groq per richiesta non era imposto: ogni modulo
 //    decideva per sé. Il budget ora è unico e condiviso dalla richiesta.
 
 const lettura = (percorso: string) =>
@@ -30,55 +30,56 @@ const lettura = (percorso: string) =>
 const attesa = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const mai = <T,>() => new Promise<T>(() => undefined);
 
-test.describe("M6-B1 — budget Gemini condiviso", () => {
+test.describe("M6-B1 — budget AI condiviso", () => {
   test("il tetto è due chiamate per richiesta", () => {
-    expect(MASSIMO_CHIAMATE_GEMINI_PINO).toBe(2);
-    const budget = creaBudgetGeminiPino();
-    expect(budget).toEqual({ limite: 2, usate: 0 });
+    expect(MASSIMO_CHIAMATE_AI_PINO).toBe(2);
+    const budget = creaBudgetAIPino();
+    expect(budget).toEqual({ limite: 2, usate: 0, scadenzaMs: expect.any(Number) });
+    expect(budget.scadenzaMs).toBeGreaterThan(Date.now());
   });
 
   test("due chiamate partono, la terza è bloccata", async () => {
-    const budget = creaBudgetGeminiPino();
+    const budget = creaBudgetAIPino();
     const esiti: string[] = [];
-    esiti.push(await chiamataGeminiConBudgetPino(budget, async () => "selezione"));
-    esiti.push(await chiamataGeminiConBudgetPino(budget, async () => "semantica"));
+    esiti.push(await chiamataAIConBudgetPino(budget, async () => "selezione"));
+    esiti.push(await chiamataAIConBudgetPino(budget, async () => "semantica"));
 
     expect(esiti).toEqual(["selezione", "semantica"]);
     expect(budget.usate).toBe(2);
     await expect(
-      chiamataGeminiConBudgetPino(budget, async () => "terza")
-    ).rejects.toBeInstanceOf(ErroreBudgetGeminiPino);
+      chiamataAIConBudgetPino(budget, async () => "terza")
+    ).rejects.toBeInstanceOf(ErroreBudgetPinoAI);
     expect(budget.usate).toBe(2);
   });
 
   test("una chiamata fallita resta conteggiata", async () => {
-    const budget = creaBudgetGeminiPino(1);
-    await chiamataGeminiConBudgetPino(budget, () =>
-      Promise.reject(new Error("Quota Gemini superata"))
+    const budget = creaBudgetAIPino(1);
+    await chiamataAIConBudgetPino(budget, () =>
+      Promise.reject(new Error("Quota Groq superata"))
     ).catch(() => undefined);
     expect(budget.usate).toBe(1);
     await expect(
-      chiamataGeminiConBudgetPino(budget, async () => "dopo")
-    ).rejects.toBeInstanceOf(ErroreBudgetGeminiPino);
+      chiamataAIConBudgetPino(budget, async () => "dopo")
+    ).rejects.toBeInstanceOf(ErroreBudgetPinoAI);
   });
 
   test("una chiamata in timeout resta conteggiata", async () => {
-    const budget = creaBudgetGeminiPino(1);
-    const inCorso = chiamataGeminiConBudgetPino(budget, () => mai<string>());
+    const budget = creaBudgetAIPino(1);
+    const inCorso = chiamataAIConBudgetPino(budget, () => mai<string>());
     // Prenotazione sincrona: il timeout non restituisce budget.
     expect(budget.usate).toBe(1);
     await expect(conScadenzaPino(inCorso, 20)).rejects.toBeInstanceOf(ErroreTimeoutPino);
     expect(budget.usate).toBe(1);
     await expect(
-      chiamataGeminiConBudgetPino(budget, async () => "dopo")
-    ).rejects.toBeInstanceOf(ErroreBudgetGeminiPino);
+      chiamataAIConBudgetPino(budget, async () => "dopo")
+    ).rejects.toBeInstanceOf(ErroreBudgetPinoAI);
   });
 
   test("due chiamate concorrenti non aggirano il budget", async () => {
-    const budget = creaBudgetGeminiPino(1);
+    const budget = creaBudgetAIPino(1);
     const esiti = await Promise.allSettled([
-      chiamataGeminiConBudgetPino(budget, async () => "prima"),
-      chiamataGeminiConBudgetPino(budget, async () => "seconda"),
+      chiamataAIConBudgetPino(budget, async () => "prima"),
+      chiamataAIConBudgetPino(budget, async () => "seconda"),
     ]);
     expect(esiti.filter((e) => e.status === "fulfilled")).toHaveLength(1);
     expect(esiti.filter((e) => e.status === "rejected")).toHaveLength(1);
@@ -86,21 +87,21 @@ test.describe("M6-B1 — budget Gemini condiviso", () => {
   });
 
   test("senza budget il chiamante fuori da Pino non è limitato", async () => {
-    expect(prelevaChiamataGeminiPino(undefined)).toBe(true);
+    expect(prelevaChiamataAIPino(undefined)).toBe(true);
     await expect(
-      chiamataGeminiConBudgetPino(undefined, async () => "libera")
+      chiamataAIConBudgetPino(undefined, async () => "libera")
     ).resolves.toBe("libera");
   });
 
   test("il budget esaurito non produce chiamate aggiuntive", async () => {
-    const budget = creaBudgetGeminiPino(1);
+    const budget = creaBudgetAIPino(1);
     let chiamate = 0;
     const conta = async () => {
       chiamate += 1;
       return "ok";
     };
-    await chiamataGeminiConBudgetPino(budget, conta);
-    await chiamataGeminiConBudgetPino(budget, conta).catch(() => undefined);
+    await chiamataAIConBudgetPino(budget, conta);
+    await chiamataAIConBudgetPino(budget, conta).catch(() => undefined);
     expect(chiamate).toBe(1);
   });
 });
@@ -133,7 +134,7 @@ test.describe("M6-B1 — fallback searchAll con scadenza", () => {
         categorie: [],
       })
     ).toBe(true);
-    expect(messaggioIndisponibilitaGemini("it")).toContain(
+    expect(messaggioIndisponibilitaAI("it")).toContain(
       "non significa che il prodotto o servizio non esista"
     );
   });
@@ -173,14 +174,14 @@ test.describe("M6-B1 — fallback searchAll con scadenza", () => {
   });
 });
 
-test.describe("M6-B1 — call graph Gemini e invarianti", () => {
+test.describe("M6-B1 — call graph Groq e invarianti", () => {
   const indice = lettura("lib/assistente/index.ts");
   const semantica = lettura("lib/assistente/semantica.ts");
   const planner = lettura("lib/assistente/core-v2/ai-request-planner.ts");
 
   test("nel percorso Pino restano due soli siti di chiamata", () => {
-    const inIndice = indice.match(/callGeminiText\(/g) ?? [];
-    const inSemantica = semantica.match(/callGeminiText\(/g) ?? [];
+    const inIndice = indice.match(/callGroqText\(/g) ?? [];
+    const inSemantica = semantica.match(/callGroqText\(/g) ?? [];
     expect(inIndice).toHaveLength(1);
     expect(inSemantica).toHaveLength(1);
     // Il planner core-v2 non è importato dal percorso Pino.
@@ -190,12 +191,12 @@ test.describe("M6-B1 — call graph Gemini e invarianti", () => {
   });
 
   test("entrambi i siti passano dal budget condiviso della richiesta", () => {
-    expect(indice).toContain("const budgetGemini = creaBudgetGeminiPino();");
-    expect(indice).toContain("chiamataGeminiConBudgetPino(budgetGemini, () =>");
-    expect(semantica).toContain("chiamataGeminiConBudgetPino(budget, () =>");
+    expect(indice).toContain("const budgetAI = creaBudgetAIPino();");
+    expect(indice).toContain("chiamataAIConBudgetPino(budgetAI, () =>");
+    expect(semantica).toContain("chiamataAIConBudgetPino(budget, () =>");
     // Il budget attraversa il planner semantico.
-    expect(indice).toContain("statoConversazionale,\n        budgetGemini");
-    expect(semantica).toContain("budget?: BudgetGeminiPino");
+    expect(indice).toContain("statoConversazionale,\n        budgetAI");
+    expect(semantica).toContain("budget?: BudgetPinoAI");
   });
 
   test("il fallback usa la scadenza e conserva i risultati validi", () => {

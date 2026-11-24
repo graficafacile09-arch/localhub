@@ -4,7 +4,7 @@ import { calcolaExtHash, calcolaTitoloFonteHash, calcolaUrlHash } from "./dedup"
 import { acquisisciFonte } from "./acquisitori";
 import type { VoceAcquisita } from "./acquisitori";
 import { HOST_WHITELIST, fonteDaDb } from "./fonti";
-import { assegnaCategoria, isPertinenteCastrovillari } from "./filtro";
+import { assegnaCategoria, isPertinenteAgricoltura } from "./filtro";
 import type { FonteDb, FonteNotizie, NotiziaNormalizzata, RiepilogoImport } from "./types";
 
 /**
@@ -215,10 +215,10 @@ export async function eseguiImportFonti(options: {
         continue;
       }
 
-      // 3. Normalizzazione + filtro Castrovillari + regole discovery.
+      // 3. Normalizzazione + filtro agricoltura calabrese + regole discovery.
       const normalizzate: NotiziaNormalizzata[] = [];
       for (const voce of voci) {
-        if (!isPertinenteCastrovillari({ fonteId: fonte.id, title: voce.title, excerpt: voce.excerpt })) {
+        if (!isPertinenteAgricoltura({ fonteId: fonte.id, title: voce.title, excerpt: voce.excerpt })) {
           esito.skipped += 1;
           continue;
         }

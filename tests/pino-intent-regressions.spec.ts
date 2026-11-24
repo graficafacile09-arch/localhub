@@ -22,6 +22,7 @@ import {
 import {
   espandiQueryConSinonimi,
   espandiQueryConSinonimiBase,
+  espandiSinonimiDirettiProdotto,
   sonoSinonimiDirettiProdotto,
 } from "../lib/ricerca-semantica";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
@@ -31,7 +32,7 @@ const u = (content: string) => ({ role: "user" as const, content });
 /**
  * Ricerca alimentare in inglese: il soggetto deve diventare italiano PRIMA del
  * retrieval. Nessuna nuova fonte: la query tradotta passa dalla stessa ricerca
- * prodotti InCittà usata dalle richieste italiane.
+ * prodotti Radici Calabria usata dalle richieste italiane.
  */
 test.describe("Pino — alimenti in inglese", () => {
   test("'bread' è intento food non basso e il piano cerca prodotti in italiano", () => {
@@ -115,9 +116,10 @@ test.describe("Pino — lingua del messaggio e conteggi", () => {
  * Categoria alimentare generica e sottotipi reali del catalogo.
  *
  * Il catalogo pubblica il nome specifico ("Pecorino"), non la categoria
- * generica ("formaggio"): il ponte è curato e viene verificato solo sui
- * metadati identitari, mai sulla descrizione, e non è una soglia globale più
- * permissiva.
+ * generica ("formaggio"): il ponte è curato (sottotipi reali) e, per chi se ne
+ * dichiara parte, letto dai metadati identitari o dalla DEFINIZIONE nella prima
+ * frase della descrizione. Non è una soglia globale più permissiva e non
+ * promuove chi cita la categoria di passaggio.
  */
 test.describe("Pino — formaggi: categoria generica e sottotipi", () => {
   const P = (nome: string, categoria: string, descrizione: string | null = null): ProdottoRicerca => ({
@@ -140,6 +142,58 @@ test.describe("Pino — formaggi: categoria generica e sottotipi", () => {
   test("'formaggio' non promuove un prodotto solo perché la descrizione lo cita", () => {
     const cipolla = P("Dolcezza di Cipolla Bianca", "Alimentari", "Ottima con formaggi e carni.");
     expect(prodottoPertinente(cipolla, ["formaggio"], [])).toBe(false);
+  });
+
+  test("'formaggio' trova i formaggi con nome locale, non solo quelli col sottotipo noto", () => {
+    // Il nome non contiene la categoria: la descrizione la DEFINISCE.
+    expect(
+      prodottoPertinente(
+        P("Felciata di Morano PAT", "Alimentari", "Formaggio tradizionale avvolto nelle felci."),
+        ["formaggio"],
+        []
+      )
+    ).toBe(true);
+    expect(
+      prodottoPertinente(
+        P("Cacioricotta del Pollino", "Alimentari", "Formaggio estivo di latte di capra e pecora."),
+        ["formaggio"],
+        []
+      )
+    ).toBe(true);
+  });
+
+  test("'formaggio' non promuove il Moretto del Pollino: è un fungo, non un formaggio", () => {
+    const moretto = P(
+      "Moretto del Pollino",
+      "Alimentari",
+      "Fungo di sottobosco della macchia mediterranea, da contorno e da condimento."
+    );
+    expect(prodottoPertinente(moretto, ["formaggio"], [])).toBe(false);
+  });
+
+  test("la definizione nella descrizione completa vale anche senza parola nel nome né in quella breve", () => {
+    const giuncata = {
+      ...P("Giuncata del Pollino", "Alimentari", "Latte cagliato fresco, dolce e senza stagionatura."),
+      descrizione_completa:
+        "La giuncata è il formaggio fresco per eccellenza: latte cagliato e lasciato sgocciolare in un cestino di giunco.",
+    };
+    expect(prodottoPertinente(giuncata, ["formaggio"], [])).toBe(true);
+  });
+
+  test("il plurale dell'utente è la stessa categoria del singolare", () => {
+    const formaggi = P("Formaggio stagionato", "Alimentari");
+    expect(prodottoPertinente(formaggi, ["formaggi"], [])).toBe(true);
+    expect(prodottoPertinente(formaggi, ["formaggio"], [])).toBe(true);
+  });
+
+  test("una citazione di passaggio non promuove il prodotto", () => {
+    expect(
+      prodottoPertinente(
+        P("Tagliere misto", "Alimentari", "Si abbina bene ai formaggi stagionati."),
+        ["formaggio"],
+        []
+      )
+    ).toBe(false);
   });
 
   test("'pecorino' resta una ricerca specifica, non una categoria", () => {
@@ -434,6 +488,8 @@ test.describe("Pino — regressioni di intento", () => {
       prodotti: [],
       offerte: [],
       eventi: [],
+      notizie: [],
+      contenuti: [],
       categorie: [],
       meteo: null,
       farmacie: [],
@@ -493,6 +549,16 @@ test.describe("Pino — regressioni di intento", () => {
     );
     expect(espandiQueryConSinonimiBase("borsa").split(/\s+/)).toEqual(
       expect.arrayContaining(["borsa", "borse", "borsello", "borselli"])
+    );
+    // Prodotti calabresi: singolare/plurale e varianti comuni.
+    expect(espandiSinonimiDirettiProdotto("soppressata")).toEqual(
+      expect.arrayContaining(["soppressata", "salame"])
+    );
+    expect(espandiSinonimiDirettiProdotto("cirò")).toEqual(
+      expect.arrayContaining(["ciro", "ciro rosso"])
+    );
+    expect(espandiSinonimiDirettiProdotto("extravergine")).toEqual(
+      expect.arrayContaining(["evo", "extra vergine"])
     );
     // Ricerca negozi: la forme colloquiale arriva allo stesso gruppo.
     expect(espandiQueryConSinonimi("borse").split(/\s+/)).toContain("borsello");

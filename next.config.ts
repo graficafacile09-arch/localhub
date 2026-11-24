@@ -23,6 +23,25 @@ const CONTENT_SECURITY_POLICY = [
 const nextConfig: NextConfig = {
   // Non esporre la tecnologia usata (header X-Powered-By).
   poweredByHeader: false,
+  // tesseract.js carica worker e modelli a runtime: resta fuori dal bundle.
+  serverExternalPackages: ["tesseract.js"],
+  // Il worker Node di tesseract.js fa require('..'): senza includere TUTTI i
+  // file del pacchetto, Vercel traccia solo l'entrypoint e il worker muore
+  // con MODULE_NOT_FOUND (verificato nei log della Preview).
+  outputFileTracingIncludes: {
+    "/api/radiscan/analisi": [
+      "./node_modules/tesseract.js/**/*",
+      "./node_modules/tesseract.js-core/**/*",
+      // Dipendenze runtime del worker: il tracing esterno non le segue.
+      "./node_modules/bmp-js/**/*",
+      "./node_modules/node-fetch/**/*",
+      "./node_modules/zlibjs/**/*",
+      "./node_modules/idb-keyval/**/*",
+      "./node_modules/is-url/**/*",
+      "./node_modules/wasm-feature-detect/**/*",
+      "./node_modules/regenerator-runtime/**/*",
+    ],
+  },
   // Permette al dev server di servire risorse a richieste originate da
   // 127.0.0.1 (necessario per i test E2E con browser in sviluppo).
   allowedDevOrigins: ["127.0.0.1", "localhost"],
@@ -59,6 +78,9 @@ const nextConfig: NextConfig = {
         hostname: `*.${dominio}`,
       })),
     ],
+    // Il logo dell'header usa una qualità più alta del default (testo sottile:
+    // a 75 la scritta CALABRIA perde nitidezza nella ricodifica).
+    qualities: [75, 95],
     // Le immagini prodotto sono salvate con nome UUID: quando un commerciante
     // cambia foto cambia anche l'URL, quindi la variante ottimizzata può
     // restare in cache CDN molto più dei 4 ore di default.

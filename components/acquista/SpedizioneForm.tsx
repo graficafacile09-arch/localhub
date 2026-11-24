@@ -62,7 +62,7 @@ export default function SpedizioneForm({
   /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
   varianteId?: string | null;
   /**
-   * Catalogo dei metodi di pagamento supportati da InCittà, ognuno con il
+   * Catalogo dei metodi di pagamento supportati da Radici Calabria, ognuno con il
    * flag `disponibile` reale per questo negozio. La UI mostra solo le voci
    * con `disponibile = true`.
    */
@@ -77,7 +77,7 @@ export default function SpedizioneForm({
     indirizzo: "", cap: "", citta: "", provincia: "", autenticato: false,
   };
   const [quantita, setQuantita] = useState(1);
-  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
+  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da Radici Calabria
   // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
   const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
@@ -441,7 +441,7 @@ export default function SpedizioneForm({
           errori={erroriFatturazione}
         />
 
-        {/* Spedizione — catalogo corrieri, prezzo calcolato da InCittà */}
+        {/* Spedizione — catalogo corrieri, prezzo calcolato da Radici Calabria */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <Package className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
@@ -536,7 +536,7 @@ export default function SpedizioneForm({
                 {pesoGrammi && pesoGrammi > 0
                   ? `Pacco: ${(pesoGrammi / 1000).toLocaleString("it-IT", { maximumFractionDigits: 2 })} kg · `
                   : ""}
-                Tariffa di spedizione calcolata automaticamente da InCittà in base al corriere e alle
+                Tariffa di spedizione calcolata automaticamente da Radici Calabria in base al corriere e alle
                 caratteristiche della spedizione.
               </p>
             </div>

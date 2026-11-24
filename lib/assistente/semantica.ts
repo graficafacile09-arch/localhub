@@ -6,14 +6,14 @@
  * quali dati inventare: restituisce solo un piano di ricerca che viene poi
  * validato e applicato dai tool deterministici.
  *
- * Fallback locale: se Gemini non è disponibile, il piano resta utilizzabile
+ * Fallback locale: se Groq non è disponibile, il piano resta utilizzabile
  * con intent + termini originali.
  */
-import { callGeminiText, type CallGeminiTextParams } from "@/lib/ai/gemini-text";
+import { callGroqText } from "@/lib/ai/groq";
 import {
-  chiamataGeminiConBudgetPino,
-  type BudgetGeminiPino,
-} from "./budget-gemini";
+  chiamataAIConBudgetPino,
+  type BudgetPinoAI,
+} from "./budget-ai";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
 import {
@@ -36,174 +36,12 @@ import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca
 import {
   ATTIVITA_CATALOGO_PINO,
   CANONICI_CATALOGO_PINO,
+  TERMINI_BEVANDE_PINO,
   VOCABOLARIO_REFUSI_PINO,
 } from "./lexicon.ts";
+import { rilevaBisognoPino } from "./bisogni";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
-
-// ─── Fallback a costo zero: Gemini 429/402 → Groq (OpenAI-compatibile) ──────
-//
-// Il planner semantico è il primo consumatore di quota della richiesta: con
-// Gemini a 429 (o appeso oltre la soglia) la comprensione AI si spegneva e
-// restava solo il piano deterministico. Qui la stessa richiesta viene ripetuta
-// su Groq Cloud, che espone un endpoint OpenAI-compatibile.
-//
-// L'helper resta LOCALE a questo file: `index.ts` importa semantica, quindi
-// importare da lì la funzione creerebbe un ciclo ESM. La chiave arriva da
-// GROQ_API_KEY, mai dal codice.
-// Se anche Groq fallisce viene rilanciato l'errore ORIGINALE di Gemini: il
-// catch di `interpretaRichiestaPino` conserva il percorso deterministico e la
-// rotta non va in crash.
-
-const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-/**
- * `llama-3.3-70b-specdec` e `llama3-8b-8192` non sono più erogati: il
- * sostituto indicato da Groq è `openai/gpt-oss-120b`, sostituibile con
- * GROQ_MODEL.
- */
-const MODELLO_GROQ_FALLBACK = "openai/gpt-oss-120b";
-/**
- * 4s su Gemini + 6s su Groq = 10s nel caso peggiore, ampiamente dentro la
- * scadenza della rotta: il backup non deve allungare il percorso.
- */
-const TIMEOUT_GROQ_MS = 6_000;
-/** 0.3: determinismo sui dati di catalogo. */
-const TEMPERATURA_GROQ = 0.3;
-/**
- * `openai/gpt-oss-120b` è un modello reasoning: spende ~150 token in
- * `reasoning_tokens` prima di scrivere il JSON del piano. Con 300 il piano
- * arrivava troncato o vuoto, quindi il tetto coincide con il minimo garantito
- * (vedi `Math.max` nel body della richiesta).
- */
-const MAX_TOKENS_GROQ = 700;
-
-/** Messaggio in formato OpenAI: Groq accetta system/user/assistant. */
-type MessaggioGroq = {
-  role: "system" | "user" | "assistant";
-  content: string;
-};
-
-/**
- * Errori in cui il backup è conveniente: quota/rate limit (429/402) e attesa
- * scaduta. Un Gemini che non risponde in 4s è già indisponibile per questa
- * richiesta: insistere significa bruciare il budget della rotta.
- * `callGeminiText` segnala il timeout come `Timeout chiamata Gemini (4s).`;
- * `deadline`/`ETIMEDOUT` coprono gli errori di rete o dei runtime.
- */
-function erroreGeminiRecuperabilePino(errore: unknown): boolean {
-  if (!errore) return false;
-  if (typeof errore === "object") {
-    const stato =
-      (errore as { status?: unknown }).status ??
-      (errore as { statusCode?: unknown }).statusCode;
-    if (stato === 429 || stato === 402 || stato === "429" || stato === "402") return true;
-    const codice = (errore as { code?: unknown }).code;
-    if (typeof codice === "string" && /ETIMEDOUT|TIMEOUT|DEADLINE/i.test(codice)) return true;
-  }
-  const testo = errore instanceof Error ? errore.message : String(errore);
-  return /429|402|quota|rate.?limit|timeout|deadline|etimedout/i.test(testo);
-}
-
-/**
- * Chiamata di backup su Groq Cloud: fetch nativa, nessuna dipendenza nuova.
- * Lancia su chiave assente, risposta non valida, timeout o testo vuoto — il
- * chiamante decide come degradare.
- */
-async function chiamaBackupSuGroq(
-  systemPrompt: string,
-  messages: MessaggioGroq[],
-  opzioni: { maxTokens?: number } = {}
-): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "Chiave API Groq mancante. Aggiungi GROQ_API_KEY alle variabili d'ambiente."
-    );
-  }
-  const model = process.env.GROQ_MODEL?.trim() || MODELLO_GROQ_FALLBACK;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_GROQ_MS);
-  try {
-    const corpo: MessaggioGroq[] = systemPrompt.trim()
-      ? [{ role: "system", content: systemPrompt.trim() }, ...messages]
-      : messages;
-    const response = await fetch(GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: corpo,
-        temperature: TEMPERATURA_GROQ,
-        // Tetto minimo: il reasoning del modello consuma token prima del testo.
-        max_tokens: Math.max(opzioni.maxTokens ?? 0, MAX_TOKENS_GROQ),
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      // Nessun body in chiaro: può contenere il token o dettagli interni.
-      throw new Error(`Errore Groq (HTTP ${response.status}).`);
-    }
-    const dati = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const testo = (dati.choices?.[0]?.message?.content ?? "").trim();
-    if (!testo) throw new Error("Risposta Groq vuota.");
-    return testo;
-  } catch (caught: unknown) {
-    if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error(`Timeout chiamata Groq (${Math.round(TIMEOUT_GROQ_MS / 1000)}s).`);
-    }
-    throw caught;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * Prova Gemini e, solo quando l'errore è recuperabile (quota o timeout),
- * ripete la stessa richiesta su Groq con lo stesso system prompt. Gli errori
- * non recuperabili restano al chiamante senza cambio di provider. Il backup
- * non consuma il budget delle 2 chiamate Gemini della richiesta.
- */
-async function chiamaGeminiConBackup(
-  parametri: CallGeminiTextParams
-): Promise<string> {
-  try {
-    return await callGeminiText(parametri);
-  } catch (erroreGemini) {
-    if (!erroreGeminiRecuperabilePino(erroreGemini)) throw erroreGemini;
-    console.warn(
-      "[pino-semantic-fallback] Gemini lento o in quota. Switch preventivo su Groq..."
-    );
-    const messaggi: MessaggioGroq[] = [
-      ...(parametri.history ?? []).map((messaggio) => ({
-        role: messaggio.role === "model" ? ("assistant" as const) : ("user" as const),
-        content: messaggio.content,
-      })),
-      { role: "user" as const, content: parametri.userPrompt },
-    ];
-    try {
-      const testo = await chiamaBackupSuGroq(parametri.systemPrompt, messaggi, {
-        maxTokens: parametri.maxTokens,
-      });
-      console.info("[pino-semantic-fallback] Piano semantico prodotto da Groq.");
-      return testo;
-    } catch (erroreGroq) {
-      // Graceful degradation: si rilancia l'errore di Gemini, che il catch di
-      // `interpretaRichiestaPino` già gestisce (piano locale, nessun crash).
-      console.warn(
-        "[pino-semantic-fallback] Groq non disponibile, degrado sul planner locale:",
-        erroreGroq instanceof Error ? erroreGroq.message : "errore sconosciuto"
-      );
-      throw erroreGemini;
-    }
-  }
-}
 
 export type PinoSemanticPlan = {
   surface: "products" | "stores" | "both" | "none";
@@ -570,7 +408,7 @@ export function limitiVincolantiPino(
   return limitiPianoPino(semantica) ?? limitiPianoPino(comprensione);
 }
 
-const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di InCittà.
+const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di Radici Calabria.
 NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
 Regole:
@@ -669,7 +507,7 @@ export const TOKEN_SENZA_REFUSI = new Set([
 export const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
 
-  // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
+  // Riutilizziamo il vocabolario semantico già presente nel motore Radici Calabria:
   // errori di battitura su prodotti, categorie e servizi vengono corretti
   // verso un termine reale già conosciuto dal catalogo.
   for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
@@ -1040,6 +878,14 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
   if (!termine) termine = attivita?.termine ?? match?.termine ?? "";
 
+  // "Ho sete" non è il nome di un prodotto: "sete" non esiste nel catalogo e
+  // il gate di pertinenza lo rifiuterebbe. Il bisogno va tradotto nella
+  // famiglia reale delle bevande; per una bevanda concreta ("una birra") il
+  // match del lessico resta invece la fonte prioritaria.
+  if (!match && !attivita && rilevaBisognoPino(qBase) === "sete") {
+    termine = TERMINI_BEVANDE_PINO[0];
+  }
+
   // "analcolica" resta una caratteristica positiva; la regola speciale del
   // retrieval la tratta correttamente senza escludere le vere analcoliche.
   if (haEsclusioneAlcol && !esclusioni.some((e) => /\balcol/i.test(e))) {
@@ -1125,7 +971,7 @@ export async function interpretaRichiestaPino(
   analisi: PinoIntentAnalysis,
   memoria: PinoMemoriaVoce[],
   stato?: PinoConversationState,
-  budget?: BudgetGeminiPino
+  budget?: BudgetPinoAI
 ): Promise<PinoSemanticPlan> {
   // Lo stato strutturato è la fonte prioritaria per le conversazioni
   // multi-turno. La memoria semantica viene applicata comunque dopo la
@@ -1176,8 +1022,8 @@ export async function interpretaRichiestaPino(
 
     // M6-B1 — Budget condiviso con la selezione dei tool: a budget esaurito
     // la chiamata non parte e vale il piano deterministico (catch sotto).
-    const raw = await chiamataGeminiConBudgetPino(budget, () =>
-      chiamaGeminiConBackup({
+    const raw = await chiamataAIConBudgetPino(budget, () =>
+      callGroqText({
         systemPrompt: SCHEMA_PROMPT,
         userPrompt:
           `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
@@ -1186,10 +1032,8 @@ export async function interpretaRichiestaPino(
         maxTokens: 300,
         temperature: 0,
         json: true,
-        // 4s: oltre questa soglia Gemini non è utile a questa richiesta e il
-        // turno passa a Groq, che ha 6s propri.
+        // Timeout diretto Groq: se scade, il catch usa il piano locale deterministico.
         timeoutMs: 4_000,
-        retries: 1,
       })
     );
 

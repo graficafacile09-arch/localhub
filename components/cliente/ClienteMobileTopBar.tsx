@@ -36,7 +36,7 @@ export default function ClienteMobileTopBar({
 
       {/* Title */}
       <span className="truncate text-sm font-bold tracking-tight text-white/90">
-        Area Clienti
+        Area consumatori
       </span>
 
       {/* Menu — apre il drawer di navigazione */}

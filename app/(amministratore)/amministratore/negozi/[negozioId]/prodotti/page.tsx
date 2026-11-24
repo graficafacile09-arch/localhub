@@ -77,7 +77,7 @@ export default async function AdminStoreProdottiPage({
               Prodotti di {storeResult.data.nome}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Gestisci il catalogo del negozio con lo stesso sistema del venditore: AI, modifica ed eliminazione incluse.
+              Gestisci il catalogo del negozio con lo stesso sistema delle imprese: AI, modifica ed eliminazione incluse.
             </p>
           </div>
 

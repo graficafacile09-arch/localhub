@@ -112,7 +112,7 @@ export async function POST(
         .maybeSingle();
 
       const resendKey = process.env.RESEND_API_KEY;
-      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
 
       if (praticaEmail?.cliente_email && resendKey) {
         const resend = new Resend(resendKey);
@@ -135,13 +135,13 @@ export async function POST(
         await resend.emails.send({
           from: fromEmail,
           to: String(praticaEmail.cliente_email),
-          subject: "Aggiornamento richiesta di recesso " + String(praticaEmail.numero) + " — InCittà",
+          subject: "Aggiornamento richiesta di recesso " + String(praticaEmail.numero) + " — Radici Calabria",
           text:
             "Ciao " + String(praticaEmail.cliente_nome || "") + ",\n\n" +
             "La tua richiesta di recesso " + String(praticaEmail.numero) + " è stata " + statoTesto + ".\n" +
             dettagliRimborso +
             notaEmail +
-            "\nPuoi consultare l'ordine dalla tua area InCittà:\n" +
+            "\nPuoi consultare l'ordine dalla tua area Radici Calabria:\n" +
             url.origin + "/ordini/conferma/" + encodeURIComponent(String(ordineId)) + "\n",
         });
       }

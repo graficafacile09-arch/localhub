@@ -184,7 +184,7 @@ export default function ServiziModule({ storeId }: Props) {
       <ModuleShell
         icon={<Sparkles className="h-4 w-4" />}
         title="Servizi"
-        subtitle="Presenta ai clienti i servizi che offri."
+        subtitle="Presenta ai consumatori i servizi che offri."
         id="servizi"
       >
         <p className="text-sm text-slate-400">Caricamento...</p>
@@ -196,11 +196,11 @@ export default function ServiziModule({ storeId }: Props) {
     <ModuleShell
       icon={<Sparkles className="h-4 w-4" />}
       title="Servizi"
-      subtitle="Presenta ai clienti i servizi che offri."
+      subtitle="Presenta ai consumatori i servizi che offri."
       id="servizi"
     >
       <p className="mb-4 text-xs text-slate-500">
-        Ogni servizio può avere prezzo (facoltativo), durata e immagine. I clienti li vedono
+        Ogni servizio può avere prezzo (facoltativo), durata e immagine. I consumatori li vedono
         nella tua pagina pubblica.
       </p>
 

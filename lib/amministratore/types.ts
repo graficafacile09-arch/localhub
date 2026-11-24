@@ -64,15 +64,15 @@ export const RUOLI_UTENTE: Record<
     chip: "bg-blue-50 text-blue-700 ring-blue-200",
   },
   commerciante: {
-    label: "Venditore",
+    label: "Impresa e operatore",
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   },
   corriere: {
-    label: "Corriere",
+    label: "Operatore logistico",
     chip: "bg-amber-50 text-amber-700 ring-amber-200",
   },
   utente: {
-    label: "Cliente",
+    label: "Consumatore",
     chip: "bg-slate-100 text-slate-600 ring-slate-200",
   },
 };
@@ -80,6 +80,38 @@ export const RUOLI_UTENTE: Record<
 /** Etichetta leggibile di un ruolo. */
 export function etichettaRuolo(ruolo: RuoloUtente): string {
   return RUOLI_UTENTE[ruolo].label;
+}
+
+/**
+ * Ordine di visualizzazione dei ruoli: identico in tabella, badge, filtri e
+ * dettaglio, così le combinazioni restano leggibili e sempre nella stessa
+ * sequenza (consumatore → impresa → logistica → amministratore).
+ */
+export const ORDINE_RUOLI: readonly RuoloUtente[] = [
+  "utente",
+  "commerciante",
+  "corriere",
+  "amministratore",
+];
+
+/**
+ * Ruoli del record, ordinati e senza duplicati. Non muta l'array originale:
+ * i valori tecnici restituiti dal database non vengono toccati.
+ */
+export function ordinaRuoli(ruoli: readonly RuoloUtente[]): RuoloUtente[] {
+  const posseduti = new Set(ruoli);
+  return ORDINE_RUOLI.filter((ruolo) => posseduti.has(ruolo));
+}
+
+/** Etichette visibili di TUTTI i ruoli, in ordine coerente. */
+export function etichetteRuoli(ruoli: readonly RuoloUtente[]): string[] {
+  return ordinaRuoli(ruoli).map((ruolo) => RUOLI_UTENTE[ruolo].label);
+}
+
+/** Testo unico delle etichette: «Consumatore · Impresa e operatore». */
+export function etichettaRuoli(ruoli: readonly RuoloUtente[]): string {
+  const etichette = etichetteRuoli(ruoli);
+  return etichette.length > 0 ? etichette.join(" · ") : "Nessun ruolo assegnato";
 }
 
 /** Etichette e stili dello stato account. */

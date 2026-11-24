@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { costruisciContestoSitoPino } from "../lib/assistente/contesto-sito.ts";
 import {
   MASSIMO_PRODOTTI_CONTESTO_PINO,
   comporreBloccoContestoPino,
@@ -133,4 +134,38 @@ test("la rotta fa l'intercettazione prima dell'AI e il contesto va nel system pr
     (orchestratore.match(/systemPrompt: systemPromptPino,/g) ?? []).length,
     2
   );
+});
+
+
+test("Pino legge i dati della pagina Territorio dalla fonte condivisa", () => {
+  const blocco = costruisciContestoSitoPino("Raccontami il Pollino");
+  assert.ok(blocco);
+  assert.match(blocco, /<conoscenza_territorio>/);
+  assert.match(blocco, /Pollino/);
+  assert.match(blocco, /192\.565 ettari/);
+});
+
+test("Pino legge il calendario stagionale e cita le fonti", () => {
+  const blocco = costruisciContestoSitoPino("Quando si raccolgono le clementine?");
+  assert.ok(blocco);
+  assert.match(blocco, /<conoscenza_stagionalita>/);
+  assert.match(blocco, /Clementine di Calabria IGP/);
+  assert.match(blocco, /ottobre/i);
+  assert.match(blocco, /consorzio/i);
+  assert.match(blocco, /NON la disponibilità commerciale/);
+});
+
+test("il contesto editoriale resta disponibile anche se il catalogo non risponde", async () => {
+  const esito = await costruisciContestoDinamicoPino(
+    [{ role: "user", content: "Raccontami il Pollino" }],
+    {
+      cerca: async () => {
+        throw new Error("db down");
+      },
+    }
+  );
+  assert.ok(esito);
+  assert.match(esito.blocco, /<conoscenza_territorio>/);
+  assert.match(esito.blocco, /Pollino/);
+  assert.equal(esito.prodotti, 0);
 });

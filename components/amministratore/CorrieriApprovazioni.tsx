@@ -42,15 +42,15 @@ export default function CorrieriApprovazioni({ iniziali }: { iniziali: Corriere[
             <Truck className="h-7 w-7" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Area Corriere Locale</p>
-            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Approvazione corrieri</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Gestisci le richieste dei corrieri locali. L'approvazione usa lo stesso sistema account già presente nella piattaforma.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Area logistica e consegne</p>
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Approvazione operatori logistici</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Gestisci le richieste degli operatori logistici. L'approvazione usa lo stesso sistema account già presente nella piattaforma.</p>
           </div>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <div className="card p-8 text-sm text-slate-500">Nessuna richiesta di corriere locale.</div>
+        <div className="card p-8 text-sm text-slate-500">Nessuna richiesta di operatore logistico.</div>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (

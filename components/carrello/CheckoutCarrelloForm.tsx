@@ -246,7 +246,7 @@ export default function CheckoutCarrelloForm({ prefill}
   // true quando il checkout è precompilato con un indirizzo del profilo.
   const indirizzoDaProfilo =
     prefill.autenticato && (prefill.indirizzo || "").trim().length > 0;
-  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
+  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da Radici Calabria
   // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
   const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
@@ -265,7 +265,7 @@ export default function CheckoutCarrelloForm({ prefill}
   const [metodoPagamento, setMetodoPagamento] = useState<
     "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | null
   >(null);
-  // Catalogo dei metodi di pagamento supportati da InCittà (STESSA fonte del
+  // Catalogo dei metodi di pagamento supportati da Radici Calabria (STESSA fonte del
   // buy-now: CATALOGO_METODI_PAGAMENTO + disponibilità via
   // /api/cliente/ordini/carrello/metodi). Mostriamo solo le voci con
   // `disponibile = true` nell'intersezione multi-negozio.
@@ -432,7 +432,7 @@ export default function CheckoutCarrelloForm({ prefill}
           </div>
           <h1 className="mt-4 text-lg font-black text-slate-900">Il tuo carrello è vuoto</h1>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-            Aggiungi prodotti dai negozi della tua città prima di procedere al checkout.
+            Aggiungi prodotti dalle filiere del territorio prima di procedere al checkout.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
@@ -1004,7 +1004,7 @@ export default function CheckoutCarrelloForm({ prefill}
 
           </section>
 
-          {/* Spedizione — catalogo corrieri, prezzo calcolato da InCittà */}
+          {/* Spedizione — catalogo corrieri, prezzo calcolato da Radici Calabria */}
 
           {modalita === "spedizione" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1131,7 +1131,7 @@ export default function CheckoutCarrelloForm({ prefill}
  kg · `
                       : ""}
 
-                    Tariffa di spedizione calcolata automaticamente da InCittà in base al corriere e alle
+                    Tariffa di spedizione calcolata automaticamente da Radici Calabria in base al corriere e alle
                     caratteristiche della spedizione.
                   </p>
                 </div>
@@ -1340,7 +1340,7 @@ export default function CheckoutCarrelloForm({ prefill}
 
         {/* ── Colonna destra: riepilogo per negozio (UI, il server è autorevole) ── */}
 
-        <aside className="h-fit space-y-3 lg:sticky lg:top-4">
+        <aside className="h-fit space-y-3 lg:sticky lg:top-20">
           {gruppi.map((gruppo) => (
             <section
               key={gruppo.negozioId}
@@ -1456,12 +1456,12 @@ function EsitoCheckoutView({
               Istruzioni per il bonifico diretto al venditore
             </p>
             <p className="mt-1 text-xs leading-5 text-amber-900">
-              Esegui il bonifico direttamente sul conto del venditore. InCittà non riceve il denaro.
+              Esegui il bonifico direttamente sul conto del venditore. Radici Calabria non riceve il denaro.
               Usa la causale indicata qui sotto.
             </p>
             <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Venditore</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Impresa</dt>
                 <dd className="font-bold text-amber-950">{esito.bonificoDiretto.venditoreNome}</dd>
               </div>
               <div>

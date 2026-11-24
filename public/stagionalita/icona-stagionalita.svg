@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-hidden="true">
+  <g fill="none" stroke="#B08D3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="60" cy="60" r="50.5" />
+    <path d="M24.3 24.3 95.7 95.7" />
+    <path d="M95.7 24.3 24.3 95.7" />
+
+    <!-- sole -->
+    <circle cx="60" cy="36.5" r="8" />
+    <path d="M60 24.5v-4" />
+    <path d="M60 48.5v4" />
+    <path d="M48 36.5h-4" />
+    <path d="M72 36.5h4" />
+    <path d="M51.6 28.1l-2.8-2.8" />
+    <path d="M68.4 44.9l2.8 2.8" />
+    <path d="M68.4 28.1l2.8-2.8" />
+    <path d="M51.6 44.9l-2.8 2.8" />
+
+    <!-- foglia -->
+    <path d="M35 77c-7.5-5-9.5-16.5-5-27 8 2 13 11 12.5 20 .1 4-3.5 7-7.5 7z" />
+    <path d="M35 77V51" />
+    <path d="M35 60l-5.5-4" />
+    <path d="M35 66l-5-3.5" />
+    <path d="M35 59l5-4" />
+    <path d="M35 65l5-3.5" />
+
+    <!-- germoglio -->
+    <path d="M85 78V55" />
+    <path d="M85 63c-7.5 0-11.5-4.5-11.5-10.5 6.8-1 11.5 3 11.5 10.5z" />
+    <path d="M85 57.5c6.8 0 10.8-4 10.8-9.5-6.3-1-10.8 2.8-10.8 9.5z" />
+
+    <!-- fiocco di neve -->
+    <g transform="translate(60 86)">
+      <circle r="2.2" />
+      <path d="M0 -11V11" />
+      <path d="M-9.5 -5.5 9.5 5.5" />
+      <path d="M-9.5 5.5 9.5 -5.5" />
+      <path d="M-3.6 -8.7-5.6 -10.6M3.6 -8.7 5.6 -10.6M-3.6 8.7-5.6 10.6M3.6 8.7 5.6 10.6" />
+      <path d="M-8.7 -3.6-10.6 -5.6M-8.7 3.6-10.6 5.6M8.7 -3.6 10.6 -5.6M8.7 3.6 10.6 5.6" />
+    </g>
+  </g>
+</svg>

@@ -61,7 +61,7 @@ export default function SegnalaAbusoButton({
           titolo: `Segnalazione abuso/violazione — ${targetName}`,
           descrizione: `Motivo: ${motivoLabel}\n\n${descrizione.trim()}`,
           target_type: targetType,
-          // I prodotti di InCittà hanno ID bigint mentre target_id della
+          // I prodotti di Radici Calabria hanno ID bigint mentre target_id della
           // tabella segnalazioni è UUID: per i prodotti manteniamo il
           // riferimento leggibile in target_name e nel negozio_id.
           target_id: targetType === "negozio" ? targetId ?? null : null,
@@ -73,13 +73,13 @@ export default function SegnalaAbusoButton({
       const data = await res.json().catch(() => null);
 
       if (res.status === 401 || res.status === 403) {
-        throw new Error("Per inviare una segnalazione devi accedere al tuo account InCittà.");
+        throw new Error("Per inviare una segnalazione devi accedere al tuo account Radici Calabria.");
       }
       if (!res.ok) {
         throw new Error(data?.error?.message ?? "Impossibile inviare la segnalazione.");
       }
 
-      setMessaggio("Segnalazione inviata. Il team InCittà la prenderà in carico.");
+      setMessaggio("Segnalazione inviata. Il team Radici Calabria la prenderà in carico.");
       setDescrizione("");
     } catch (err) {
       setMessaggio(err instanceof Error ? err.message : "Si è verificato un errore.");

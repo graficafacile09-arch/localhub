@@ -24,7 +24,7 @@ export default function MerchantError({
         Qualcosa è andato storto
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-        Si è verificato un errore durante il caricamento dell&apos;area venditore. Riprova tra qualche istante.
+        Si è verificato un errore durante il caricamento dell&apos;area imprese e operatori. Riprova tra qualche istante.
       </p>
       <button
         type="button"

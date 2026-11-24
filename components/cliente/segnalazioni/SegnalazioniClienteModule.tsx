@@ -67,7 +67,7 @@ export default function SegnalazioniClienteModule() {
               Segnala un problema
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Hai riscontrato un problema tecnico, un errore nei dati di un negozio o un contenuto non idoneo? Invia una segnalazione al team di InCittà.
+              Hai riscontrato un problema tecnico, un errore nei dati di un negozio o un contenuto non idoneo? Invia una segnalazione al team di Radici Calabria.
             </p>
           </div>
         </div>

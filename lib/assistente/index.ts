@@ -51,9 +51,8 @@ import {
  *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
  *   3. contesto strutturato dei risultati → risposta finale dell'AI.
  *
- * Usa GEMINI_API_KEY (già presente nel progetto, usata anche dalla Vision),
- * modello GEMINI_MODEL (con fallback gemini-2.0-flash), timeout su ogni
- * chiamata, max_tokens e temperature. Fallback: se la selezione tool fallisce
+ * Usa GROQ_API_KEY e GROQ_MODEL (default openai/gpt-oss-120b), timeout su ogni
+ * chiamata e budget condiviso per richiesta. Fallback: se la selezione tool fallisce
  * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
  * dei risultati recuperati. Nessuna scrittura su DB.
  *
@@ -66,6 +65,8 @@ import {
   contaAttivitaCatalogoPino,
   searchOffers,
   searchEvents,
+  searchNews,
+  searchContent,
   getCategoriesList,
   searchAll,
   getWeatherCastrovillari,
@@ -90,6 +91,7 @@ import {
   type EsitoAttributiProdottiPino,
   type RichiestaServizioPino,
   type ServizioAttivoPino,
+  type ProdottoConVariantiPino,
   type ToolParams,
   type StrumentoPino,
   negozioAttivitaCompatibilePino,
@@ -111,14 +113,11 @@ import {
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import {
-  callGeminiText,
-  type CallGeminiTextParams,
-  type GeminiMessage,
-} from "@/lib/ai/gemini-text";
-import {
-  chiamaGeminiFunctionCalling,
-  type GeminiFunctionCallingParams,
-} from "@/lib/ai/gemini-function-calling";
+  callGroqText,
+  callGroqFunctionCalling,
+  type GroqFunctionCallingParams,
+  type GroqHistoryMessage,
+} from "@/lib/ai/groq";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { trovaRispostaFaqPino } from "./faq";
 import {
@@ -142,10 +141,12 @@ import {
 import { rilevaPeriodoEventiPino } from "./eventi-periodo";
 import {
   estraiSoggettoInfoAttivitaPino,
+  estraiSoggettoServiziAttivitaPino,
   filtraNegoziNominatiPino,
   giornoRichiestoPino,
   nomeNegozioNominatoPino,
   rilevaRichiestaInfoAttivitaPino,
+  rilevaRichiestaServiziAttivitaPino,
   rimuoviNomeNegozioPino,
   rispostaInfoAttivitaPino,
 } from "./info-attivita";
@@ -160,6 +161,8 @@ import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
 import {
   rilevaDomandaAggregata,
   rilevaConteggioAttivitaPino,
+  rilevaRichiestaVariantiProdottoPino,
+  estraiSoggettoVariantiPino,
   risolviSoggettoAggregato,
   prodottoCorrispondeQualificatore,
   componiRispostaAggregata,
@@ -180,9 +183,10 @@ import {
   type PinoSemanticPlan,
 } from "./semantica";
 import {
-  chiamataGeminiConBudgetPino,
-  creaBudgetGeminiPino,
-} from "./budget-gemini";
+  chiamataAIConBudgetPino,
+  creaBudgetAIPino,
+  tempoRestanteAIPino,
+} from "./budget-ai";
 import type { PinoUnderstanding } from "./understanding";
 import {
   correggiTokenCatalogo,
@@ -219,6 +223,10 @@ export interface RispostaAssistente {
   risposta: string;
   negozi: NegozioRicerca[];
   prodotti: ProdottoRicerca[];
+  /** Notizie pubbliche restituite dal tool; la risposta testuale le cita. */
+  notizie?: Awaited<ReturnType<typeof searchNews>>;
+  /** Contenuti editoriali pubblici restituiti dal tool. */
+  contenuti?: Awaited<ReturnType<typeof searchContent>>;
   processingMs: number;
   source: "assistente";
   /** Intento riconosciuto da Pino Intent Layer v1 (osservabilità/test). */
@@ -250,7 +258,7 @@ export type ToolInvocation = {
 };
 
 export type NativeFunctionCallingProvider = (
-  input: GeminiFunctionCallingParams
+  input: GroqFunctionCallingParams
 ) => Promise<{ calls?: unknown; text?: string }>;
 
 export type EsitoSelezioneNativaPino =
@@ -275,13 +283,13 @@ export async function selezionaStrumentiNativoPino(
   input: {
     systemPrompt: string;
     userPrompt: string;
-    history?: GeminiMessage[];
+    history?: GroqHistoryMessage[];
     limiti: { minPrice: number | null; maxPrice: number | null } | null;
     surface?: string | null;
     intent?: string | null;
     followUp?: boolean;
   },
-  provider: NativeFunctionCallingProvider = chiamaGeminiFunctionCalling
+  provider: NativeFunctionCallingProvider = callGroqFunctionCalling
 ): Promise<EsitoSelezioneNativaPino> {
   let risposta: { calls?: unknown; text?: string };
   try {
@@ -350,12 +358,18 @@ export async function selezionaStrumentiNativoPino(
 // non consuma il budget delle 3 invocazioni e non resta un'esecuzione vuota
 // silenziosa. Nessuna firma pubblica cambia.
 
+import { cercaConoscenza, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
+import { misuraFaseChat } from "./timing-fasi";
+
 /** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
 export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchStores",
   "searchProducts",
   "searchOffers",
   "searchEvents",
+  "searchNews",
+  "searchContent",
+  "searchConoscenza",
   "searchAll",
   "getCategories",
   "getWeather",
@@ -513,179 +527,27 @@ export function selezioneUtilizzabilePino(
   );
 }
 
-// ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
-// Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
-// GEMINI_API_KEY + GEMINI_MODEL, endpoint generateContent di Gemini, retry con
-// backoff su 429/402 (quota) e timeout su ogni chiamata. L'assistente esegue
-// fino a 2 chiamate LLM per messaggio, quindi i picchi brevi di quota sono
-// gestiti dal retry interno.
-
-// ─── Fallback a costo zero: Gemini 429/402 → Groq (OpenAI-compatibile) ──────
-//
-// Quando la quota Gemini è esaurita, o la chiamata resta appesa oltre la
-// soglia, la selezione dei tool non deve fermarsi: la stessa richiesta viene
-// ripetuta su Groq Cloud, che espone l'endpoint OpenAI-compatibile. Se anche
-// Groq non risponde, viene rilanciato l'errore ORIGINALE di Gemini, così il
-// percorso deterministico già esistente (piano locale, `searchAll`, messaggio
-// di indisponibilità) resta l'ultimo livello e la chat non si interrompe mai.
-//
-// La chiave NON sta nel codice: arriva da GROQ_API_KEY. Un segreto scritto in
-// un file versionato finisce nella storia di git, dove resta leggibile anche
-// dopo la rimozione.
-
-const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-/**
- * `llama-3.3-70b-specdec` e `llama3-8b-8192` non sono più erogati da Groq: il
- * loro sostituto indicato da Groq è `openai/gpt-oss-120b`. Resta sostituibile
- * con GROQ_MODEL senza toccare il codice.
- */
-const MODELLO_GROQ_FALLBACK = "openai/gpt-oss-120b";
-/**
- * 4,5s su Gemini + 6s su Groq = 10,5s nel caso peggiore: la somma con il
- * planner semantico resta sotto la scadenza della rotta (25s).
- */
-const TIMEOUT_GROQ_MS = 6_000;
-/** 0.3: determinismo sui dati di catalogo, come richiesto per il fallback. */
-const TEMPERATURA_GROQ = 0.3;
-/**
- * `openai/gpt-oss-120b` è un modello reasoning: spende ~150 token in
- * `reasoning_tokens` prima di scrivere `content`. Con un tetto più basso la
- * risposta torna vuota e il fallback degraderebbe senza motivo, quindi 700 è
- * anche il minimo garantito (vedi `Math.max` nel body della richiesta).
- */
-const MAX_TOKENS_GROQ = 700;
-
-/** Messaggio in formato OpenAI: Groq accetta system/user/assistant. */
-export type MessaggioGroq = {
-  role: "system" | "user" | "assistant";
-  content: string;
-};
-
-/**
- * Riconosce gli errori in cui vale la pena passare a Groq: quota/rate limit
- * (status 429/402 o `Quota Gemini superata (HTTP 429).`) e attese scadute
- * (`Timeout chiamata Gemini (4s).`, `deadline`, `ETIMEDOUT`).
- * Gli altri errori (5xx, risposta vuota) NON attivano il provider di backup:
- * restano al chiamante con il comportamento che già aveva.
- */
-export function erroreGeminiRecuperabilePino(errore: unknown): boolean {
-  if (!errore) return false;
-  if (typeof errore === "object") {
-    const stato =
-      (errore as { status?: unknown }).status ??
-      (errore as { statusCode?: unknown }).statusCode;
-    if (stato === 429 || stato === 402 || stato === "429" || stato === "402") return true;
-    const codice = (errore as { code?: unknown }).code;
-    if (typeof codice === "string" && /ETIMEDOUT|TIMEOUT|DEADLINE/i.test(codice)) return true;
-  }
-  const testo = errore instanceof Error ? errore.message : String(errore);
-  return /429|402|quota|rate.?limit|timeout|deadline|etimedout/i.test(testo);
-}
-
-/**
- * Chiamata di backup su Groq Cloud: fetch nativa, nessuna dipendenza nuova.
- * Restituisce il testo della prima scelta; lancia su chiave assente, risposta
- * HTTP non valida, timeout o risposta vuota — il chiamante decide come
- * degradare.
- */
-export async function chiamaBackupSuGroq(
-  systemPrompt: string,
-  messages: MessaggioGroq[],
-  opzioni: { maxTokens?: number; timeoutMs?: number } = {}
-): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "Chiave API Groq mancante. Aggiungi GROQ_API_KEY alle variabili d'ambiente."
-    );
-  }
-  const model = process.env.GROQ_MODEL?.trim() || MODELLO_GROQ_FALLBACK;
-  const controller = new AbortController();
-  const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_GROQ_MS;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const corpo: MessaggioGroq[] = systemPrompt.trim()
-      ? [{ role: "system", content: systemPrompt.trim() }, ...messages]
-      : messages;
-    const response = await fetch(GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: corpo,
-        temperature: TEMPERATURA_GROQ,
-        // Tetto minimo: il reasoning del modello consuma token prima del testo.
-        max_tokens: Math.max(opzioni.maxTokens ?? 0, MAX_TOKENS_GROQ),
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      // Nessun body in chiaro: contiene il token o dettagli interni.
-      throw new Error(`Errore Groq (HTTP ${response.status}).`);
-    }
-    const dati = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const testo = (dati.choices?.[0]?.message?.content ?? "").trim();
-    if (!testo) throw new Error("Risposta Groq vuota.");
-    return testo;
-  } catch (caught: unknown) {
-    if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error(`Timeout chiamata Groq (${Math.round(timeoutMs / 1000)}s).`);
-    }
-    throw caught;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * Unico punto di chiamata LLM del percorso Pino: prova Gemini e, solo quando
- * l'errore è recuperabile (quota o timeout), ripete la stessa richiesta su
- * Groq. Il budget delle 2 chiamate Gemini per richiesta resta valido perché la
- * chiamata di backup non consuma budget Gemini.
- */
-export async function chiamaGeminiConBackup(
-  parametri: CallGeminiTextParams
-): Promise<string> {
-  try {
-    return await callGeminiText(parametri);
-  } catch (erroreGemini) {
-    if (!erroreGeminiRecuperabilePino(erroreGemini)) throw erroreGemini;
-    console.warn("[pino-fallback] Gemini lento o in quota. Switch su Groq...");
-    const messaggi: MessaggioGroq[] = [
-      ...(parametri.history ?? []).map((messaggio) => ({
-        role: messaggio.role === "model" ? ("assistant" as const) : ("user" as const),
-        content: messaggio.content,
-      })),
-      { role: "user" as const, content: parametri.userPrompt },
-    ];
-    try {
-      const testo = await chiamaBackupSuGroq(parametri.systemPrompt, messaggi, {
-        maxTokens: parametri.maxTokens,
-        timeoutMs: TIMEOUT_GROQ_MS,
-      });
-      console.info("[pino-fallback] Risposta Groq utilizzata.");
-      return testo;
-    } catch (erroreGroq) {
-      // Graceful degradation: si rilancia l'errore di Gemini, che il percorso
-      // deterministico del chiamante già sa gestire (piano locale, searchAll,
-      // messaggio di indisponibilità). Nessun crash della rotta.
-      console.warn(
-        "[pino-fallback] Groq non disponibile, degrado sul percorso deterministico:",
-        erroreGroq instanceof Error ? erroreGroq.message : "errore sconosciuto"
-      );
-      throw erroreGemini;
-    }
-  }
-}
+// ─── Provider AI unico: Groq ────────────────────────────────────────────────
+// Le chiamate testuali/JSON e il Function Calling usano lo stesso provider.
+// Gli errori vengono gestiti dai fallback deterministici già presenti in Pino.
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
+
+/**
+ * Attesa limitata per letture accessorie (memoria, correzioni): se scade,
+ * la richiesta prosegue con il valore di ripiego senza bloccare la risposta.
+ */
+async function conTimeoutPino<T>(promessa: Promise<T>, ms: number, ripiego: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const scadenza = new Promise<T>((risolvi) => {
+    timer = setTimeout(() => risolvi(ripiego), ms);
+  });
+  try {
+    return await Promise.race([promessa.catch(() => ripiego), scadenza]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function normalizzaMessaggi(messages: MessaggioAssistente[]): MessaggioAssistente[] {
   return (messages ?? [])
@@ -711,11 +573,25 @@ async function eseguiTool(
   prodotti: ProdottoRicerca[];
   offerte: Awaited<ReturnType<typeof searchOffers>>;
   eventi: Awaited<ReturnType<typeof searchEvents>>;
+  notizie: Awaited<ReturnType<typeof searchNews>>;
+  contenuti: Awaited<ReturnType<typeof searchContent>>;
+  conoscenza?: RisultatoConoscenza[];
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
 }> {
-  const vuoto = { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
+  const vuoto = {
+    negozi: [],
+    prodotti: [],
+    offerte: [],
+    eventi: [],
+    notizie: [],
+    contenuti: [],
+    conoscenza: [],
+    categorie: [],
+    meteo: null,
+    farmacie: [],
+  };
   const limit = params?.limit;
 
   switch (nome) {
@@ -759,6 +635,17 @@ async function eseguiTool(
           rilevaPeriodoEventiPino(fallbackQuery)
         ),
       };
+    case "searchNews":
+      // Vuoto = ultime notizie pubblicate, non "nessuna notizia".
+      return {
+        ...vuoto,
+        notizie: await searchNews(params?.query?.trim() || fallbackQuery, limit),
+      };
+    case "searchContent":
+      return {
+        ...vuoto,
+        contenuti: await searchContent(params?.query?.trim() || fallbackQuery, limit),
+      };
     case "searchAll": {
       const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
       if (!q) return vuoto;
@@ -767,6 +654,11 @@ async function eseguiTool(
     }
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
+    case "searchConoscenza":
+      return {
+        ...vuoto,
+        conoscenza: await cercaConoscenza(params?.query?.trim() || fallbackQuery, limit),
+      };
     case "searchGiftCategories": {
       // S5.1 — Un'unica invocazione tool per gruppo di categorie regalo. Le
       // ricerche per singola categoria sono query INTERNE al contratto dello
@@ -820,6 +712,11 @@ export type RisultatoToolPino = {
   prodotti: ProdottoRicerca[];
   offerte: Awaited<ReturnType<typeof searchOffers>>;
   eventi: Awaited<ReturnType<typeof searchEvents>>;
+  /** Opzionali per compatibilità con gli esiti storici e i test M6. */
+  notizie?: Awaited<ReturnType<typeof searchNews>>;
+  contenuti?: Awaited<ReturnType<typeof searchContent>>;
+  /** Fonti editoriali indicizzate (searchConoscenza), opzionali. */
+  conoscenza?: RisultatoConoscenza[];
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
@@ -872,6 +769,8 @@ export function risultatoToolVuotoPino(
     (risultati.prodotti?.length ?? 0) === 0 &&
     (risultati.offerte?.length ?? 0) === 0 &&
     (risultati.eventi?.length ?? 0) === 0 &&
+    (risultati.notizie?.length ?? 0) === 0 &&
+    (risultati.contenuti?.length ?? 0) === 0 &&
     (risultati.categorie?.length ?? 0) === 0 &&
     (risultati.farmacie?.length ?? 0) === 0 &&
     !risultati.meteo
@@ -925,17 +824,34 @@ export const SCADENZA_INVOCAZIONE_PINO_MS = 20_000;
  * la classifica come timeout. La promessa perdente ha già i gestori di
  * `Promise.race`, quindi non produce rifiuti non gestiti.
  */
+let contatoreScadenzeProbe = 0;
 export function conScadenzaPino<T>(
   promessa: Promise<T>,
   ms: number = SCADENZA_INVOCAZIONE_PINO_MS
 ): Promise<T> {
   const attesa = Number.isFinite(ms) && ms > 0 ? ms : SCADENZA_INVOCAZIONE_PINO_MS;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  const idScadenza = ++contatoreScadenzeProbe;
+  const inizioScadenza = Date.now();
+  console.info("[probe-scadenza]", "id=" + idScadenza, "avvio attesa=" + attesa);
   const scadenza = new Promise<never>((_, rifiuta) => {
-    timer = setTimeout(() => rifiuta(new ErroreTimeoutPino(attesa)), attesa);
+    timer = setTimeout(() => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "timer scattato ms=" + (Date.now() - inizioScadenza));
+      rifiuta(new ErroreTimeoutPino(attesa));
+    }, attesa);
   });
-  return Promise.race([promessa, scadenza]).finally(() => {
+  return Promise.race([promessa, scadenza]).then(
+    (valore) => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=ok ms=" + (Date.now() - inizioScadenza));
+      return valore;
+    },
+    (errore) => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=errore ms=" + (Date.now() - inizioScadenza));
+      throw errore;
+    }
+  ).finally(() => {
     if (timer) clearTimeout(timer);
+    console.info("[probe-scadenza]", "id=" + idScadenza, "fine finally ms=" + (Date.now() - inizioScadenza));
   });
 }
 
@@ -1085,7 +1001,7 @@ export function fontiInattendibiliSenzaRisultatiPino(
   risultati: Pick<
     RisultatoToolPino,
     "negozi" | "prodotti" | "offerte" | "eventi" | "categorie" | "meteo" | "farmacie"
-  >
+  > & { notizie?: unknown[]; contenuti?: unknown[] }
 ): boolean {
   if (!riepilogo || riepilogo.fallite + riepilogo.timeout === 0) return false;
   return (
@@ -1093,6 +1009,8 @@ export function fontiInattendibiliSenzaRisultatiPino(
     (risultati?.prodotti?.length ?? 0) === 0 &&
     (risultati?.offerte?.length ?? 0) === 0 &&
     (risultati?.eventi?.length ?? 0) === 0 &&
+    (risultati?.notizie?.length ?? 0) === 0 &&
+    (risultati?.contenuti?.length ?? 0) === 0 &&
     (risultati?.categorie?.length ?? 0) === 0 &&
     (risultati?.farmacie?.length ?? 0) === 0 &&
     !risultati?.meteo
@@ -1110,13 +1028,15 @@ export function meteoSostituisceRispostaPino(
   risultati: Pick<
     RisultatoToolPino,
     "negozi" | "prodotti" | "offerte" | "eventi" | "categorie" | "farmacie"
-  >
+  > & { notizie?: unknown[]; contenuti?: unknown[] }
 ): boolean {
   return (
     (risultati?.negozi?.length ?? 0) === 0 &&
     (risultati?.prodotti?.length ?? 0) === 0 &&
     (risultati?.offerte?.length ?? 0) === 0 &&
     (risultati?.eventi?.length ?? 0) === 0 &&
+    (risultati?.notizie?.length ?? 0) === 0 &&
+    (risultati?.contenuti?.length ?? 0) === 0 &&
     (risultati?.categorie?.length ?? 0) === 0 &&
     (risultati?.farmacie?.length ?? 0) === 0
   );
@@ -1136,9 +1056,12 @@ export function mergeEsitiInvocazioniPino(
   let prodotti: ProdottoRicerca[] = [];
   let offerte: RisultatoToolPino["offerte"] = [];
   let eventi: RisultatoToolPino["eventi"] = [];
+  let notizie: NonNullable<RisultatoToolPino["notizie"]> = [];
+  let contenuti: NonNullable<RisultatoToolPino["contenuti"]> = [];
   let categorie: RisultatoToolPino["categorie"] = [];
   let meteo: RisultatoToolPino["meteo"] = null;
   let farmacie: RisultatoToolPino["farmacie"] = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   for (const esito of Array.isArray(esiti) ? esiti : []) {
     if (esito.stato !== "ok" && esito.stato !== "vuoto") continue;
     const r = esito.risultati;
@@ -1155,11 +1078,14 @@ export function mergeEsitiInvocazioniPino(
     }
     for (const o of r.offerte ?? []) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
     for (const e of r.eventi ?? []) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
+    for (const n of r.notizie ?? []) if (!notizie.some((x) => x.id === n.id)) notizie = [...notizie, n];
+    for (const c of r.contenuti ?? []) if (!contenuti.some((x) => x.id === c.id)) contenuti = [...contenuti, c];
     for (const c of r.categorie ?? []) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
     if (r.meteo && !meteo) meteo = r.meteo;
     for (const f of r.farmacie ?? []) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
+    for (const k of r.conoscenza ?? []) if (!conoscenza.some((x) => x.chiave === k.chiave)) conoscenza = [...conoscenza, k];
   }
-  return { negozi, prodotti, offerte, eventi, categorie, meteo, farmacie };
+  return { negozi, prodotti, offerte, eventi, notizie, contenuti, categorie, meteo, farmacie, conoscenza };
 }
 
 /**
@@ -1323,6 +1249,100 @@ type NegozioConServiziPino = NegozioRicerca & {
  * prodotto casuale, nessun negozio fuori tema) da una sola `searchStores` con
  * il servizio riconosciuto. Il soggetto attività, se c'è, resta la query.
  */
+/**
+ * Risposta deterministica per «che varianti ha questo prodotto?». Elenca solo
+ * le varianti attive pubblicate; se il prodotto è una scheda singola, lo dice
+ * esplicitamente invece di lasciare la domanda senza risposta.
+ */
+export function rispostaVariantiProdottoPino(
+  prodotti: ProdottoConVariantiPino[],
+  soggetto: string,
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
+  const righe: string[] = [];
+  for (const prodotto of (prodotti ?? []).slice(0, 5)) {
+    const varianti = (prodotto.varianti ?? []).filter((variante) => variante.attivo !== false);
+    if (varianti.length === 0) {
+      righe.push(
+        `- **${prodotto.nome}** — ${inglese ? "no active variants published in the Radici Calabria catalogue" : "nessuna variante attiva pubblicata nel catalogo Radici Calabria"}`
+      );
+      continue;
+    }
+    const dettagli = varianti.slice(0, 10).map((variante) => {
+      const attributi = Object.values(variante.attributi ?? {})
+        .map((valore) => String(valore).trim())
+        .filter(Boolean)
+        .join(" / ");
+      const nome = String(variante.nome ?? "").trim() || attributi || (inglese ? "variant" : "variante");
+      const prezzo =
+        variante.prezzo != null && Number.isFinite(Number(variante.prezzo))
+          ? ` — €${Number(variante.prezzo)}`
+          : "";
+      return `${nome}${prezzo}`;
+    });
+    righe.push(
+      `- **${prodotto.nome}** — ${inglese ? "variants" : "varianti"}: ${dettagli.join("; ")}`
+    );
+  }
+  if (righe.length === 0) {
+    return inglese
+      ? `I couldn't find a published product for "${soggetto}" in the Radici Calabria catalogue.`
+      : `Non trovo un prodotto pubblicato per «${soggetto}» nel catalogo Radici Calabria.`;
+  }
+  const apertura = inglese
+    ? "I checked the variants published in the Radici Calabria catalogue."
+    : "Ho controllato le varianti pubblicate nel catalogo Radici Calabria.";
+  return `${apertura}\n\n${righe.join("\n")}`;
+}
+
+/**
+ * Risposta deterministica per «quali servizi offre questa attività?»: elenca
+ * solo i servizi pubblicati dal negozio, con prezzo/durata quando presenti.
+ * Se un'attività non pubblica servizi, lo dichiara senza inventarne.
+ */
+export function rispostaServiziAttivitaPino(
+  negozi: NegozioRicerca[],
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
+  const righe: string[] = [];
+  for (const negozio of (negozi ?? []).slice(0, 8)) {
+    const nome = String(negozio?.nome ?? "").trim();
+    if (!nome) continue;
+    const servizi = ((negozio as NegozioConServiziPino).serviziTrovati ?? []).filter(
+      (voce) => voce && String(voce.nome ?? "").trim()
+    );
+    if (servizi.length === 0) {
+      righe.push(
+        `- **${nome}** — ${inglese ? "no services published in the Radici Calabria catalogue" : "nessun servizio pubblicato nel catalogo Radici Calabria"}`
+      );
+      continue;
+    }
+    const dettagli = servizi.map((voce) => {
+      const prezzo = formattaPrezzoServizioPino(voce.prezzo);
+      const durata =
+        voce.durataMin != null && Number.isFinite(Number(voce.durataMin)) && Number(voce.durataMin) > 0
+          ? (inglese ? `about ${Number(voce.durataMin)} minutes` : `circa ${Number(voce.durataMin)} minuti`)
+          : null;
+      return `${String(voce.nome).trim()}: ${[
+        prezzo ?? (inglese ? "price not stated" : "prezzo non indicato"),
+        durata ?? (inglese ? "duration not stated" : "durata non indicata"),
+      ].join(" · ")}`;
+    });
+    righe.push(`- **${nome}** — ${dettagli.join("; ")}`);
+  }
+  if (righe.length === 0) {
+    return inglese
+      ? "I couldn't find that business in the Radici Calabria catalogue, so I can't list its published services."
+      : "Non trovo quell'attività nel catalogo Radici Calabria, quindi non posso elencare i servizi pubblicati.";
+  }
+  const apertura = inglese
+    ? `I found the services published for ${righe.length === 1 ? "this business" : "these businesses"}.`
+    : `Ho trovato i servizi pubblicati ${righe.length === 1 ? "per questa attività" : "per queste attività"}.`;
+  return `${apertura}\n\n${righe.join("\n")}`;
+}
+
 export function invocazioniConServizioPino(
   invocazioni: ToolInvocation[],
   richiesta: RichiestaServizioPino | null,
@@ -1402,8 +1422,8 @@ export function rispostaServizioPino(
   if (righe.length === 0) return messaggioServizioNonTrovatoPino(servizio, lingua);
   const pluraleServizi = richiesti.length > 1;
   const apertura = inglese
-    ? `I found ${righe.length} ${righe.length === 1 ? "business" : "businesses"} in the InCittà catalogue that ${pluraleServizi ? "list the requested services" : "list this service"}.`
-    : `Ho trovato ${righe.length} attività nel catalogo InCittà che ${pluraleServizi ? "dichiarano i servizi richiesti" : "dichiara questo servizio"}.`;
+    ? `I found ${righe.length} ${righe.length === 1 ? "business" : "businesses"} in the Radici Calabria catalogue that ${pluraleServizi ? "list the requested services" : "list this service"}.`
+    : `Ho trovato ${righe.length} attività nel catalogo Radici Calabria che ${pluraleServizi ? "dichiarano i servizi richiesti" : "dichiara questo servizio"}.`;
   return `${apertura}\n\n${righe.join("\n")}`;
 }
 
@@ -1416,14 +1436,14 @@ export function messaggioServizioNonTrovatoPino(
   lingua: "it" | "en" = "it"
 ): string {
   return lingua === "en"
-    ? `I couldn't find any business in the InCittà catalogue that lists "${servizio}". I can try a different area or a similar service.`
-    : `Nel catalogo InCittà non ho trovato attività che dichiarino "${servizio}". Posso provare con un'altra zona o un servizio simile.`;
+    ? `I couldn't find any business in the Radici Calabria catalogue that lists "${servizio}". I can try a different area or a similar service.`
+    : `Nel catalogo Radici Calabria non ho trovato attività che dichiarino "${servizio}". Posso cercare un servizio simile, provare un'altra zona del territorio oppure mostrarti le categorie attive e i negozi più vicini.`;
 }
 
 /**
  * Nota onesta sugli attributi: dichiara solo ciò che il catalogo permette di
  * verificare. Se il filtro ha azzerato i risultati, Pino parla di catalogo
- * InCittà e non afferma che il prodotto non esista in città; se alcuni
+ * Radici Calabria e non afferma che il prodotto non esista in città; se alcuni
  * risultati non dichiarano il dato, non lo presenta come confermato.
  */
 export function notaAttributiProdottiPino(
@@ -1438,8 +1458,8 @@ export function notaAttributiProdottiPino(
 
   if (esito.prodotti.length === 0 && esito.esclusi > 0) {
     return lingua === "en"
-      ? `I found no products in the InCittà catalogue matching ${elenco}. I can relax that filter or look for a similar item.`
-      : `Nel catalogo InCittà non ho trovato prodotti compatibili con ${elenco}. Posso allargare la ricerca o cercare un prodotto simile.`;
+      ? `I found no products in the Radici Calabria catalogue matching ${elenco}. I can relax that filter or look for a similar item.`
+      : `Nel catalogo Radici Calabria non ho trovato prodotti compatibili con ${elenco}. Posso allargare la ricerca o cercare un prodotto simile.`;
   }
 
   const mancantiIt: string[] = [];
@@ -1454,8 +1474,8 @@ export function notaAttributiProdottiPino(
   }
   if (mancantiIt.length === 0) return null;
   return lingua === "en"
-    ? `Some results do not state ${mancantiEn.join(" or ")} in the InCittà catalogue, so I can't confirm it.`
-    : `Per alcuni risultati il catalogo InCittà non indica ${mancantiIt.join(" e ")}: non posso confermarlo.`;
+    ? `Some results do not state ${mancantiEn.join(" or ")} in the Radici Calabria catalogue, so I can't confirm it.`
+    : `Per alcuni risultati il catalogo Radici Calabria non indica ${mancantiIt.join(" e ")}: non posso confermarlo.`;
 }
 
 // Ultima query "sostanziale" dell'utente: se il messaggio corrente è solo un
@@ -1555,7 +1575,7 @@ export function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
 
 // Guardie deterministiche per le intenzioni CHIARE: garantiscono che "ci sono
 // offerte?", "cosa c'è questo weekend?", "voglio mangiare", "va bene" e
-// "che cos'è InCittà?" scelgano SEMPRE il tool/risposta giusti, senza
+// "che cos'è Radici Calabria?" scelgano SEMPRE il tool/risposta giusti, senza
 // affidarsi alla disciplina del modello. Per tutto il resto decide l'LLM.
 /**
  * S6.2 — Richiesta breve di prodotto con un'esclusione esplicita.
@@ -1582,7 +1602,7 @@ export function pianoProdottoEsclusionePino(
     return null;
   }
   // Piano con esclusioni già riconosciute oppure piano locale deterministico
-  // (stesso fallback usato dal planner quando Gemini non è disponibile).
+  // (stesso fallback usato dal planner quando Groq non è disponibile).
   const piano =
     semantica && semantica.exclusions.length > 0
       ? semantica
@@ -1622,7 +1642,7 @@ function pianoPredefinito(
   if (!ultimo) return null;
 
   const RE_PIATTAFORMA =
-    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|what is this site/;
+    /che cos'è radici calabria|che cos'e radici calabria|che cos'è radici|cos'è radici calabria|come funziona|cos'è il sito|what is radici calabria|what is radici|how does radici calabria work|what is this site/;
 
   // Meteo e farmacie: riconoscimento UNICO e condiviso con il router della
   // barra di ricerca (lib/assistente/local-intents.ts), che normalizza accenti
@@ -1641,7 +1661,7 @@ function pianoPredefinito(
       return {
         directReply: inglese
           ? `The verified weather service covers Castrovillari only: I don't have reliable data for ${etichetta}, and I won't make up a forecast. I can show you Castrovillari's weather if that helps.`
-          : `Il meteo verificato di InCittà copre solo Castrovillari: per ${etichetta} non ho dati affidabili e non voglio inventare una previsione. Se ti serve, posso darti il meteo di Castrovillari.`,
+          : `Il meteo verificato di Radici Calabria copre solo Castrovillari: per ${etichetta} non ho dati affidabili e non voglio inventare una previsione. Se ti serve, posso darti il meteo di Castrovillari.`,
         tools: [],
       };
     }
@@ -1666,9 +1686,6 @@ function pianoPredefinito(
     };
   }
 
-  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b|\boffers?\b|\bdeals?\b|\bdiscounts?\b|\bsales?\b/;
-  const RE_EVENTI =
-    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b|\bevents?\b|what'?s on|what is on|\bconcerts?\b|\bfestivals?\b|\bexhibitions?\b/;
   const RE_CHIACCHIERA =
     /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great|goodbye|bye|see you|good morning|good evening|good afternoon|sure)$/;
 
@@ -1682,9 +1699,56 @@ function pianoPredefinito(
   if (/\bvicino a (?:me|te)\b/.test(ultimo) && nomiGiaMostrati(storico).length === 0) {
     return {
       directReply: inglese
-        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to InCittà). Tell me the area or street and I'll filter by that."
-        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
+        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to Radici Calabria). Tell me the area or street and I'll filter by that."
+        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a Radici Calabria non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
       tools: [],
+    };
+  }
+
+  // Servizi di un'attività nominata: «quali servizi offre il Panificio Zini?».
+  // Deve precedere il ramo generico "panificio", altrimenti la risposta
+  // elencherebbe le attività senza mostrare i servizi richiesti.
+  if (rilevaRichiestaServiziAttivitaPino(ultimo)) {
+    const soggettoServizi = estraiSoggettoServiziAttivitaPino(ultimo);
+    if (soggettoServizi) {
+      return {
+        directReply: null,
+        tools: [
+          {
+            tool: "searchStores",
+            params: { query: soggettoServizi, serviziTutti: true, limit: 6 },
+          },
+        ],
+      };
+    }
+  }
+
+  // Offerte ed eventi hanno la precedenza sulle categorie di attività: «offerte
+  // del Panificio Zini» non è una ricerca di panifici. La query residua filtra
+  // per prodotto/negozio, mentre una richiesta generica resta senza query e
+  // restituisce tutte le offerte/eventi attivi.
+  if (RE_OFFERTE_PINO.test(ultimo)) {
+    const queryOfferte = queryOfferteEventiPino(ultimo, "offerte");
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchOffers",
+          params: queryOfferte ? { query: queryOfferte } : {},
+        },
+      ],
+    };
+  }
+  if (RE_EVENTI_PINO.test(ultimo)) {
+    const queryEventi = queryOfferteEventiPino(ultimo, "eventi");
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchEvents",
+          params: queryEventi ? { query: queryEventi } : {},
+        },
+      ],
     };
   }
 
@@ -1721,25 +1785,28 @@ function pianoPredefinito(
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
       directReply: /\b(what|how)\b/i.test(ultimo)
-        ? "InCittà is the local platform for your city. It brings together local businesses, products and prices, offers and promotions, events and useful information. You can search for businesses, compare products, check opening hours and contact local shops."
-        : "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
+        ? "Radici Calabria is the local platform for your city. It brings together local businesses, products and prices, offers and promotions, events, news and editorial content. You can search for businesses, compare products, check opening hours and contact local shops."
+        : "Radici Calabria è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi, notizie e contenuti editoriali. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
       tools: [],
     };
   }
-  if (RE_OFFERTE.test(ultimo)) {
-    // params vuoti = TUTTE le offerte attive (query non specificata)
-    return { directReply: null, tools: [{ tool: "searchOffers", params: {} }] };
+  if (richiestaNotiziePino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchNews", params: { query: ultimo, limit: 6 } }],
+    };
   }
-  if (RE_EVENTI.test(ultimo)) {
-    // params vuoti = TUTTI gli eventi attivi (query non specificata)
-    return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
+  if (richiestaContenutiEditorialiPino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchContent", params: { query: ultimo, limit: 6 } }],
+    };
   }
-
   // "e domani?" dopo una richiesta di eventi resta sugli eventi, con il nuovo
   // intervallo: non diventa una ricerca generica né perde il contesto.
   if (utenti.length >= 2 && rilevaPeriodoEventiPino(ultimo)) {
     const precedente = utenti[utenti.length - 2] ?? "";
-    if (RE_EVENTI.test(precedente)) {
+    if (RE_EVENTI_PINO.test(precedente)) {
       return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
     }
   }
@@ -1770,8 +1837,8 @@ function pianoPredefinito(
   if (rilevaFollowUp(ultimo)?.tipo === "vicino" && nomiGiaMostrati(storico).length === 0) {
     return {
       directReply: inglese
-        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to InCittà). Tell me the area or street and I'll filter by that."
-        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
+        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to Radici Calabria). Tell me the area or street and I'll filter by that."
+        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a Radici Calabria non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
       tools: [],
     };
   }
@@ -1781,10 +1848,10 @@ function pianoPredefinito(
     if (soggetto) {
       // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
       // resta su quella superficie (non su negozi/prodotti).
-      if (RE_OFFERTE.test(soggetto)) {
+      if (RE_OFFERTE_PINO.test(soggetto)) {
         return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
       }
-      if (RE_EVENTI.test(soggetto)) {
+      if (RE_EVENTI_PINO.test(soggetto)) {
         return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
       }
       const analisiPrec = analizzaIntentoPino(soggetto);
@@ -1901,6 +1968,24 @@ function pianoPredefinito(
   // 5 euro" sono prodotti, non tre vetrine di negozi. Il planner LLM può
   // classificare "pasta" come attività e perdere il catalogo; qui il soggetto
   // alimentare e il budget già estratti restano la fonte autorevole.
+  // «Che varianti ha la Birra Mythos?» chiede le varianti di un prodotto
+  // concreto: non è un conteggio aggregato e deve passare dal catalogo, dove
+  // il tool arricchisce il prodotto con le varianti attive pubblicate.
+  if (rilevaRichiestaVariantiProdottoPino(ultimo)) {
+    const soggettoVarianti = estraiSoggettoVariantiPino(ultimo);
+    if (soggettoVarianti) {
+      return {
+        directReply: null,
+        tools: [
+          {
+            tool: "searchProducts",
+            params: { query: soggettoVarianti, limit: 8 },
+          },
+        ],
+      };
+    }
+  }
+
   const pianoProdottoLocale = pianoLocaleIntelligente(ultimo, analisi);
   if (
     pianoProdottoLocale?.surface === "products" &&
@@ -2125,6 +2210,7 @@ function aRisultatiRecuperati(
       descrizione: n.descrizione ?? null,
       indirizzo: n.indirizzo ?? null,
       telefono: n.telefono ?? null,
+      servizi: (n as NegozioConServiziPino).serviziTrovati ?? [],
     })),
     prodotti: prodotti.map((p) => ({
       nome: p.nome,
@@ -2133,9 +2219,13 @@ function aRisultatiRecuperati(
       categoria: p.categoria,
       descrizione: p.descrizione,
       ha_varianti: p.ha_varianti === true,
+      varianti: (p as ProdottoConVariantiPino).varianti ?? [],
     })),
     offerte: [],
     eventi: [],
+    notizie: [],
+    contenuti: [],
+    conoscenza: extra.conoscenza ?? [],
     categorie: [],
     meteo: null,
     farmacie: [],
@@ -2184,7 +2274,14 @@ function sezioniRisultati(
             const prezzoCanonico = formattaPrezzoProdottoPino(p, lingua);
             const prezzoTesto =
               prezzoCanonico.charAt(0).toLocaleLowerCase() + prezzoCanonico.slice(1);
-            return `- **${p.nome}** — ${prezzoTesto} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
+            const varianti = (p.varianti ?? [])
+              .filter((variante) => variante.nome)
+              .map(
+                (variante) =>
+                  `${variante.nome}${variante.prezzo != null ? ` €${variante.prezzo}` : ""}`
+              )
+              .join(", ");
+            return `- **${p.nome}** — ${prezzoTesto} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${varianti ? ` — ${inglese ? "variants" : "varianti"}: ${varianti}` : ""}${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
           })
           .join("\n")
     );
@@ -2212,7 +2309,25 @@ function sezioniRisultati(
       (inglese ? "**Events**\n" : "**Eventi**\n") +
         risultati.eventi
           .slice(0, 4)
-          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
+          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""}${e.data_fine ? `–${e.data_fine.slice(0, 10)}` : ""} (${e.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
+          .join("\n")
+    );
+  }
+  if (risultati.notizie.length > 0) {
+    sezioni.push(
+      (inglese ? "**Latest news**\n" : "**Ultime notizie**\n") +
+        risultati.notizie
+          .slice(0, 4)
+          .map((n) => `- **${n.titolo}** — ${n.fonte}${n.data ? `, ${n.data.slice(0, 10)}` : ""}${n.estratto ? `. ${n.estratto.slice(0, 140)}` : ""} [${inglese ? "read" : "leggi"}](${n.url})`)
+          .join("\n")
+    );
+  }
+  if (risultati.contenuti.length > 0) {
+    sezioni.push(
+      (inglese ? "**Editorial content**\n" : "**Contenuti editoriali**\n") +
+        risultati.contenuti
+          .slice(0, 4)
+          .map((c) => `- **${c.titolo}**${c.autore ? ` — ${c.autore}` : ""}${c.estratto ? `. ${c.estratto.slice(0, 140)}` : ""} [${inglese ? "read" : "leggi"}](${c.url})`)
           .join("\n")
     );
   }
@@ -2239,6 +2354,8 @@ function contaRisultati(risultati: RisultatiRecuperati): number {
     risultati.prodotti.length +
     risultati.offerte.length +
     risultati.eventi.length +
+    risultati.notizie.length +
+    risultati.contenuti.length +
     (risultati.meteo ? 1 : 0) +
     risultati.farmacie.length
   );
@@ -2275,6 +2392,8 @@ export function fallbackSelezioneVuotaPino(esito: {
   prodotti: readonly unknown[];
   offerte: readonly unknown[];
   eventi: readonly unknown[];
+  notizie?: readonly unknown[];
+  contenuti?: readonly unknown[];
   categorie: readonly unknown[];
 }): boolean {
   return (
@@ -2284,6 +2403,8 @@ export function fallbackSelezioneVuotaPino(esito: {
     esito.prodotti.length === 0 &&
     esito.offerte.length === 0 &&
     esito.eventi.length === 0 &&
+    (esito.notizie?.length ?? 0) === 0 &&
+    (esito.contenuti?.length ?? 0) === 0 &&
     esito.categorie.length === 0
   );
 }
@@ -2292,10 +2413,10 @@ export function fallbackSelezioneVuotaPino(esito: {
  * Indisponibilità temporanea della selezione AI: distinta da un catalogo
  * senza risultati. Usa la lingua già rilevata da Pino, senza forzare l'italiano.
  */
-export function messaggioIndisponibilitaGemini(lingua: "it" | "en" = "it"): string {
+export function messaggioIndisponibilitaAI(lingua: "it" | "en" = "it"): string {
   return lingua === "en"
-    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, or tell me a category or a shop."
-    : "Il servizio di ricerca intelligente è momentaneamente in difficoltà. Non ho trovato risultati con la ricerca alternativa, ma questo non significa che il prodotto o servizio non esista nel catalogo. Puoi riprovare tra poco oppure indicarmi una categoria o un negozio.";
+    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, browse the Shops section, or tell me a category or a shop."
+    : "Il servizio di ricerca è momentaneamente in difficoltà: non ho potuto consultare il catalogo. Non è un catalogo vuoto, e questo non significa che il prodotto o servizio non esista. Puoi riprovare tra poco, esplorare la sezione Negozi oppure indicarmi una categoria o un negozio della zona.";
 }
 
 export function fallbackTestuale(
@@ -2326,7 +2447,9 @@ export function fallbackTestuale(
     risultati.prodotti.length === 0 &&
     risultati.negozi.length > 0 &&
     risultati.offerte.length === 0 &&
-    risultati.eventi.length === 0;
+    risultati.eventi.length === 0 &&
+    risultati.notizie.length === 0 &&
+    risultati.contenuti.length === 0;
 
   // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no,
   // in modo naturale. Per i servizi non ha senso parlare di "prodotto esatto".
@@ -2430,8 +2553,8 @@ async function rispostaFollowUp(input: {
         negozi: [],
         prodotti: [],
         risposta: inglese
-          ? "None of the previous businesses can be verified as open right now based on the opening hours listed on InCittà."
-          : "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
+          ? "None of the previous businesses can be verified as open right now based on the opening hours listed on Radici Calabria."
+          : "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su Radici Calabria.",
       };
     }
     const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti), undefined, lingua).join("\n\n");
@@ -2479,7 +2602,7 @@ async function rispostaFollowUp(input: {
       prodotti,
       risposta: inglese
         ? "I don't have your location, so I can't calculate distances to these businesses. Tell me an area or street and I can narrow things down. In the meantime, here are the previous results:\n\n" + corpo
-        : "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" + corpo,
+        : "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a Radici Calabria non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" + corpo,
     };
   }
 
@@ -2677,7 +2800,7 @@ async function recuperaAlternativeSemantiche(
 }
 
 // ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
-// Meteo e stato farmacie non devono mai essere "interpretati" da Gemini:
+// Meteo e stato farmacie non devono mai essere "interpretati" da Groq:
 // una volta recuperati i dati, la risposta viene composta qui usando soltanto
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
 // anche quando il modello finale sarebbe tentato di completare i buchi.
@@ -2966,6 +3089,61 @@ function terminiSpecificiGuidaPino(query: string): string[] {
   );
 }
 
+const RE_NOTIZIE_PINO =
+  /\b(?:notizie?|news|rassegna stampa|rassegna|ultim['’]?ora|ultime notizie)\b/;
+// «articoli per il teatro» è una ricerca di prodotto, non un contenuto
+// editoriale: la parola "articoli" da sola non basta. Accettiamo solo la forma
+// secca o quella con un complemento di tema ("articoli sul Pollino").
+const RE_CONTENUTI_PINO =
+  /\b(?:contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b|\barticol[oi]\s+(?:su|sul|sulla|sui|sugli|sulle|di|del|della|dei|degli|delle|riguardo|about)\b|^articol[oi]$/;
+
+export function richiestaNotiziePino(query: string): boolean {
+  return RE_NOTIZIE_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
+}
+
+export function richiestaContenutiEditorialiPino(query: string): boolean {
+  return RE_CONTENUTI_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
+}
+
+/**
+ * Notizie e contenuti editoriali non sono luoghi: senza questa guardia
+ * «articoli sul Pollino» finirebbe nella guida Attrazioni per il toponimo.
+ */
+export function richiestaEditorialePino(query: string): boolean {
+  return richiestaNotiziePino(query) || richiestaContenutiEditorialiPino(query);
+}
+
+const RE_OFFERTE_PINO =
+  /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b|\boffers?\b|\bdeals?\b|\bdiscounts?\b|\bsales?\b/;
+const RE_EVENTI_PINO =
+  /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b|\bevents?\b|what'?s on|what is on|\bconcerts?\b|\bfestivals?\b|\bexhibitions?\b/;
+
+/**
+ * Dopo aver riconosciuto offerte/eventi, isola il soggetto reale:
+ * «offerte del Panificio Zini» → «panificio zini», «eventi questo weekend» →
+ * nessuna query (tutti gli eventi). Senza questa pulizia il tool cercherebbe
+ * «offerte del panificio zini» e non troverebbe nessuna corrispondenza.
+ */
+export function queryOfferteEventiPino(
+  query: string,
+  superficie: "offerte" | "eventi"
+): string | undefined {
+  const espressione = superficie === "offerte" ? RE_OFFERTE_PINO : RE_EVENTI_PINO;
+  const q = normalizza(String(query ?? ""))
+    .replace(espressione, " ")
+    .replace(
+      /\b(?:questo|questa|questi|queste|oggi|domani|stasera|stamattina|weekend|fine settimana|prossim[oi]|this|next)\b/g,
+      " "
+    )
+    .replace(
+      /\b(?:di|del|dello|della|dei|degli|delle|da|dal|dallo|dalla|dai|dagli|dalle|presso|a|al|allo|alla|ai|agli|alle|in|nel|nello|nella|nei|negli|nelle|per|con|su|sul|sulla|sui|sugli|sulle)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+  return q.length >= 2 ? q : undefined;
+}
+
 /**
  * Riconosce una richiesta di luogo/attrazione, escludendo acquisti ed eventi.
  * Il nome di un luogo del catalogo resta sempre una richiesta valida, ma un
@@ -2973,6 +3151,7 @@ function terminiSpecificiGuidaPino(query: string): string[] {
  */
 export function richiestaGuidaAttrazioniPino(query: string): boolean {
   const testo = String(query ?? "");
+  if (richiestaEditorialePino(testo)) return false;
   // Decisione unica e ordinata in `routing-policy.ts`: cinema, acquisto ed
   // eventi vincono sull'intento turistico, esattamente come prima, ma la
   // sequenza non vive più qui.
@@ -2986,8 +3165,8 @@ export function richiestaGuidaAttrazioniPino(query: string): boolean {
 /** Risposta onesta: assenza nella guida, non inesistenza nella città. */
 export function rispostaGuidaAttrazioniAssentePino(lingua: "it" | "en" = "it"): string {
   return lingua === "en"
-    ? "I can't currently find information about this place in InCittà's attractions guide. That doesn't necessarily mean it doesn't exist in Castrovillari. I won't suggest shops or products that have nothing to do with it."
-    : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di InCittà. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
+    ? "I can't currently find information about this place in Radici Calabria's attractions guide. That doesn't necessarily mean it doesn't exist in Castrovillari. I won't suggest shops or products that have nothing to do with it."
+    : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di Radici Calabria. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
 }
 
 /** Risposta condivisa per i risultati della guida Attrazioni. */
@@ -3005,8 +3184,8 @@ export function rispostaGuidaAttrazioniTrovatePino(
     })
     .join("\n");
   return inglese
-    ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
-    : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
+    ? `I searched Radici Calabria's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
+    : `Ho cercato nella guida Attrazioni di Radici Calabria. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
 }
 
 // «Festival», «fest» e «sagra» sono eventi anche nella guida statica: se il
@@ -3187,8 +3366,8 @@ export function notaContestoAttributiPino(
   }
   if (vociIt.length === 0) return null;
   return lingua === "en"
-    ? `Note: the InCittà catalogue has no verifiable data on ${vociEn.join(", ")}. These results are not presented as meeting those criteria.`
-    : `Nota: il catalogo InCittà non dispone di dati verificabili su ${vociIt.join(", ")}. I risultati non sono presentati come conformi a questi criteri.`;
+    ? `Note: the Radici Calabria catalogue has no verifiable data on ${vociEn.join(", ")}. These results are not presented as meeting those criteria.`
+    : `Nota: il catalogo Radici Calabria non dispone di dati verificabili su ${vociIt.join(", ")}. I risultati non sono presentati come conformi a questi criteri.`;
 }
 
 /**
@@ -3285,19 +3464,17 @@ export function invocazioniRegaloPino(
  */
 async function risolviCorrezioneTurnoPino(
   storico: MessaggioAssistente[]
-): Promise<CorrezioneRilevataPino | null> {
+): Promise<(CorrezioneRilevataPino & { domandaCorretta: string }) | null> {
   const correzione = rilevaCorrezionePino(storico);
   if (correzione) {
     void registraCorrezionePino(correzione);
-    const indiceUltimo = storico.length - 1;
-    storico[indiceUltimo] = {
-      ...storico[indiceUltimo],
-      content:
-        correzione.tipo === "altro"
-          ? `${correzione.domandaPrecedente} ${correzione.correzione}`
-          : correzione.correzione,
-    };
-    return correzione;
+    const domandaCorretta =
+      correzione.tipo === "altro"
+        ? `${correzione.domandaPrecedente} ${correzione.correzione}`
+        : correzione.correzione;
+    // La domanda dell'utente resta intatta nello storico: la correzione viaggia
+    // come contesto di sistema (vedi `chatConAssistente`).
+    return { ...correzione, domandaCorretta };
   }
 
   const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
@@ -3309,12 +3486,19 @@ async function risolviCorrezioneTurnoPino(
     !rispostaIdentitaPino(ultimaUtente.content) &&
     !rispostaSalutoPino(ultimaUtente.content)
   ) {
-    const apprese = await correzioniAppresePino(ultimaUtente.content);
+    const apprese = await misuraFaseChat("correzioniAppresePino", () =>
+      conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 1_000, [])
+    );
     const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
     if (corretta !== ultimaUtente.content) {
-      const indice = storico.lastIndexOf(ultimaUtente);
-      storico[indice] = { ...ultimaUtente, content: corretta };
+      // Non sovrascrive la domanda: la correzione appresa diventa contesto di sistema.
       console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
+      return {
+        tipo: "altro",
+        domandaPrecedente: ultimaUtente.content,
+        correzione: corretta,
+        domandaCorretta: corretta,
+      };
     }
   }
   return null;
@@ -3382,7 +3566,7 @@ export async function chatConAssistente(
 
   // La correzione dell'utente (se c'è) viene applicata al turno prima di
   // qualsiasi interpretazione: vedi `risolviCorrezioneTurnoPino`.
-  const correzioneUtente = await risolviCorrezioneTurnoPino(storico);
+  const correzioneUtente = await misuraFaseChat("risolviCorrezioneTurnoPino", () => risolviCorrezioneTurnoPino(storico));
 
   const ultimo = storico[storico.length - 1];
   // Contesto dinamico: dati reali del database già verificati dalla rotta.
@@ -3390,8 +3574,11 @@ export async function chatConAssistente(
     ? `${SYSTEM_PROMPT}\n\n${opzioni.contestoDatabase.trim()}`
     : SYSTEM_PROMPT;
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
-  // (la storia è già troncata a 300 caratteri per messaggio).
-  const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  // (la storia è già troncata a 1200 caratteri per gli ultimi messaggi).
+  // Se l'utente ha corretto Pino, la domanda di lavoro è quella corretta:
+  // lo storico resta com'è.
+  const domandaGrezza = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  const domanda = (correzioneUtente?.domandaCorretta ?? domandaGrezza).slice(0, 500);
   const restrizioneAlimentareRigida = restrizioneAlimentareRigidaPino(domanda);
 
   type DatiShadowTier0 = {
@@ -3421,6 +3608,7 @@ export async function chatConAssistente(
       intent?: PinoIntent;
     };
     conMetadati.motivoUscita = dati.motivoTelemetria ?? motivo;
+    console.info("[probe-uscita]", "motivo=" + motivo, "ms=" + (Date.now() - inizio));
     if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
       creaOsservazioneTier0(
@@ -3469,7 +3657,7 @@ export async function chatConAssistente(
     }, { limiti: null, origine: "assente" });
   }
 
-  // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
+  // Fast path conversazionale: non attendere memoria, planner semantico o Groq
   // per saluti, domande personali e inviti a chiacchierare.
   const identitaDiretta = rispostaIdentitaPino(domanda);
   const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda, linguaConversazione) ?? rispostaSalutoPino(domanda);
@@ -3555,7 +3743,7 @@ export async function chatConAssistente(
     const faq = trovaRispostaFaqPino(domanda);
     if (faq) {
       return esci("faq", {
-        risposta: `Secondo le FAQ di InCittà, **${faq.domanda}**\n\n${faq.risposta}\n\n[Consulta tutte le FAQ](/faq)`,
+        risposta: `Secondo le FAQ di Radici Calabria, **${faq.domanda}**\n\n${faq.risposta}\n\n[Consulta tutte le FAQ](/faq)`,
         negozi: [],
         prodotti: [],
         processingMs: Date.now() - inizio,
@@ -3646,7 +3834,7 @@ export async function chatConAssistente(
   }
 
   // Cinema: è un luogo/attività, non un prodotto. Nella guida Attrazioni di
-  // InCittà non è presente una sala cinematografica: Pino dichiara di non poter
+  // Radici Calabria non è presente una sala cinematografica: Pino dichiara di non poter
   // confermarla, senza affermare che in città non esistano cinema. Le rassegne
   // della guida sono citate come EVENTI, mai presentate come sala disponibile.
   if (richiestaCinemaPino(domanda)) {
@@ -3659,8 +3847,8 @@ export async function chatConAssistente(
       .map((luogo) => `- **${luogo.nome}** — ${luogo.tipo}${luogo.url ? ` · [${inglese ? "official source" : "fonte ufficiale"}](${luogo.url})` : ""}`)
       .join("\n");
     const rispostaCinema = (inglese
-      ? "I can't find a cinema among the places listed in InCittà's Attractions guide, so I can't point you to a verified venue or confirm whether one exists in town. I won't suggest shops or products that have nothing to do with it."
-      : "Nella guida Attrazioni di InCittà non trovo cinema tra i luoghi elencati, quindi non posso indicarti una sala verificata né confermarti se in città ce ne siano. Non ti propongo negozi o prodotti che non c'entrano.") +
+      ? "I can't find a cinema among the places listed in Radici Calabria's Attractions guide, so I can't point you to a verified venue or confirm whether one exists in town. I won't suggest shops or products that have nothing to do with it."
+      : "Nella guida Attrazioni di Radici Calabria non trovo cinema tra i luoghi elencati, quindi non posso indicarti una sala verificata né confermarti se in città ce ne siano. Non ti propongo negozi o prodotti che non c'entrano.") +
       (elenco
         ? (inglese
             ? `\n\nAmong the events, these cinema-related initiatives are listed:\n\n${elenco}`
@@ -3750,8 +3938,8 @@ export async function chatConAssistente(
       const risposta = negozi.length > 0
         ? fallbackTestuale(aRisultatiRecuperati(negozi, []), "", analisi.intent, undefined, null, linguaConversazione)
         : inglese
-          ? `No ${plurale} are listed in the InCittà catalog.`
-          : `Non risultano ${plurale} nel catalogo InCittà.`;
+          ? `No ${plurale} are listed in the Radici Calabria catalog.`
+          : `Non risultano ${plurale} nel catalogo Radici Calabria.`;
       return esci("servizio_assente", {
         risposta,
         negozi: negozi.slice(0, 8),
@@ -3763,7 +3951,7 @@ export async function chatConAssistente(
     }
   }
 
-  // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
+  // Guida turistica Radici Calabria: usa lo stesso catalogo della pagina /attrazioni.
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
   // Meteo e farmacie sono intenti locali ESPLICITI e hanno precedenza sulla
   // guida: senza questo controllo basta un toponimo nella frase («… a
@@ -3814,7 +4002,10 @@ export async function chatConAssistente(
   // pertinenza la azzera e Pino risponde con risultati non pertinenti.
   // Qui il soggetto (ed eventualmente il filtro già attivo) viene ricostruito
   // dalla conversazione e il conteggio usa SOLO i prodotti recuperati.
-  const domandaAggregata = rilevaDomandaAggregata(domanda);
+  const richiestaVariantiProdotto = rilevaRichiestaVariantiProdottoPino(domanda);
+  const domandaAggregata = richiestaVariantiProdotto
+    ? null
+    : rilevaDomandaAggregata(domanda);
   if (domandaAggregata) {
     const precedenti = storico
       .filter((m) => m.role === "user")
@@ -3906,8 +4097,8 @@ export async function chatConAssistente(
   const memoriaPromise =
     pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
       ? Promise.resolve([])
-      : recuperaMemoria(domandaSemantica);
-  const memoria = await memoriaPromise;
+      : conTimeoutPino(recuperaMemoria(domandaSemantica), 1_000, []);
+  const memoria = await misuraFaseChat("memoriaPromise", () => memoriaPromise);
   // Un'attività già riconosciuta dal lessico è una decisione deterministica:
   // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
   // come "gelateria" o "bar", che il piano sa comunque gestire.
@@ -3926,18 +4117,18 @@ export async function chatConAssistente(
       domandaSemantica.length >= 22 ||
       /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
     );
-  // M6-B1 — Budget condiviso: massimo due chiamate Gemini per richiesta,
+  // M6-B1 — Budget condiviso: massimo due chiamate Groq per richiesta,
   // prenotate PRIMA di partire (anche quando falliscono o vanno in timeout).
-  const budgetGemini = creaBudgetGeminiPino();
+  const budgetAI = creaBudgetAIPino();
   const semanticaGrezza = attivaPlannerSemantico
-    ? await interpretaRichiestaPino(
+    ? await misuraFaseChat("interpretaRichiestaPino", () => interpretaRichiestaPino(
         domandaSemantica,
         storico,
         analisiSemantica,
         memoria,
         statoConversazionale,
-        budgetGemini
-      )
+        budgetAI
+      ))
     : undefined;
 
   // Il modello non è la fonte del budget: solo l'estrazione deterministica
@@ -3974,16 +4165,19 @@ export async function chatConAssistente(
   let prodotti: ProdottoRicerca[] = [];
   let offerte: Awaited<ReturnType<typeof searchOffers>> = [];
   let eventi: Awaited<ReturnType<typeof searchEvents>> = [];
+  let notizie: Awaited<ReturnType<typeof searchNews>> = [];
+  let contenuti: Awaited<ReturnType<typeof searchContent>> = [];
   let categorie: Awaited<ReturnType<typeof getCategoriesList>> = [];
   let meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>> = null;
   let farmacie: Awaited<ReturnType<typeof searchPharmacies>> = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   let directReply: string | null = null;
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
   let followUp: FollowUp | null = null;
 
   // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
-  // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
+  // (offerte, eventi, mangiare, chiacchiera, domande su Radici Calabria); per tutto
   // il resto la selezione dei tool la fa l'LLM.
   const piano = pianoPredefinito(storico, analisi, semantica, domandaSemantica);
 
@@ -3999,7 +4193,7 @@ export async function chatConAssistente(
     // esplicitamente in un ambiente controllato.
     if (process.env.PINO_NATIVE_FUNCTION_CALLING === "on") {
       try {
-        const esitoNativo = await chiamataGeminiConBudgetPino(budgetGemini, () =>
+        const esitoNativo = await chiamataAIConBudgetPino(budgetAI, () =>
           selezionaStrumentiNativoPino({
             systemPrompt: systemPromptPino,
             userPrompt: buildNativeFunctionCallingPrompt(
@@ -4042,15 +4236,14 @@ export async function chatConAssistente(
 
     if (!selezioneNativaOk) {
       try {
-        const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
-          chiamaGeminiConBackup({
+        const raw = await chiamataAIConBudgetPino(budgetAI, () =>
+          callGroqText({
             systemPrompt: systemPromptPino,
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
             temperature: 0.1,
-            // 4,5s: oltre questa soglia Gemini è inutile per questo turno e
-            // il budget residuo va a Groq (6s), restando sotto i 25s.
-            timeoutMs: 4_500,
+            // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
+            timeoutMs: Math.max(1_000, Math.min(4_500, tempoRestanteAIPino(budgetAI))),
           })
         );
         const parsed = JSON.parse(extractJsonFromText(raw)) as {
@@ -4081,12 +4274,21 @@ export async function chatConAssistente(
 
   // Memoria semantica: associazioni già confermate diventano ricerche
   // aggiuntive sulle attività, senza sostituire il piano principale.
+  const planoServiziTuttiAttivo = invocazioni.some(
+    (t) => t.tool === "searchStores" && t.params?.serviziTutti === true
+  );
+  // L'elenco dei servizi riguarda UNA attività nominata: le associazioni di
+  // memoria aggiungerebbero altre vetrine della stessa categoria.
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
     !richiestaServizio &&
     !isExplicitFoodProductRequest(domanda) &&
+    !planoServiziTuttiAttivo &&
     memoria.length > 0 &&
-    !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
+    !invocazioni.some((t) =>
+      ["getWeather", "searchPharmacies", "searchOffers", "searchEvents", "searchNews", "searchContent"]
+        .includes(String(t.tool ?? ""))
+    );
 
   if (usaMemoriaSuRicerca) {
     const giaCercati = new Set(
@@ -4108,7 +4310,16 @@ export async function chatConAssistente(
   // La query restituita dal planner è il soggetto del catalogo, non la frase
   // conversazionale completa. Questo evita che inglese, budget e richieste di
   // alternative diventino termini obbligatori nel gate di pertinenza.
+  // Offerte, eventi, notizie e contenuti sono domini propri: un piano
+  // semantico "products" non deve sostituire il tool deterministico scelto per
+  // «offerte di Bottega del Pollino» con una ricerca prodotto.
+  const pianoEditorialeGiaScelto = invocazioni.some((t) =>
+    ["searchOffers", "searchEvents", "searchNews", "searchContent"].includes(
+      String(t.tool ?? "")
+    )
+  );
   const pianoProdottoAffidabile = Boolean(
+    !pianoEditorialeGiaScelto &&
     semantica &&
     semantica.surface === "products" &&
     (semantica.intent === "product" || semantica.intent === "food" || semantica.intent === "drink") &&
@@ -4220,7 +4431,7 @@ export async function chatConAssistente(
   invocazioni = applicaQueryRiservaPino(invocazioni, comprensione);
 
   // Budget esplicito → vincolante su TUTTE le invocazioni di catalogo, comprese
-  // quelle scelte da Gemini, che non può attivare né disattivare il filtro.
+  // quelle scelte da Groq, che non può attivare né disattivare il filtro.
   invocazioni = applicaBudgetVincolantePino(invocazioni, limitiVincolanti);
 
   // S1-A — Contratto al confine: nomi fuori allowlist e parametri non ammessi
@@ -4260,17 +4471,20 @@ export async function chatConAssistente(
   // quindi il merge non dipende dall'indice di array paralleli.
   let esitiInvocazioni: EsitoInvocazionePino[] = [];
   if (invocazioni.length > 0) {
-    esitiInvocazioni = await eseguiInvocazioniPino(invocazioni, (invocazione) =>
+    esitiInvocazioni = await misuraFaseChat("eseguiInvocazioniPino", () => eseguiInvocazioniPino(invocazioni, (invocazione) =>
       eseguiTool(invocazione.tool as string, invocazione.params ?? {}, queryDefault)
-    );
+    ));
     const merge = mergeEsitiInvocazioniPino(esitiInvocazioni, { regaloGenerico });
     negozi = merge.negozi;
     prodotti = merge.prodotti;
     offerte = merge.offerte;
     eventi = merge.eventi;
+    notizie = merge.notizie ?? [];
+    contenuti = merge.contenuti ?? [];
     categorie = merge.categorie;
     if (merge.meteo) meteo = merge.meteo;
     farmacie = merge.farmacie;
+    conoscenza = merge.conoscenza ?? [];
   }
 
   // I festival possono essere nella guida Attrazioni anche quando il catalogo
@@ -4313,12 +4527,22 @@ export async function chatConAssistente(
     !directReply &&
     !followUp &&
     negozi.length === 0 &&
-    prodotti.length === 0
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0 &&
+    notizie.length === 0 &&
+    contenuti.length === 0 &&
+    // Offerte, eventi, notizie e contenuti hanno un vuoto proprio: non vanno
+    // riempiti con attività alternative solo perché il loro dominio è vuoto.
+    !invocazioni.some((t) =>
+      ["searchOffers", "searchEvents", "searchNews", "searchContent"]
+        .includes(String(t.tool ?? ""))
+    )
   ) {
-    const alternative = await cercaAlternativeBisognoPino(
+    const alternative = await misuraFaseChat("cercaAlternativeBisognoPino", () => cercaAlternativeBisognoPino(
       domanda,
       linguaConversazione
-    );
+    ));
     negozi = alternative.negozi;
     notaBisogno = alternative.nota;
   }
@@ -4385,10 +4609,15 @@ export async function chatConAssistente(
     eventi.length === 0 &&
     !richiestaRistorazionePino(domanda) &&
     !invocazioni.some((t) =>
-      t.tool === "getWeather" || t.tool === "searchPharmacies" || t.tool === "searchOffers" || t.tool === "searchEvents"
+      t.tool === "getWeather" ||
+      t.tool === "searchPharmacies" ||
+      t.tool === "searchOffers" ||
+      t.tool === "searchEvents" ||
+      t.tool === "searchNews" ||
+      t.tool === "searchContent"
     )
   ) {
-    const recupero = await recuperaAlternativeSemantiche(
+    const recupero = await misuraFaseChat("recuperaAlternativeSemantiche", () => recuperaAlternativeSemantiche(
       domanda,
       storico,
       analisi,
@@ -4396,7 +4625,7 @@ export async function chatConAssistente(
       semantica,
       comprensione,
       budgetInvocazioniRecuperoPino(invocazioni.length)
-    );
+    ));
     if (recupero.prodotti.length > 0 || recupero.negozi.length > 0) {
       prodotti = recupero.prodotti;
       negozi = recupero.negozi;
@@ -4643,13 +4872,15 @@ export async function chatConAssistente(
     // trattiene la richiesta. Un timeout non e' un catalogo vuoto: il ramo S19
     // sotto dichiara l'indisponibilita', e i risultati validi restano.
     const fallback = await eseguiFallbackConScadenzaPino(() =>
-      searchAll(domanda, parametriFallbackPiano(semantica, comprensione, domandaSemantica))
+      misuraFaseChat("searchAllFallback", () => searchAll(domanda, parametriFallbackPiano(semantica, comprensione, domandaSemantica)))
     );
     if (fallback.esito) {
       negozi = fallback.esito.negozi;
       prodotti = fallback.esito.prodotti;
       offerte = fallback.esito.offerte;
       eventi = fallback.esito.eventi;
+      notizie = fallback.esito.notizie;
+      contenuti = fallback.esito.contenuti;
       categorie = fallback.esito.categorie;
     }
   } else if (!directReply && !toolsEseguiti && !richiestaServizio) {
@@ -4679,6 +4910,8 @@ export async function chatConAssistente(
     prodotti,
     offerte,
     eventi,
+    notizie,
+    contenuti,
     categorie,
   });
 
@@ -4718,7 +4951,9 @@ export async function chatConAssistente(
       query: domanda,
       analisi,
       categorie: negozi.map((n) => n.categoria ?? "").filter(Boolean),
-      risultati: contaRisultati(aRisultatiRecuperati(negozi, prodotti, { offerte, eventi })),
+      risultati: contaRisultati(
+        aRisultatiRecuperati(negozi, prodotti, { offerte, eventi, notizie, contenuti })
+      ),
       memoriaUsata: memoria,
       semantica,
     });
@@ -4769,9 +5004,12 @@ export async function chatConAssistente(
   const risultati: RisultatiRecuperati = aRisultatiRecuperati(negozi, prodotti, {
     offerte,
     eventi,
+    notizie,
+    contenuti,
     categorie,
     meteo,
     farmacie,
+    conoscenza,
   });
   const contesto = buildContextoRisultati(risultati);
 
@@ -4800,7 +5038,7 @@ export async function chatConAssistente(
     : contesto;
 
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
-  // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
+  // Evitiamo una seconda chiamata Groq solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
   // S5.1-A — Un'unica fonte per la lingua: il contratto di comprensione
   // (preferenza esplicita inclusa), lo stesso usato dai rami anticipati.
@@ -4861,9 +5099,17 @@ export async function chatConAssistente(
   }
 
   const totaleRisultati =
-    negozi.length + prodotti.length + offerte.length + eventi.length + categorie.length;
+    negozi.length +
+    prodotti.length +
+    offerte.length +
+    eventi.length +
+    notizie.length +
+    contenuti.length +
+    categorie.length;
   const soloEventi = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchEvents");
   const soloOfferte = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchOffers");
+  const soloNotizie = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchNews");
+  const soloContenuti = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchContent");
   const soloNegozi = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchStores");
   // Un vuoto di eventi/offerte/attività non è un vuoto di prodotti: il
   // messaggio deve restare nel dominio della richiesta, senza suggerire
@@ -4897,24 +5143,80 @@ export async function chatConAssistente(
         ? "I found these businesses:"
         : "Ho trovato queste attività:"
       : null);
-  const bisognoDomanda = rilevaBisognoPino(domanda);
+  // «Offerte del Panificio Zini» contiene una categoria alimentare, ma il
+  // dominio della richiesta è offerte: il messaggio di vuoto non deve diventare
+  // «nessuna attività di cibo pronto». Stessa regola per eventi e contenuti.
+  const bisognoDomanda =
+    soloEventi || soloOfferte || soloNotizie || soloContenuti
+      ? null
+      : rilevaBisognoPino(domanda);
   // Vuoto di attività: invece di «prova un'altra categoria» si elencano le
   // categorie realmente pubblicate. Una sola query, e solo a risposta vuota.
   const categorieCatalogo =
     totaleRisultati === 0 && soloNegozi && !notaBisogno && !bisognoDomanda
       ? await riepilogoCategorieCatalogoPino()
       : [];
+  // Le varianti sono un dato della scheda prodotto: la risposta deterministica
+  // evita che il modello elenchi il prodotto senza rispondere alla domanda.
+  const richiestaVarianti = rilevaRichiestaVariantiProdottoPino(domanda);
+  if (richiestaVarianti && prodotti.length > 0) {
+    return esci("varianti_prodotto", {
+      risposta: rispostaVariantiProdottoPino(
+        prodotti as ProdottoConVariantiPino[],
+        estraiSoggettoVariantiPino(domanda) || domanda,
+        linguaRisposta
+      ),
+      negozi: [],
+      prodotti,
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
+  }
+
+  const richiestaServiziTutti =
+    !directReply &&
+    invocazioni.some(
+      (t) => t.tool === "searchStores" && t.params?.serviziTutti === true
+    );
+  const rispostaServiziTrovata = richiestaServiziTutti
+    ? rispostaServiziAttivitaPino(negozi, linguaRisposta)
+    : null;
+  const queryOfferteRichiesta =
+    invocazioni.find((t) => t.tool === "searchOffers")?.params?.query?.trim() ?? "";
+  const queryEventiRichiesta =
+    invocazioni.find((t) => t.tool === "searchEvents")?.params?.query?.trim() ?? "";
   const rispostaBase =
     totaleRisultati === 0 && bisognoDomanda
       ? messaggioBisognoVuotoPino(linguaRisposta, bisognoDomanda)
+      : totaleRisultati === 0 && soloNotizie
+      ? (linguaRisposta === "en"
+          ? "There are no news items published on Radici Calabria right now. I won't make any up: try again later or ask me about shops, products and events."
+          : "Al momento non risultano notizie pubblicate su Radici Calabria. Non ne invento: riprova più tardi oppure chiedimi di negozi, prodotti ed eventi.")
+      : totaleRisultati === 0 && soloContenuti
+      ? (linguaRisposta === "en"
+          ? "There are no editorial contents published on Radici Calabria right now. I won't make any up: try again later or ask me about local businesses and events."
+          : "Al momento non risultano contenuti editoriali pubblicati su Radici Calabria. Non ne invento: riprova più tardi oppure chiedimi di attività ed eventi locali.")
       : totaleRisultati === 0 && soloEventi
       ? (linguaRisposta === "en"
-          ? "There are no events published on InCittà right now. I won't make any up: try again later or ask me about shops and products."
-          : "Al momento non risultano eventi pubblicati su InCittà. Non ne invento: riprova più tardi oppure chiedimi di negozi e prodotti.")
+          ? queryEventiRichiesta
+            ? `There are no events for "${queryEventiRichiesta}" published on Radici Calabria right now. I won't make any up: try again later or ask me about other events.`
+            : "There are no events published on Radici Calabria right now. I won't make any up: try again later or ask me about shops and products."
+          : queryEventiRichiesta
+            ? `Nel catalogo Radici Calabria non risultano eventi pubblicati per «${queryEventiRichiesta}». Non ne invento: riprova più tardi oppure chiedimi altri eventi.`
+            : "Al momento non risultano eventi pubblicati su Radici Calabria. Non ne invento: riprova più tardi oppure chiedimi di negozi e prodotti.")
       : totaleRisultati === 0 && soloOfferte
         ? (linguaRisposta === "en"
-            ? "There are no active offers published on InCittà right now. I won't make any up: try again later or ask me about products and shops."
-            : "Al momento non risultano offerte attive pubblicate su InCittà. Non ne invento: riprova più tardi oppure chiedimi di prodotti e negozi.")
+            ? queryOfferteRichiesta
+              ? `There are no active offers for "${queryOfferteRichiesta}" published on Radici Calabria right now. I won't make any up: try again later or ask me about other offers.`
+              : "There are no active offers published on Radici Calabria right now. I won't make any up: try again later or ask me about products and shops."
+            : queryOfferteRichiesta
+              ? `Nel catalogo Radici Calabria non risultano offerte attive per «${queryOfferteRichiesta}». Non ne invento: riprova più tardi oppure chiedimi altre offerte.`
+              : "Al momento non risultano offerte attive pubblicate su Radici Calabria. Non ne invento: riprova più tardi oppure chiedimi di prodotti e negozi.")
         : totaleRisultati === 0 && richiestaRistorazionePino(domanda)
           ? messaggioRistorazioneVuotaPino(linguaRisposta)
           : totaleRisultati === 0 && soloNegozi
@@ -4942,11 +5244,13 @@ export async function chatConAssistente(
     negozi.length === 0 &&
     offerte.length === 0 &&
     eventi.length === 0 &&
+    notizie.length === 0 &&
+    contenuti.length === 0 &&
     categorie.length === 0;
   // Correzione B (S19): il messaggio di indisponibilità sostituisce solo la
   // risposta di base del ramo di fallback; filtri, note e risultati restano.
   const rispostaIndisponibilitaAI = ricercaFallbackVuota
-    ? messaggioIndisponibilitaGemini(linguaRisposta)
+    ? messaggioIndisponibilitaAI(linguaRisposta)
     : null;
   // M6-A — Una fonte fallita senza alcun risultato rende il catalogo vuoto
   // non dimostrabile: la risposta dichiara l'indisponibilità, non "non ho
@@ -4966,6 +5270,7 @@ export async function chatConAssistente(
   const rispostaBaseEffettiva = rispostaRestrizioneAlimentare ??
     rispostaIndisponibilitaAI ??
     rispostaFontiNonDisponibili ??
+    rispostaServiziTrovata ??
     rispostaServizioTrovata ??
     (soloProdottiEsauriti ? notaDisponibilita! : rispostaBase);
   // S4.3: nota solo quando il catalogo non permette di confermare l'attributo o
@@ -5072,6 +5377,8 @@ export async function chatConAssistente(
     negozi: negozi.slice(0, 8),
     // Già limitati a 6 prima della composizione (vedi sopra).
     prodotti,
+    notizie: notizie.slice(0, 6),
+    contenuti: contenuti.slice(0, 6),
     processingMs: Date.now() - inizio,
     source: "assistente",
     intent: analisi.intent,
@@ -5086,6 +5393,10 @@ export async function chatConAssistente(
         ? "eventi_assenti"
         : totaleRisultati === 0 && soloOfferte
           ? "offerte_assenti"
-          : undefined,
+          : totaleRisultati === 0 && soloNotizie
+            ? "notizie_assenti"
+            : totaleRisultati === 0 && soloContenuti
+              ? "contenuti_assenti"
+              : undefined,
   });
 }

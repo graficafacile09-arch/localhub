@@ -222,7 +222,7 @@ test.describe("S4.5 — servizio non trovato", () => {
   test("messaggio onesto e circoscritto al catalogo, in italiano", () => {
     const testo = messaggioServizioNonTrovatoPino("idraulico");
 
-    expect(testo).toContain("catalogo InCittà");
+    expect(testo).toContain("catalogo Radici Calabria");
     expect(testo).toContain("idraulico");
     expect(testo).not.toMatch(/castrovillari|non esiste/i);
   });
@@ -236,7 +236,7 @@ test.describe("S4.5 — servizio non trovato", () => {
   test("messaggio inglese equivalente", () => {
     const testo = messaggioServizioNonTrovatoPino("plumber", "en");
 
-    expect(testo).toContain("InCittà catalogue");
+    expect(testo).toContain("Radici Calabria catalogue");
     expect(testo).toContain("plumber");
   });
 

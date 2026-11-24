@@ -56,11 +56,11 @@ export default async function RecessoOrdineAdmin({ ordineId }) {
                 <div>
                   <p className="text-sm font-black text-slate-900">{p.numero}</p>
                   <p className="mt-1 text-xs text-slate-600">
-                    Cliente: <strong>{p.cliente_nome} {p.cliente_cognome}</strong>
+                    Consumatore: <strong>{p.cliente_nome} {p.cliente_cognome}</strong>
                     {p.cliente_email ? <> · {p.cliente_email}</> : null}
                   </p>
                   <p className="mt-1 text-xs text-slate-600">
-                    Venditore: <strong>{p.venditore_nome_commerciale || p.venditore_denominazione_legale || "—"}</strong>
+                    Impresa: <strong>{p.venditore_nome_commerciale || p.venditore_denominazione_legale || "—"}</strong>
                   </p>
                 </div>
                 <div className="text-right text-xs text-slate-600">

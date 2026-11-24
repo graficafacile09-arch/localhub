@@ -9,6 +9,7 @@ import {
   MASSIMO_INVOCAZIONI_PINO,
   mergeEsitiInvocazioniPino,
   messaggioFontiNonDisponibiliPino,
+  messaggioIndisponibilitaAI,
   notaFontiParzialiPino,
   riepilogoEsitiInvocazioniPino,
   risultatoToolVuotoPino,
@@ -290,10 +291,9 @@ test.describe("M6-A — messaggi localizzati", () => {
     expect(messaggioFontiNonDisponibiliPino("it")).not.toBe(messaggioFontiNonDisponibiliPino("en"));
   });
 
-  test("il messaggio totale non è il messaggio S19 della selezione AI", async () => {
-    const { messaggioIndisponibilitaGemini } = await import("../lib/assistente/index");
-    expect(messaggioFontiNonDisponibiliPino("it")).not.toBe(messaggioIndisponibilitaGemini("it"));
-    expect(messaggioFontiNonDisponibiliPino("en")).not.toBe(messaggioIndisponibilitaGemini("en"));
+  test("il messaggio totale non è il messaggio di indisponibilità della selezione AI", () => {
+    expect(messaggioFontiNonDisponibiliPino("it")).not.toBe(messaggioIndisponibilitaAI("it"));
+    expect(messaggioFontiNonDisponibiliPino("en")).not.toBe(messaggioIndisponibilitaAI("en"));
   });
 });
 

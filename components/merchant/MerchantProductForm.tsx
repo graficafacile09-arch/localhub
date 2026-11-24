@@ -533,7 +533,7 @@ export default function MerchantProductForm({
         <Toggle
           icon={<Tag className="h-4 w-4 text-red-600" aria-hidden />}
           label="Prodotto in offerta"
-          description="Mostra questo prodotto nella pagina &quot;Offerte&quot; di InCittà con il badge rosso OFFERTA. Il prodotto resta nel normale catalogo del negozio."
+          description="Mostra questo prodotto nella pagina &quot;Offerte&quot; di Radici Calabria con il badge rosso OFFERTA. Il prodotto resta nel normale catalogo del negozio."
           checked={prodottoOfferta}
           onChange={(v) => {
             setProdottoOfferta(v);
@@ -547,14 +547,14 @@ export default function MerchantProductForm({
         <Toggle
           icon={<span className="text-base" aria-hidden>18+</span>}
           label="Richiede verifica della maggiore età"
-          description="Attiva questa opzione per prodotti la cui vendita è riservata ai maggiorenni. Il checkout richiederà la conferma del cliente e l'ordine segnalerà al venditore che deve effettuare i controlli previsti dalla legge."
+          description="Attiva questa opzione per prodotti la cui vendita è riservata ai maggiorenni. Il checkout richiederà la conferma del consumatore e l'ordine segnalerà all'impresa che deve effettuare i controlli previsti dalla legge."
           checked={soggettoVerificaEta}
           onChange={(v) => {
             setSoggettoVerificaEta(v);
             notifyDirty(v !== Boolean(initialValues.soggetto_verifica_eta));
           }}
         />
-        {soggettoVerificaEta ? <p className="mt-2 text-[10px] leading-4 text-amber-800">La conferma online non sostituisce il controllo dell'identità richiesto al venditore nei casi previsti dalla legge.</p> : null}
+        {soggettoVerificaEta ? <p className="mt-2 text-[10px] leading-4 text-amber-800">La conferma online non sostituisce il controllo dell'identità richiesto all&apos;impresa nei casi previsti dalla legge.</p> : null}
       </div>
 
       {/* Banner prezzo AI */}
@@ -571,7 +571,7 @@ export default function MerchantProductForm({
           <div>
             <p className="text-sm font-bold text-slate-900">Peso del prodotto per la spedizione</p>
             <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-              Inserisci il peso reale del prodotto in grammi. InCittà usa questo dato per determinare automaticamente la fascia tariffaria compatibile per Poste Italiane e BRT.
+              Inserisci il peso reale del prodotto in grammi. Radici Calabria usa questo dato per determinare automaticamente la fascia tariffaria compatibile per Poste Italiane e BRT.
             </p>
           </div>
         </div>

@@ -94,6 +94,24 @@ export async function getProdottiAmministrazione(): Promise<ProdottoAdminRow[]> 
 }
 
 /**
+ * Filtro di ricerca del catalogo amministratore: nome, categoria o negozio.
+ * Usato dal server quando arriva ?q= (ricerca che funziona anche senza
+ * JavaScript) e identico al filtro immediato del modulo lato client.
+ */
+export function filtraProdottiAmministrazione(
+  prodotti: ProdottoAdminRow[],
+  termine: string
+): ProdottoAdminRow[] {
+  const query = termine.trim().toLocaleLowerCase("it");
+  if (!query) return prodotti;
+  return prodotti.filter((prodotto) =>
+    [prodotto.nome, prodotto.categoria ?? "", prodotto.negozioNome].some((valore) =>
+      valore.toLocaleLowerCase("it").includes(query)
+    )
+  );
+}
+
+/**
  * Recupera il negozio_id di un singolo prodotto (per il collegamento alla
  * modifica amministrativa, che riusa il form del venditore).
  */

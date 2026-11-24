@@ -97,7 +97,7 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
           <Images className="h-4 w-4 text-blue-500" /> Galleria immagini
         </h3>
         <p className="mb-3 text-xs text-slate-500">
-          Aggiungi foto del negozio, dei prodotti o del tuo lavoro: i clienti le vedono nella
+          Aggiungi foto del negozio, dei prodotti o del tuo lavoro: i consumatori le vedono nella
           tua pagina.
         </p>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">

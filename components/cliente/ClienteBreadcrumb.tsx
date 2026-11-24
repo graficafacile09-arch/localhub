@@ -36,7 +36,7 @@ export default function ClienteBreadcrumb() {
           !sezione || sezione.href === "/cliente" ? "text-slate-800" : ""
         }`}
       >
-        Area Clienti
+        Area consumatori
       </Link>
       {sezione && sezione.href !== "/cliente" && (
         <>

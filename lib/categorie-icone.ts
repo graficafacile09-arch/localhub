@@ -3,7 +3,7 @@
  *
  * Unica fonte per l'icona di ogni categoria della navigazione pubblica
  * (homepage + pagina /categorie). Le icone sono icone Lucide minimali e
- * lineari — stesso linguaggio visivo del resto di InCittà, con un pastello di
+ * lineari — stesso linguaggio visivo del resto di Radici Calabria, con un pastello di
  * sfondo + colore coordinato, leggibili anche in dimensioni piccole.
  *
  * La mappa è indicizzata per SLUG (l'identificatore stabile delle categorie,
