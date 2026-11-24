@@ -381,6 +381,7 @@ test.describe("S1-A — contratti per strumento", () => {
       "getCategories",
       "getWeather",
       "searchAll",
+      "searchConoscenza",
       "searchContent",
       "searchEvents",
       "searchGiftCategories",
