@@ -807,17 +807,34 @@ export const SCADENZA_INVOCAZIONE_PINO_MS = 20_000;
  * la classifica come timeout. La promessa perdente ha già i gestori di
  * `Promise.race`, quindi non produce rifiuti non gestiti.
  */
+let contatoreScadenzeProbe = 0;
 export function conScadenzaPino<T>(
   promessa: Promise<T>,
   ms: number = SCADENZA_INVOCAZIONE_PINO_MS
 ): Promise<T> {
   const attesa = Number.isFinite(ms) && ms > 0 ? ms : SCADENZA_INVOCAZIONE_PINO_MS;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  const idScadenza = ++contatoreScadenzeProbe;
+  const inizioScadenza = Date.now();
+  console.info("[probe-scadenza]", "id=" + idScadenza, "avvio attesa=" + attesa);
   const scadenza = new Promise<never>((_, rifiuta) => {
-    timer = setTimeout(() => rifiuta(new ErroreTimeoutPino(attesa)), attesa);
+    timer = setTimeout(() => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "timer scattato ms=" + (Date.now() - inizioScadenza));
+      rifiuta(new ErroreTimeoutPino(attesa));
+    }, attesa);
   });
-  return Promise.race([promessa, scadenza]).finally(() => {
+  return Promise.race([promessa, scadenza]).then(
+    (valore) => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=ok ms=" + (Date.now() - inizioScadenza));
+      return valore;
+    },
+    (errore) => {
+      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=errore ms=" + (Date.now() - inizioScadenza));
+      throw errore;
+    }
+  ).finally(() => {
     if (timer) clearTimeout(timer);
+    console.info("[probe-scadenza]", "id=" + idScadenza, "fine finally ms=" + (Date.now() - inizioScadenza));
   });
 }
 
@@ -3566,6 +3583,7 @@ export async function chatConAssistente(
       intent?: PinoIntent;
     };
     conMetadati.motivoUscita = dati.motivoTelemetria ?? motivo;
+    console.info("[probe-uscita]", "motivo=" + motivo, "ms=" + (Date.now() - inizio));
     if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
       creaOsservazioneTier0(
