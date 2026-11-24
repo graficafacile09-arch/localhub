@@ -26,8 +26,8 @@ process.env.NODE_OPTIONS = [
  *   contro un ambiente avviato;
  * - tutte le suite non Pino, che appartengono a `test:e2e`.
  *
- * La suite Node (`npm run test:pino`) resta separata e invariata, perché è
- * quella richiamata da `prebuild`.
+ * La suite Node (`npm run test:pino`) resta separata e invariata, ed è
+ * inclusa nella verifica CI `npm run verify:ci`.
  */
 export default defineConfig({
   testDir: "./tests",
