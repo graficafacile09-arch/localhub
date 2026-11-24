@@ -162,7 +162,7 @@ export default function AssistantAdminChat() {
                 Assistente AI Amministrazione
               </h2>
               <p className="mt-1 max-w-sm text-[13px] leading-5 text-slate-500">
-                Analizza e consulta i dati reali della piattaforma InCittà.
+                Analizza e consulta i dati reali della piattaforma Radici Calabria.
                 Fai una domanda qui sotto.
               </p>
             </div>

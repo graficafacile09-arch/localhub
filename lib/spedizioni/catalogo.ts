@@ -54,7 +54,7 @@ export type VoceCatalogoSpedizione = {
   tempoConsegna: string | null;
   /** Descrizione breve mostrata al cliente (es. "Consegna nazionale GLS"). */
   descrizione: string | null;
-  /** "tariffa" = prezzo calcolato da InCittà; "locale" = prezzo del prodotto. */
+  /** "tariffa" = prezzo calcolato da Radici Calabria; "locale" = prezzo del prodotto. */
   fonte: "tariffa" | "locale";
 };
 
@@ -302,7 +302,7 @@ export const TARIFFE_BRT_ONLINE: readonly FasciaTariffaria[] = [
 
 /**
  * GLS — Consegna nazionale (servizio standard, 24/48h).
- * Preventivi MEDI NAZIONALI realistici configurati da InCittà (non il
+ * Preventivi MEDI NAZIONALI realistici configurati da Radici Calabria (non il
  * tariffario ufficiale GLS): nessun supplemento CAP/zona, nessuna IVA
  * aggiuntiva, nessun peso volumetrico. Il prezzo mostrato al cliente è
  * esattamente quello della fascia.

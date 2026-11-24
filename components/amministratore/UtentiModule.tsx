@@ -210,7 +210,7 @@ export default function UtentiModule({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Gestione account della piattaforma</p>
               <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Utenti</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Centro di controllo degli account InCittà: ruoli, stato (attivo/sospeso/bannato), verifica email, negozi associati e ripristino accesso. I dati provengono dal database reale della piattaforma.</p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Centro di controllo degli account Radici Calabria: ruoli, stato (attivo/sospeso/bannato), verifica email, negozi associati e ripristino accesso. I dati provengono dal database reale della piattaforma.</p>
             </div>
           </div>
           <button type="button" onClick={() => setMostraNuovo((value) => !value)} className="btn-cta shrink-0 px-5 py-2.5 text-sm"><Plus className="h-4 w-4" />Nuovo utente</button>

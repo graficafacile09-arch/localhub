@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const descrizione =
     categoria.descrizione ?? `Negozi e attività della categoria ${categoria.nome} a ${citta}.`;
   return {
-    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    // title senza suffisso "| Radici Calabria": lo aggiunge il template del layout.
     title: categoria.nome,
     description: descrizione,
     alternates: { canonical },
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       description: descrizione,
       url: canonical,
       type: "website",
-      siteName: "InCittà",
+      siteName: "Radici Calabria",
     },
   };
 }

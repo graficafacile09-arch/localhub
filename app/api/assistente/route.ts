@@ -1,7 +1,7 @@
 /**
  * LocalHub — API Route: /api/assistente
  *
- * Endpoint dell'Assistente AI pubblico di InCittà (Pino).
+ * Endpoint dell'Assistente AI pubblico di Radici Calabria (Pino).
  * Riceve la cronologia recente della conversazione e restituisce la risposta
  * intelligente (comprensione intento + retrieval + ragionamento).
  *

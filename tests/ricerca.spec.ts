@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Suite automatica della NUOVA ricerca semantica di InCittà.
+ * Suite automatica della NUOVA ricerca semantica di Radici Calabria.
  *
  * Esegue le verifiche contro l'endpoint reale `/api/search` (ricerca normale
  * 🔎) e, per la UX, contro la pagina `/ricerca` con il pulsante ✨ AI.

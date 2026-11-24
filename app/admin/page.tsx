@@ -5,7 +5,7 @@ import { getSessionArea } from "@/lib/auth/session-area";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
-  title: "Amministrazione — InCittà",
+  title: "Amministrazione — Radici Calabria",
 };
 
 /**

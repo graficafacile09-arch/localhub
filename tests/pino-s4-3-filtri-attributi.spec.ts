@@ -173,7 +173,7 @@ test.describe("S4.3 — nessun risultato compatibile, risposta onesta", () => {
 
     const nota = notaAttributiProdottiPino(esito, u, "it");
     expect(nota).not.toBeNull();
-    expect(nota).toContain("catalogo InCittà");
+    expect(nota).toContain("catalogo Radici Calabria");
     expect(nota).not.toMatch(/non esiste in città|non esiste a /i);
   });
 
@@ -198,7 +198,7 @@ test.describe("S4.3 — nessun risultato compatibile, risposta onesta", () => {
     });
     const nota = notaAttributiProdottiPino(esito, u, "en");
 
-    expect(nota).toContain("InCittà catalogue");
+    expect(nota).toContain("Radici Calabria catalogue");
     expect(nota).toContain("no products");
   });
 });

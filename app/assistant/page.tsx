@@ -1,7 +1,7 @@
 import BackButton from "@/components/BackButton";
 
 export const metadata = {
-  title: "Assistente AI — InCittà",
+  title: "Assistente AI — Radici Calabria",
 };
 
 export default function AssistantPage() {

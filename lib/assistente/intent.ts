@@ -32,7 +32,7 @@ import { normalizzaRichiesta } from "./local-intents";
 // La traduzione inglese→italiano vive in un solo posto (understanding): il piano
 // la riusa invece di mantenere un secondo dizionario da tenere allineato.
 import { normalizzaQueryCatalogo } from "./understanding";
-import { ATTIVITA_CATALOGO_PINO } from "./lexicon.ts";
+import { ATTIVITA_CATALOGO_PINO, TERMINI_BEVANDE_PINO } from "./lexicon.ts";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -309,6 +309,8 @@ const L_FOOD: string[] = [
   "torte",
   "biscotti",
   "formaggio",
+  "fungo",
+  "funghi",
   "salumi",
   "prosciutto",
   "carne",
@@ -342,6 +344,8 @@ const L_FOOD_SOGGETTO: string[] = [
   "torte",
   "biscotti",
   "formaggio",
+  "fungo",
+  "funghi",
   "salumi",
   "prosciutto",
   "carne",
@@ -590,14 +594,16 @@ export function pianoIntento(analisi: PinoIntentAnalysis, query: string): PinoTo
       return [prodotti(q), ...analisi.terminiPrioritari.map(negozi)].slice(0, 7);
 
     case "drink": {
-      // Come per il cibo: i prodotti si cercano SOLO su una bevanda concreta
-      // ("birra", "vino"...), non su termini di attività ("bar"): quelli
-      // trascinerebbero prodotti casuali.
+      // Come per il cibo: i prodotti si cercano su una bevanda concreta
+      // ("birra", "vino"...), non su un termine di attività ("bar"). Per un
+      // bisogno generico ("ho sete") si usa la famiglia di termini con cui il
+      // catalogo pubblica davvero le bevande: la vecchia query letterale
+      // "sete" non poteva corrispondere a nessun prodotto.
       const soggetto = soggettoBevanda(q);
       return [
+        prodotti(soggetto ? q : TERMINI_BEVANDE_PINO[0]),
         negozi(q),
         ...analisi.terminiPrioritari.map(negozi),
-        ...(soggetto ? [prodotti(q)] : []),
       ].slice(0, 7);
     }
 

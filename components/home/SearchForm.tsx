@@ -51,7 +51,7 @@ export default function SearchForm({ initialQuery = "", compact = false }: Searc
           type="text"
           name="q"
           defaultValue={initialQuery}
-          placeholder="Cerca prodotti, negozi o categorie..."
+          placeholder="Cerca prodotti, filiere, produttori e territori."
           autoComplete="off"
           enterKeyHint="search"
           className={`w-full rounded-lg border border-slate-200 bg-white py-0 pl-3 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300 ${compact ? "h-9" : "h-10"}`}

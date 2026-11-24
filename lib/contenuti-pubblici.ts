@@ -92,6 +92,51 @@ export async function getContenutiPubblici(
 }
 
 /**
+ * Ricerca full-text nei contenuti PUBBLICATI (titolo, riassunto e corpo).
+ *
+ * Il corpo non è incluso nell'elenco pubblico per non appesantire /contenuti:
+ * qui viene letto solo per la ricerca di Pino, con un tetto esplicito. Il
+ * filtro `stato = pubblicato` resta nella query, quindi bozze e archiviati non
+ * possono essere restituiti nemmeno se la query li nomina.
+ */
+export async function cercaContenutiPubblici(
+  query: string,
+  limit = 6
+): Promise<ContenutoPubblico[]> {
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
+    .from("contenuti")
+    .select("id, titolo, slug, riassunto, corpo, immagine_url, autore, pubblicato_il, created_at")
+    .eq("stato", "pubblicato")
+    .order("pubblicato_il", { ascending: false, nullsFirst: false })
+    .limit(120);
+
+  if (error || !data) {
+    console.error("[contenuti-pubblici] ricerca fallita:", error?.message ?? "data null");
+    return [];
+  }
+
+  const righe = (data as Record<string, unknown>[]).map(assumiContenutoPubblico);
+  const testoQuery = String(query ?? "")
+    .toLocaleLowerCase("it-IT")
+    .replace(/[^a-z0-9\u00e0-\u00ff\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!testoQuery) return righe.slice(0, limit);
+
+  const token = testoQuery.split(" ").filter((voce) => voce.length >= 2);
+  return righe
+    .filter((contenuto) => {
+      const testo = `${contenuto.titolo} ${contenuto.riassunto ?? ""} ${contenuto.corpo}`
+        .toLocaleLowerCase("it-IT");
+      return token.every((voce) => testo.includes(voce));
+    })
+    .slice(0, limit);
+}
+
+/**
  * Singolo contenuto PUBBLICATO per slug. null se: slug assente, contenuto
  * inesistente, NON pubblicato, o errore DB → la pagina gestisce il 404.
  */

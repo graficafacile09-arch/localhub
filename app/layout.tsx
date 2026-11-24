@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
@@ -9,6 +9,7 @@ import AreaTitleSync from "@/components/layout/AreaTitleSync";
 import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
 import CookieNotice from "@/components/privacy/CookieNotice";
+import LanguageProvider from "@/components/i18n/LanguageProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +21,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Corsivo editoriale del titolo hero ("che produce"): serif ad alto contrasto.
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  style: ["italic"],
+  display: "swap",
+});
+
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -28,9 +38,9 @@ export const viewport: Viewport = {
 const SITE_URL = getSiteUrl();
 
 const DEFAULTS = {
-  site_name: "InCittà",
+  site_name: "Radici Calabria",
   site_tagline: "Filiere, Prodotti e Territori",
-  footer_text: "© 2026 InCittà · Castrovillari",
+  footer_text: "© 2026 Radici Calabria · Castrovillari",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${nome}`,
     },
     description:
-      "InCittà collega produttori, trasformatori, distributori e consumatori: le filiere dei territori arrivano in città.",
+      "Radici Calabria collega produttori, trasformatori, distributori e consumatori: le filiere dei territori arrivano in città.",
     openGraph: {
       siteName: nome,
       locale: "it_IT",
@@ -83,9 +93,10 @@ export default async function RootLayout({
   return (
     <html
       lang="it"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <LanguageProvider>
         <AreaTitleSync />
         <a
           href="#main"
@@ -128,6 +139,7 @@ export default async function RootLayout({
           <AssistantPanel />
         </Suspense>
         <CookieNotice />
+        </LanguageProvider>
       </body>
     </html>
   );

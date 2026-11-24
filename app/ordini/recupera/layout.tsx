@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Recupera i tuoi ordini — InCittà",
+  title: "Recupera i tuoi ordini — Radici Calabria",
 };
 
 /**

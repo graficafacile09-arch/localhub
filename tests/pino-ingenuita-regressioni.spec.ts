@@ -12,11 +12,13 @@ import {
   pianoIntentoLocale,
 } from "../lib/assistente/local-intents";
 import {
+  filtraProdottiPerSoggettoUnico,
   fraseQualificazionePino,
   negozioAttivitaCompatibilePino,
   negozioProfessioneCompatibilePino,
   pulisciCorniceRicercaPino,
 } from "../lib/assistente/tools";
+import type { ProdottoRicerca } from "../lib/ricerca-ai";
 import {
   richiestaConsiglioFarmacoPino,
   rispostaFarmacieDeterministica,
@@ -107,6 +109,56 @@ test.describe("Pino — nomi di attività", () => {
     expect(piano("pizza")?.surface).toBe("products");
     expect(piano("pizze")?.surface).toBe("products");
     expect(piano("pasta")?.surface).toBe("products");
+  });
+
+  test("i bisogni di bere cercano bevande reali, non la parola «sete»", () => {
+    const casi = [
+      ["ho sete", "bevande"],
+      ["bevande", "bevande"],
+      ["voglio una birra", "birra"],
+    ] as const;
+
+    for (const [frase, atteso] of casi) {
+      const analisi = analizzaIntentoPino(frase);
+      const locale = pianoLocaleIntelligente(frase, analisi);
+      expect(locale?.surface, frase).toBe("products");
+      expect(locale?.query, frase).toBe(atteso);
+
+      const invocazione = pianoIntento(analisi, frase).find(
+        (t) => t.tool === "searchProducts"
+      );
+      expect(invocazione, frase).toBeDefined();
+      expect(pulisciCorniceRicercaPino(invocazione?.query ?? ""), frase).toBe(atteso);
+    }
+  });
+
+  test("il gate «bevande» accetta la birra e scarta un panino", () => {
+    const base = {
+      descrizione: null,
+      negozio_id: "negozio-test",
+      prezzo: 1,
+      negozio_nome: "Negozio Test",
+      immagine_principale: null,
+    };
+    const birra: ProdottoRicerca = {
+      ...base,
+      id: "1525",
+      nome: "Birra Mythos",
+      categoria: "alcolici",
+    };
+    const panino: ProdottoRicerca = {
+      ...base,
+      id: "panino-test",
+      nome: "Panino",
+      categoria: "Panificio",
+    };
+
+    const ammessi = filtraProdottiPerSoggettoUnico(
+      [birra, panino],
+      "bevande",
+      "bevande"
+    );
+    expect(ammessi.map((prodotto) => prodotto.nome)).toEqual(["Birra Mythos"]);
   });
 
   test("la domanda di prezzo non perde il soggetto alimento", () => {

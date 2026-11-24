@@ -315,7 +315,7 @@ export default function SpedizionePaccoConfig({
             </p>
             <p className="mb-3 text-[11px] leading-4 text-slate-500">
               Il peso del pacco determina la tariffa di Poste Italiane e BRT (calcolata
-              automaticamente da InCittà). Il corriere locale usa invece la tariffa
+              automaticamente da Radici Calabria). Il corriere locale usa invece la tariffa
               configurata su ogni prodotto.
             </p>
             <div className="grid grid-cols-2 gap-3">

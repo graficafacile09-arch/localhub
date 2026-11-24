@@ -1,5 +1,5 @@
 /**
- * EMAIL "PRODOTTO TORNATO DISPONIBILE" — InCittà.
+ * EMAIL "PRODOTTO TORNATO DISPONIBILE" — Radici Calabria.
  *
  * Riutilizza l'infrastruttura Resend già presente nel progetto
  * (lib/password-reset-email.ts, lib/cliente/ordine-email.ts): stessa chiave
@@ -17,7 +17,7 @@
 
 import { Resend } from "resend";
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
 
 export type EsitoEmailAvviso =
@@ -59,7 +59,7 @@ export async function inviaEmailProdottoDisponibile(opts: {
         </p>
         <p style="color:#64748b;font-size:13px;line-height:1.6;margin-top:24px">
           Ti abbiamo avvisato perché hai richiesto di essere avvisato quando
-          questo prodotto sarebbe tornato disponibile su InCittà.
+          questo prodotto sarebbe tornato disponibile su Radici Calabria.
         </p>
       </div>
     `,

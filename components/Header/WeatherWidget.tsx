@@ -35,6 +35,43 @@ function resolveWeather(code: number): WeatherInfo {
   return WMO[code] ?? { Icon: Cloud, label: "Condizioni variabili" };
 }
 
+/**
+ * Endpoint interno: la richiesta parte dal nostro origin, così il widget compare
+ * anche quando la rete dell'utente non raggiunge api.open-meteo.com (proxy,
+ * ad-blocker, DNS). L'URL diretto resta come ripiego.
+ */
+const URL_INTERNO = "/api/meteo";
+const URL_DIRETTO =
+  "https://api.open-meteo.com/v1/forecast?latitude=39.817&longitude=16.202&current=temperature_2m,weather_code";
+
+type Meteo = { temperatura: number; codice: number };
+
+async function leggiMeteo(signal: AbortSignal): Promise<Meteo> {
+  try {
+    const risposta = await fetch(URL_INTERNO, { signal, cache: "no-store" });
+    if (risposta.ok) {
+      const json = (await risposta.json()) as { data?: { temperatura?: number; codice?: number } };
+      const temperatura = Number(json?.data?.temperatura);
+      const codice = Number(json?.data?.codice);
+      if (Number.isFinite(temperatura) && Number.isFinite(codice)) {
+        return { temperatura: Math.round(temperatura), codice };
+      }
+    }
+  } catch {
+    // Si prova la fonte esterna qui sotto.
+  }
+
+  const risposta = await fetch(URL_DIRETTO, { signal });
+  if (!risposta.ok) throw new Error(String(risposta.status));
+  const json = (await risposta.json()) as {
+    current?: { temperature_2m?: number; weather_code?: number };
+  };
+  return {
+    temperatura: Math.round(Number(json?.current?.temperature_2m)),
+    codice: Number(json?.current?.weather_code),
+  };
+}
+
 export default function WeatherWidget() {
   const [temp, setTemp] = useState<number | null>(null);
   const [code, setCode] = useState<number>(0);
@@ -44,20 +81,13 @@ export default function WeatherWidget() {
   useEffect(() => {
     let cancelled = false;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const timer = setTimeout(() => ctrl.abort(), 10000);
 
-    fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=39.817&longitude=16.202&current=temperature_2m,weather_code",
-      { signal: ctrl.signal }
-    )
-      .then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-        return r.json();
-      })
-      .then((d) => {
+    leggiMeteo(ctrl.signal)
+      .then((meteo) => {
         if (cancelled) return;
-        setTemp(Math.round(d.current.temperature_2m));
-        setCode(d.current.weather_code);
+        setTemp(meteo.temperatura);
+        setCode(meteo.codice);
         setLoaded(true);
       })
       .catch(() => {})

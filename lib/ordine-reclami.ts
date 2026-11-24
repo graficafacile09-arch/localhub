@@ -17,7 +17,7 @@
  *
  * ENV notifiche (server-side, mai NEXT_PUBLIC_):
  *   NTFY_ORDERS_TOPIC — topic VENDITORE (lo stesso dei nuovi ordini);
- *   NTFY_ADMIN_TOPIC  — topic SYSTEM/ADMIN di InCittà (OPZIONALE: se assente
+ *   NTFY_ADMIN_TOPIC  — topic SYSTEM/ADMIN di Radici Calabria (OPZIONALE: se assente
  *                       la notifica admin viene saltata senza errori).
  */
 

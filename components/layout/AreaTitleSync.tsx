@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const AREA_TITLES: Array<[string, string]> = [
-  ["/amministratore", "Amministratore — InCittà"],
-  ["/cliente", "Area consumatori — InCittà"],
-  ["/merchant", "Area imprese e operatori — InCittà"],
+  ["/amministratore", "Amministratore — Radici Calabria"],
+  ["/cliente", "Area consumatori — Radici Calabria"],
+  ["/merchant", "Area imprese e operatori — Radici Calabria"],
 ];
 
 export default function AreaTitleSync() {

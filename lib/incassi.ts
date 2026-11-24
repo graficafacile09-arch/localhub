@@ -1,5 +1,5 @@
 /**
- * INCASSI InCittà — CALCOLI ECONOMICI PURI (V1 rendicontazione, solo server).
+ * INCASSI Radici Calabria — CALCOLI ECONOMICI PURI (V1 rendicontazione, solo server).
  *
  * Tutti i calcoli monetari avvengono QUI, server-side e deterministici in
  * centesimi (Math.round). Nessun importo/commissione arriva mai dal client.

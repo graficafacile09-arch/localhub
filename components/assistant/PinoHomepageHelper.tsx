@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
-import { isPinoAreaRiservata, isPinoTransactionalRoute } from "./pino-route";
+import {
+  isPinoAreaRiservata,
+  isPinoSezioneNascosta,
+  isPinoTransactionalRoute,
+} from "./pino-route";
 
 const PINO_HOME_SRC = PINO_ASSET.neutral;
 const PINO_HOME_W = PINO_ASSET_W;
@@ -23,7 +27,12 @@ export default function PinoHomepageHelper() {
   const [isNearBottom, setIsNearBottom] = useState(false);
 
   useEffect(() => {
-    if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) {
+    if (
+      isAdminArea ||
+      isPinoAreaRiservata(pathname) ||
+      isPinoTransactionalRoute(pathname) ||
+      isPinoSezioneNascosta(pathname)
+    ) {
       setHasReachedArea(false);
       setIsScrolling(false);
       setIsNearBottom(false);
@@ -86,9 +95,15 @@ export default function PinoHomepageHelper() {
   }, []);
 
   // Nelle aree personali (venditore, cliente, corriere, amministratore) Pino non
-  // compare; sulle pagine pubbliche, homepage compresa, resta disponibile anche
-  // per chi ha effettuato l'accesso.
-  if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) return null;
+  // compare, né nella sezione Territorio; sulle altre pagine pubbliche,
+  // homepage compresa, resta disponibile anche per chi ha effettuato l'accesso.
+  if (
+    isAdminArea ||
+    isPinoAreaRiservata(pathname) ||
+    isPinoTransactionalRoute(pathname) ||
+    isPinoSezioneNascosta(pathname)
+  )
+    return null;
 
   // Sulla homepage manteniamo il comportamento esistente: Pino compare dopo
   // lo scroll iniziale. Nelle altre pagine è disponibile subito, ma scompare
@@ -102,7 +117,7 @@ export default function PinoHomepageHelper() {
 
   return (
     <div
-      aria-label="Pino, assistente di InCittà"
+      aria-label="Pino, assistente di Radici Calabria"
       data-pino-helper="true"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit lg:rounded-l-2xl"
       aria-hidden="false"
@@ -115,7 +130,7 @@ export default function PinoHomepageHelper() {
             type="button"
             onClick={openAssistant}
             data-testid="pino-richiama"
-            aria-label="Apri Pino, assistente di InCittà"
+            aria-label="Apri Pino, assistente di Radici Calabria"
             title="Apri Pino"
             className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             style={{ width: PINO_CLOSED_SIZE, height: PINO_CLOSED_SIZE }}

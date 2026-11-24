@@ -18,3 +18,7 @@ screenshots/
 .freebuff/
 *.bundle
 *.zip
+
+.work-enoteca/
+preview-restyle/
+logo-filiera/

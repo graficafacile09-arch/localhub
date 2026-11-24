@@ -10,7 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { contaNotificheAdminNonLette } from "@/lib/amministratore/notifiche";
 
 export const metadata = {
-  title: "Amministratore — InCittà",
+  title: "Amministratore — Radici Calabria",
   description:
     "Pannello di amministrazione di LocalHub: gestione di attività, prodotti, contenuti e piattaforma.",
 };

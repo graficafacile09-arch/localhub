@@ -1,12 +1,19 @@
 import ProdottiModule from "@/components/amministratore/ProdottiModule";
 import { getAdminNavItem } from "@/components/amministratore/navigation";
-import { getProdottiAmministrazione } from "@/lib/amministratore/prodotti";
+import {
+  filtraProdottiAmministrazione,
+  getProdottiAmministrazione,
+} from "@/lib/amministratore/prodotti";
 
 export const metadata = {
   title: "Prodotti — Amministratore",
 };
 
 export const dynamic = "force-dynamic";
+
+type Props = {
+  searchParams: Promise<{ q?: string }>;
+};
 
 /**
  * Catalogo prodotti nell'Area Amministratore: supervisione globale dei
@@ -16,11 +23,20 @@ export const dynamic = "force-dynamic";
  * disattiva, prodotto tipico, in offerta, eliminazione). La modifica
  * completa riusa il form condiviso del venditore via
  * /amministratore/prodotti/[productId].
+ *
+ * La ricerca arriva anche come ?q= (form GET): il server filtra il catalogo,
+ * così «scrivo il nome e clicco Cerca» restituisce i risultati anche se il
+ * modulo client non è ancora idratato. Con il client attivo il filtro resta
+ * immediato mentre si scrive.
  */
-export default async function AdminProdottiPage() {
+export default async function AdminProdottiPage({ searchParams }: Props) {
   const item = getAdminNavItem("/amministratore/prodotti");
   const Icon = item.icon;
-  const prodotti = await getProdottiAmministrazione();
+  const parametri = await searchParams;
+  const ricerca = parametri.q?.trim() ?? "";
+
+  const catalogo = await getProdottiAmministrazione();
+  const prodotti = filtraProdottiAmministrazione(catalogo, ricerca);
 
   return (
     <div className="space-y-5">
@@ -41,14 +57,15 @@ export default async function AdminProdottiPage() {
               {item.description}
             </p>
             <p className="mt-4 text-sm font-semibold text-slate-500">
-              {prodotti.length} {prodotti.length === 1 ? "prodotto" : "prodotti"} nel catalogo
+              {prodotti.length} {prodotti.length === 1 ? "prodotto" : "prodotti"}{" "}
+              {ricerca ? "trovati per la ricerca" : "nel catalogo"}
             </p>
           </div>
         </div>
       </div>
 
       {/* Modulo interattivo: ricerca, filtri, ordinamento, azioni rapide */}
-      <ProdottiModule prodotti={prodotti} />
+      <ProdottiModule prodotti={prodotti} ricercaIniziale={ricerca} />
     </div>
   );
 }

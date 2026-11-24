@@ -81,7 +81,7 @@ test.describe("Pino — capacità dichiarate", () => {
     expect(rilevaAzioneNonDisponibilePino("Qual è il tuo numero di telefono?")).toBe(
       "contatto"
     );
-    expect(rilevaAzioneNonDisponibilePino("Come posso contattare InCittà?")).toBe(
+    expect(rilevaAzioneNonDisponibilePino("Come posso contattare Radici Calabria?")).toBe(
       "contatto"
     );
   });

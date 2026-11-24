@@ -4,6 +4,7 @@ import {
   terminiOriginali,
 } from "./ranking-negozi";
 import { estraiToken, normalizza, equivalenzaSigla, soloSigle } from "./text-utils";
+import { appartieneCategoriaGenericaProdotto } from "./sottotipi-prodotto";
 import { espandiQueryConSinonimi, espandiQueryConSinonimiBase, sonoSinonimiDirettiProdotto } from "./ricerca-semantica";
 import {
   concettiIntento,
@@ -37,7 +38,7 @@ const getDb = () => {
 // Le funzioni dati continuano a restituire liste vuote come prima: cambia solo
 // la POSSIBILITÀ di segnalare che il vuoto deriva da un errore tecnico. La
 // callback è additiva e assente per impostazione predefinita, quindi le pagine
-// InCittà e le API pubbliche mantengono esattamente il comportamento attuale.
+// Radici Calabria e le API pubbliche mantengono esattamente il comportamento attuale.
 // La callback può lanciare: in quel caso l'eccezione interrompe la funzione e
 // raggiunge il chiamante (è il meccanismo usato dai tool di Pino).
 
@@ -1045,6 +1046,13 @@ function applicaFiltriRicercaProdotti(
         return [
           `nome.ilike.%${p}%`,
           `descrizione.ilike.%${p}%`,
+          // La descrizione COMPLETA è dove il catalogo definisce il prodotto
+          // («La giuncata è il formaggio fresco per eccellenza…»): senza questa
+          // colonna un
+          // formaggio il cui nome non contiene la categoria non veniva nemmeno
+          // recuperato. La pertinenza resta decisa dal ranking/gate: un prodotto
+          // che cita la categoria solo di passaggio non entra nei risultati.
+          `descrizione_completa.ilike.%${p}%`,
           `categoria.ilike.%${p}%`,
           `marca.ilike.%${p}%`,
           `sottocategoria.ilike.%${p}%`,
@@ -1277,7 +1285,16 @@ function escludiProdottiPerNegazione(
   );
 }
 
-/** Riordina per punteggio, scarta gli spuri, taglia al limite. */
+/**
+ * Riordina per punteggio, scarta gli spuri, taglia al limite.
+ *
+ * Una categoria GENERICA («formaggio», «salumi») non è una parola da cercare
+ * nel nome: è un criterio di appartenenza. Un «Caprino di Morano» è un
+ * formaggio anche se il nome non contiene la parola, e la soglia relativa non
+ * deve scartarlo solo perché il suo punteggio è più basso di quello di un
+ * prodotto che ripete il termine nel nome (era il difetto: due formaggi su
+ * otto).
+ */
 function ordinaFiltraProdottiPerRilevanza(
   risultati: Record<string, unknown>[],
   ricerca: string,
@@ -1285,14 +1302,24 @@ function ordinaFiltraProdottiPerRilevanza(
   limite: number
 ): Record<string, unknown>[] {
   const originali = terminiSignificativi(ricerca, 10);
-  // Termini originali presenti anche espansi gestiti sopra.
+  // La categoria si valuta su un soggetto singolo: una richiesta composta
+  // («formaggio di capra») resta governata dai termini originali.
+  const terminiCategoria = originali.map((t) => normalizza(t).trim()).filter(Boolean);
   const conPunteggio = risultati
-    .map((p) => ({
-      p,
-      punteggio: calcolaPunteggioProdotto(p, originali, terminiEspansi),
-      rilevante: prodottoRilevante(p, originali, terminiEspansi),
-    }))
-    .filter(({ punteggio, rilevante }) => punteggio > 0 && rilevante);
+    .map((p) => {
+      const punteggio = calcolaPunteggioProdotto(p, originali, terminiEspansi);
+      const categoria = terminiCategoria.some((termine) =>
+        appartieneCategoriaGenericaProdotto(p, termine)
+      );
+      return {
+        p,
+        punteggio,
+        categoria,
+        rilevante:
+          categoria || prodottoRilevante(p, originali, terminiEspansi),
+      };
+    })
+    .filter(({ punteggio, rilevante, categoria }) => rilevante && (categoria || punteggio > 0));
 
   // Soglia relativa al miglior risultato (con un minimo assoluto) per escludere
   // i match deboli. Se però esiste un match esatto/forte il top resta sempre.
@@ -1300,8 +1327,10 @@ function ordinaFiltraProdottiPerRilevanza(
   conPunteggio.sort((a, b) => b.punteggio - a.punteggio);
   const topScore = conPunteggio[0].punteggio;
   const soglia = Math.max(8, Math.ceil(topScore * 0.35));
+  // I membri della categoria restano TUTTI: la soglia vale per i match
+  // occasionali di un termine, non per chi appartiene alla categoria richiesta.
   const filtrati = conPunteggio
-    .filter(({ punteggio }) => punteggio >= soglia)
+    .filter(({ punteggio, categoria }) => categoria || punteggio >= soglia)
     .map(({ p }) => p);
 
   return (filtrati.length > 0 ? filtrati : conPunteggio.slice(0, 1).map(({ p }) => p)).slice(0, limite);

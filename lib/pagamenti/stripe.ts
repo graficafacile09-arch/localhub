@@ -47,7 +47,7 @@ function costruisciLineItems(
         unit_amount: Math.round(riga.prezzoUnitario * 100),
         product_data: {
           name: riga.variante ? `${riga.nome} — ${riga.variante}` : riga.nome,
-          description: `Ordine InCittà ${ctx.numeroOrdine}`,
+          description: `Ordine Radici Calabria ${ctx.numeroOrdine}`,
         },
       },
     }));
@@ -61,7 +61,7 @@ function costruisciLineItems(
           unit_amount: Math.round(spedizione * 100),
           product_data: {
             name: "Spedizione",
-            description: `Consegna per l'ordine InCittà ${ctx.numeroOrdine}`,
+            description: `Consegna per l'ordine Radici Calabria ${ctx.numeroOrdine}`,
           },
         },
       });
@@ -78,7 +78,7 @@ function costruisciLineItems(
         unit_amount: Math.round(Number(ctx.importo) * 100),
         product_data: {
           name: `Ordine ${ctx.numeroOrdine}`,
-          description: `Ordine InCittà ${ctx.numeroOrdine} presso il negozio.`,
+          description: `Ordine Radici Calabria ${ctx.numeroOrdine} presso il negozio.`,
         },
       },
     },
@@ -205,11 +205,11 @@ export class GatewayStripe implements PaymentGateway {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
-        // IMPORTANTISSIMO: il metodo scelto in InCittà deve essere anche il
+        // IMPORTANTISSIMO: il metodo scelto in Radici Calabria deve essere anche il
         // solo metodo esposto da questa Checkout Session. Senza questo campo
         // Stripe usa la configurazione dinamica dell'account e può mostrare
         // altri metodi (per esempio Bonifici bancari) che il cliente non ha
-        // selezionato nel checkout InCittà.
+        // selezionato nel checkout Radici Calabria.
         payment_method_types: paymentMethodTypes,
         // Tutti i pagamenti online sono centralizzati su Stripe.
         // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot

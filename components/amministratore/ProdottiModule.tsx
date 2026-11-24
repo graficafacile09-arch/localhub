@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
   Loader2,
+  PenLine,
   Pencil,
   Search,
   Store,
@@ -42,11 +43,14 @@ type Aggiornamenti = {
  */
 export default function ProdottiModule({
   prodotti: prodottiIniziali,
+  ricercaIniziale = "",
 }: {
   prodotti: ProdottoAdminRow[];
+  /** Termine già applicato dal server (?q=…): la barra riparte da lì. */
+  ricercaIniziale?: string;
 }) {
   const [prodotti, setProdotti] = useState(prodottiIniziali);
-  const [ricerca, setRicerca] = useState("");
+  const [ricerca, setRicerca] = useState(ricercaIniziale);
   const [filtroNegozio, setFiltroNegozio] = useState("tutti");
   const [filtroStato, setFiltroStato] = useState<FiltroStato>("tutti");
   const [filtroCategoria, setFiltroCategoria] = useState("tutte");
@@ -60,6 +64,10 @@ export default function ProdottiModule({
   const [operando, setOperando] = useState<string | null>(null);
   const [errore, setErrore] = useState<string | null>(null);
   const [confermaElimina, setConfermaElimina] = useState<ProdottoAdminRow | null>(null);
+  // Rinomina rapida: apre un dialog con il nome attuale già compilato.
+  const [rinomina, setRinomina] = useState<ProdottoAdminRow | null>(null);
+  const [rinominaValore, setRinominaValore] = useState("");
+  const [rinominaErrore, setRinominaErrore] = useState<string | null>(null);
 
   const negozi = useMemo(() => {
     const mappa = new Map<string, string>();
@@ -209,6 +217,46 @@ export default function ProdottiModule({
     }
   }
 
+  /** Salva il nuovo nome del prodotto (PATCH admin: solo la colonna nome). */
+  async function salvaNome(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!rinomina) return;
+    const nome = rinominaValore.trim().replace(/\s+/g, " ");
+    if (nome.length < 2) {
+      setRinominaErrore("Inserisci un nome di almeno 2 caratteri.");
+      return;
+    }
+    if (nome.length > 120) {
+      setRinominaErrore("Il nome non può superare 120 caratteri.");
+      return;
+    }
+    const id = rinomina.id;
+    setOperando(`nome:${id}`);
+    setRinominaErrore(null);
+    setErrore(null);
+    try {
+      const response = await fetch(`/api/amministratore/prodotti/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome }),
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(json?.error?.message ?? "Impossibile rinominare il prodotto.");
+      }
+      const salvato = String(json?.data?.aggiornamenti?.nome ?? nome);
+      setProdotti((precedenti) =>
+        precedenti.map((riga) => (riga.id === id ? { ...riga, nome: salvato } : riga))
+      );
+      setRinomina(null);
+      setRinominaValore("");
+    } catch (caught) {
+      setRinominaErrore(caught instanceof Error ? caught.message : "Errore sconosciuto.");
+    } finally {
+      setOperando(null);
+    }
+  }
+
   async function eliminaProdotto() {
     if (!confermaElimina) return;
     const prodotto = confermaElimina;
@@ -247,6 +295,75 @@ export default function ProdottiModule({
 
   return (
     <div className="space-y-5">
+      {/* Rinomina rapida */}
+      {rinomina && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+          role="presentation"
+        >
+          <form
+            onSubmit={(event) => void salvaNome(event)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rinomina-prodotto-titolo"
+            className="w-full max-w-md rounded-[2rem] border border-blue-100 bg-white p-6 shadow-2xl"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+              Nome prodotto
+            </p>
+            <h2 id="rinomina-prodotto-titolo" className="mt-1 text-lg font-black text-slate-900">
+              Cambia il nome
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {rinomina.negozioNome} · il link pubblico del prodotto resta invariato.
+            </p>
+            <label htmlFor="rinomina-nome" className="mt-4 block text-xs font-semibold text-slate-600">
+              Nuovo nome
+            </label>
+            <input
+              id="rinomina-nome"
+              name="nome"
+              value={rinominaValore}
+              onChange={(event) => setRinominaValore(event.target.value)}
+              maxLength={120}
+              autoFocus
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+            {rinominaErrore && (
+              <p role="alert" className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                {rinominaErrore}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={operando !== null}
+                onClick={() => {
+                  setRinomina(null);
+                  setRinominaValore("");
+                  setRinominaErrore(null);
+                }}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                disabled={operando !== null || rinominaValore.trim() === rinomina.nome}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {operando !== null ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <PenLine className="h-4 w-4" aria-hidden />
+                )}
+                Salva nome
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Conferma eliminazione definitiva */}
       {confermaElimina && (
         <div
@@ -323,20 +440,48 @@ export default function ProdottiModule({
       {/* Barra strumenti: ricerca + filtri */}
       <div className="card p-4 md:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="relative block min-w-0 flex-1 xl:max-w-sm">
-            <span className="sr-only">Cerca prodotti per nome, categoria o negozio</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          {/*
+           * Ricerca prodotti: filtro immediato mentre si scrive e invio
+           * esplicito con «Cerca»/Invio. Il form è un GET reale su ?q=, così
+           * la ricerca funziona anche se il JavaScript non è ancora pronto:
+           * in quel caso è la pagina server a filtrare il catalogo.
+           */}
+          <form
+            method="get"
+            action="/amministratore/prodotti"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              tornaAPaginaUno();
+            }}
+            className="relative min-w-0 flex-1 xl:max-w-sm"
+          >
+            <label htmlFor="ricerca-prodotti" className="sr-only">
+              Cerca prodotti per nome, categoria o negozio
+            </label>
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden
+            />
             <input
+              id="ricerca-prodotti"
               type="search"
+              name="q"
               value={ricerca}
               onChange={(event) => {
                 setRicerca(event.target.value);
                 tornaAPaginaUno();
               }}
               placeholder="Cerca nome, categoria o negozio..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-24 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
             />
-          </label>
+            <button
+              type="submit"
+              className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center rounded-lg bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-700"
+            >
+              Cerca
+            </button>
+          </form>
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={filtroNegozio}
@@ -449,7 +594,8 @@ export default function ProdottiModule({
       {/* Legenda flag gestibili */}
       <p className="px-1 text-xs leading-5 text-slate-500">
         <span className="font-bold text-slate-600">Azioni rapide:</span> i badge
-        “Attivo”, “Tipico” e “In offerta” sono interruttori: un click cambia lo
+        “Attivo”, “Tipico” e “In offerta” sono interruttori (un click cambia lo
+        stato); il nome si modifica con “Rinomina”, mentre
         stato (la modifica completa di prezzo, descrizione e immagini resta nel
         form “Modifica”). I prodotti tipici/in offerta compaiono nelle relative
         vetrine pubbliche solo quando sono attivi.
@@ -604,6 +750,21 @@ export default function ProdottiModule({
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={occupato}
+                        onClick={() => {
+                          setRinomina(prodotto);
+                          setRinominaValore(prodotto.nome);
+                          setRinominaErrore(null);
+                          setErrore(null);
+                        }}
+                        title="Cambia il nome del prodotto"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-50"
+                      >
+                        <PenLine className="h-3.5 w-3.5" />
+                        Rinomina
+                      </button>
                       <Link
                         href={`/amministratore/prodotti/${prodotto.id}`}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"

@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Pagina "I miei ordini" — Area Clienti.
- * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
+ * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini Radici Calabria":
  * numero + sintesi prodotto, negozio, data/ora, foto prodotto, totale e
  * stato. Dati REALI da Supabase, filtrati per cliente_user_id (server-side).
  * Filtri di presentazione (Tutti / In corso / Completati / Annullati):

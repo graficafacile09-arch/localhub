@@ -80,7 +80,7 @@ test("B4 'farmacie' senza stato → elenco completo delle farmacie", () => {
 });
 
 // Regressione: "farmacia" al singolare ricadeva sul catalogo negozi e Pino
-// rispondeva "Non risultano farmacie nel catalogo InCittà" anche con i dati
+// rispondeva "Non risultano farmacie nel catalogo Radici Calabria" anche con i dati
 // (e il turno) disponibili. Le farmacie sono sempre un intento locale.
 test("B5 'farmacia' al singolare e 'cerca farmacia' → farmacie vere, mai il catalogo", () => {
   for (const q of ["farmacia", "cerca farmacia", "cerco una farmacia", "Farmacia Castrovillari"]) {

@@ -60,7 +60,7 @@ export default async function ClienteDashboardPage() {
                   Il mio account
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-                  Il riepilogo della tua attività su InCittà: ordini, preferiti
+                  Il riepilogo della tua attività su Radici Calabria: ordini, preferiti
                   e ultimi acquisti, sempre a portata di mano.
                 </p>
               </div>

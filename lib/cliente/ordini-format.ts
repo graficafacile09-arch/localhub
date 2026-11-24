@@ -111,7 +111,7 @@ export function etichettaStato(stato: StatoOrdine): string {
  * ricevere la grafica di un ordine confermato. Testabile in modo puro
  * (scripts/test-ordini-vista.ts).
  *
- * Palette identità InCittà (blu struttura + giallo accento):
+ * Palette identità Radici Calabria (blu struttura + giallo accento):
  *   NUOVO          → giallo (attenzione)
  *   CONFERMATO     → blu chiaro (informazione)
  *   IN LAVORAZIONE → giallo (in corso, icona martello)

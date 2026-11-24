@@ -11,7 +11,7 @@ export default function PrivacyPage() {
             href="/"
             className="text-sm font-semibold text-blue-700 underline-offset-2 hover:underline"
           >
-            ← Torna a InCittà
+            ← Torna a Radici Calabria
           </Link>
         </div>
 
@@ -26,10 +26,10 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900">1. Titolare del trattamento</h2>
             <p className="mt-2">
-              InCittà è la piattaforma digitale dedicata a negozi, prodotti,
+              Radici Calabria è la piattaforma digitale dedicata a negozi, prodotti,
               servizi, offerte, contenuti e iniziative del territorio.
               Il titolare del trattamento è il soggetto che gestisce la
-              piattaforma InCittà. Per le richieste relative alla privacy è
+              piattaforma Radici Calabria. Per le richieste relative alla privacy è
               possibile utilizzare i recapiti pubblicati sul sito e le
               funzionalità di contatto disponibili sulla piattaforma.
             </p>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900">2. Dati trattati</h2>
             <p className="mt-2">
-              A seconda dei servizi utilizzati, InCittà può trattare dati
+              A seconda dei servizi utilizzati, Radici Calabria può trattare dati
               identificativi e di contatto, credenziali di accesso, dati
               necessari alla gestione dell'account, dati relativi agli ordini
               e alle richieste effettuate, dati forniti dagli esercenti per la
@@ -51,9 +51,9 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold text-slate-900">3. Registrazione e autenticazione</h2>
             <p className="mt-2">
               Per la registrazione con email e password i dati vengono
-              utilizzati per creare e gestire l'account. InCittà consente
+              utilizzati per creare e gestire l'account. Radici Calabria consente
               inoltre l'autenticazione tramite Google e, quando disponibile,
-              Apple. In questi casi il provider comunica a InCittà i dati
+              Apple. In questi casi il provider comunica a Radici Calabria i dati
               necessari a identificare l'account, nel rispetto delle
               impostazioni e delle autorizzazioni previste dal provider.
             </p>
@@ -86,7 +86,7 @@ export default function PrivacyPage() {
             <p className="mt-2">
               La piattaforma può utilizzare fornitori tecnologici per
               autenticazione, hosting, database, pagamenti, comunicazioni,
-              sicurezza e altri servizi necessari al funzionamento di InCittà.
+              sicurezza e altri servizi necessari al funzionamento di Radici Calabria.
               Quando l'utente sceglie un'autenticazione sociale, il relativo
               trattamento da parte del provider è disciplinato anche dalla
               documentazione privacy del provider stesso.
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900">8. Sicurezza</h2>
             <p className="mt-2">
-              InCittà adotta misure tecniche e organizzative ragionevoli per
+              Radici Calabria adotta misure tecniche e organizzative ragionevoli per
               proteggere i dati da accessi non autorizzati, perdita, uso
               improprio o alterazione.
             </p>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900">10. Cookie e tecnologie simili</h2>
             <p className="mt-2">
-              InCittà può utilizzare cookie e tecnologie tecniche necessarie
+              Radici Calabria può utilizzare cookie e tecnologie tecniche necessarie
               alla navigazione, alla gestione della sessione, alla sicurezza e
               al corretto funzionamento del servizio. Eventuali cookie non
               necessari saranno utilizzati secondo le impostazioni e le

@@ -217,7 +217,7 @@ export function costruisciMessaggioRispostaClienteNtfy(
   dati: DatiRispostaClienteNtfy
 ): string {
   const righe: string[] = [];
-  righe.push("🔴 RISPOSTA RECLAMO — InCittà");
+  righe.push("🔴 RISPOSTA RECLAMO — Radici Calabria");
   righe.push("");
   righe.push(`Cliente: ${(dati.clienteNome || "").trim() || "—"}`);
   righe.push("");

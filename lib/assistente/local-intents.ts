@@ -70,7 +70,7 @@ export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
 
   // Qualunque forma di "farmacia" (singolare, plurale, "cerca farmacia") è un
   // intento locale: la fonte reale è il tool farmacie, non il catalogo negozi.
-  // Prima il singolare ricadeva sul catalogo e Pino rispondeva che in InCittà
+  // Prima il singolare ricadeva sul catalogo e Pino rispondeva che in Radici Calabria
   // non risultavano farmacie, pur avendo i dati (e il turno) disponibili.
   if (RE_FARMACIA.test(q) || RE_SINTOMO.test(q)) {
     const chiedeAperta = /apert|adesso|ora|in questo momento|open|now|right now|currently/i.test(q);

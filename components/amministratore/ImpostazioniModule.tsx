@@ -214,7 +214,7 @@ export default function ImpostazioniModule({
               Impostazioni piattaforma
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Configura le informazioni principali di InCittà. Le modifiche
+              Configura le informazioni principali di Radici Calabria. Le modifiche
               vengono applicate subito a header, footer e pagine pubbliche.
             </p>
           </div>

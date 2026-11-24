@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     },
     {
       numero: "TEST-001",
-      negozioNome: "InCittà",
+      negozioNome: "Radici Calabria",
       totale: 12.9,
       modalita: "ritiro",
       clienteNome: "Domenico",

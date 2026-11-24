@@ -7,6 +7,7 @@ import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { LOGHI_RICONOSCIMENTO, riconoscimentoProdotto } from "@/lib/territori";
 import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getProductMediaPubbliche } from "@/lib/prodotti-media";
 import { getVariantiPubblicheProdotto } from "@/lib/varianti-pubbliche";
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const nome = (prodotto.nome as string) ?? "Prodotto";
   const descrizione =
     ((prodotto.descrizione_completa as string) ?? (prodotto.descrizione as string) ?? "")
-      .slice(0, 155) || `${nome} disponibile su InCittà.`;
+      .slice(0, 155) || `${nome} disponibile su Radici Calabria.`;
   const canonical = `${getSiteUrl()}/prodotto/${prodotto.slug as string}`;
 
   // Immagine Open Graph: sempre URL ASSOLUTO (Meta/abbonati richiedono URL
@@ -49,8 +50,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     return `${getSiteUrl()}${src?.startsWith("/") ? src : `/${src}`}`;
   })();
 
-  // title/og:title senza il suffisso "| InCittà": il template del layout
-  // ("%s | InCittà") lo aggiunge, evitando il duplicato "… | InCittà | InCittà".
+  // title/og:title senza il suffisso "| Radici Calabria": il template del layout
+  // ("%s | Radici Calabria") lo aggiunge, evitando il duplicato "… | Radici Calabria | Radici Calabria".
   return {
     title: nome,
     description: descrizione,
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       description: descrizione,
       url: canonical,
       type: "website",
-      siteName: "InCittà",
+      siteName: "Radici Calabria",
       images: [{ url: immagineOg, alt: nome }],
     },
     twitter: {
@@ -83,6 +84,10 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   }
 
   const id = String(prodotto.id);
+  // Riconoscimento documentato del prodotto: mappa esplicita per slug, nessuna
+  // certificazione dedotta dal nome o dalla categoria.
+  const riconoscimento = riconoscimentoProdotto(String(prodotto.slug ?? id));
+  const logoRiconoscimento = riconoscimento ? LOGHI_RICONOSCIMENTO[riconoscimento] ?? null : null;
   const soggettoVerificaEta = Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta);
   const cookieStore = await cookies();
   const ageVerified = cookieStore.get(`incitta_age_verified_v2_${id}`)?.value === "1";
@@ -151,7 +156,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
     if (!negozio) return "#";
     const number = normalizzaNumeroWhatsApp((negozio.whatsapp as string) || (negozio.telefono as string));
     const msg = encodeURIComponent(
-      `Ciao! Vorrei informazioni su "${prodotto.nome as string}" visto su InCittà.`
+      `Ciao! Vorrei informazioni su "${prodotto.nome as string}" visto su Radici Calabria.`
     );
     return `https://wa.me/${number}?text=${msg}`;
   };
@@ -162,24 +167,24 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="rd-pagina min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
+      <div className="rd-guscio py-5 pb-12 md:py-8">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
-          <Link href="/" className="transition hover:text-blue-600">Home</Link>
+        <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#8a8378]">
+          <Link href="/" className="transition hover:text-[#24462f]">Home</Link>
           <span>/</span>
-          <Link href="/negozi" className="transition hover:text-blue-600">Negozi</Link>
+          <Link href="/negozi" className="transition hover:text-[#24462f]">Negozi</Link>
           <span>/</span>
-          <span className="truncate font-semibold text-slate-600">{prodotto.nome as string}</span>
+          <span className="truncate font-bold text-[#24462f]">{prodotto.nome as string}</span>
         </nav>
 
         {/* Back to store */}
         {negozio && (
           <Link
             href={`/negozio/${negozio.slug}`}
-            className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-blue-600"
+            className="rd-link-freccia mb-4"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Torna a {negozio.nome as string}
@@ -234,29 +239,31 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           fallbackUrl={imageUrl}
           altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
           nomeProdotto={prodotto.nome as string}
+          marchio={riconoscimento}
+          logoMarchio={logoRiconoscimento}
         />
         </div>
 
         <div className="min-w-0">
         {/* Product info */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:p-5 md:mt-0">
-          <div className="flex items-start justify-between gap-4">
+        <div className="rd-scheda mt-4 p-5 sm:p-6 md:mt-0">
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
             <div className="min-w-0 flex-1">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">
+              <h1 className="mt-1 text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-[#1b3624] sm:text-[2.1rem]">
                 {prodotto.nome as string}
               </h1>
               {"categoria" in prodotto && prodotto.categoria && (
-                <p className="mt-0.5 text-xs font-semibold text-blue-600">
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a5a3b]">
                   {prodotto.categoria as string}
                 </p>
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-2xl font-black text-blue-700">
+              <p className="text-[1.9rem] font-extrabold leading-none tracking-tight text-[#1b3624] tabular-nums">
                 €{prezzo.toFixed(2)}
               </p>
               {stato && (
-                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8378]">
                   {stato}
                 </p>
               )}
@@ -271,25 +278,25 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           ) : null}
 
           {"descrizione" in prodotto && prodotto.descrizione && (
-            <p className="mt-4 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-600">
+            <p className="mt-4 border-t border-[#e5ded0] pt-4 text-sm leading-7 text-[#57534e]">
               {prodotto.descrizione as string}
             </p>
           )}
 
           {"descrizione_completa" in prodotto && (prodotto as Record<string, unknown>).descrizione_completa && (
-            <p className="mt-2 rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm leading-6 text-slate-500">
+            <p className="mt-3 text-sm leading-7 text-[#6b6459]">
               {(prodotto as Record<string, unknown>).descrizione_completa as string}
             </p>
           )}
 
           {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (
-            <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${!esaurito ? "bg-blue-50 text-blue-700" : "bg-blue-50 text-blue-600"}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-blue-500" : "bg-blue-500"}`} />
+            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#e5ded0] pt-3">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-[#e5ded0] ${!esaurito ? "bg-[#f4efe4] text-[#24462f]" : "bg-[#f4efe4] text-[#8a5a3b]"}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-[#24462f]" : "bg-[#8a5a3b]"}`} />
                 {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
               </span>
-              <span className="text-[10px] leading-4 text-red-600">
+              <span className="text-[10px] leading-4 text-[#8a5a3b]">
                 Demo: account e dati di test; acquisti non attivi.
               </span>
             </div>
@@ -300,7 +307,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             negozio proprietario (regola auto-acquisto, blocco anche API) */}
         <div className="mt-4 space-y-3">
           {eIlMioProdotto ? (
-            <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#e5ded0] bg-[#f4efe4] px-4 py-3 text-base font-bold text-[#24462f]">
               <Store className="h-5 w-5 shrink-0" aria-hidden />
               Il tuo prodotto
             </div>
@@ -308,7 +315,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             <>
               <Link
                 href={`/prodotto/${prodotto.slug}/acquista`}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+                className="rd-azione w-full py-3.5 text-base"
               >
                 <ShoppingBag className="h-5 w-5" />
                 ACQUISTA
@@ -363,34 +370,35 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
         {/* Store info */}
         {negozio && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="rd-pannello mt-6 p-5">
+            <p className="rd-occhiello mb-2">Venduto da</p>
             <Link
               href={`/negozio/${negozio.slug}`}
-              className="text-sm font-bold text-slate-900 transition hover:text-blue-600"
+              className="rd-titolo-scheda text-base transition hover:text-[#8a5a3b]"
             >
               {negozio.nome as string}
             </Link>
             {negozio.categoria && (
-              <p className="mt-px text-[11px] font-semibold text-blue-600">
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#8a5a3b]">
                 {negozio.categoria as string}
               </p>
             )}
             {negozio.descrizione && (
-              <p className="mt-1 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-sm leading-6 text-[#57534e]">
                 {negozio.descrizione as string}
               </p>
             )}
 
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#6b6459]">
               {negozio.indirizzo && (
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3 text-blue-500" />
+                  <MapPin className="h-3 w-3 text-[#8a5a3b]" />
                   {negozio.indirizzo as string}
                 </span>
               )}
               {negozio.telefono && (
                 <span className="flex items-center gap-1">
-                  <Phone className="h-3 w-3 text-blue-500" />
+                  <Phone className="h-3 w-3 text-[#8a5a3b]" />
                   {negozio.telefono as string}
                 </span>
               )}
@@ -401,7 +409,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               {!eIlMioProdotto && (
                 <Link
                   href={`/prodotto/${prodotto.slug}/acquista`}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+                  className="rd-azione h-8 px-3 py-0 text-xs"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
                   Acquista
@@ -423,7 +431,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                   href={buildMapsUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  className="rd-azione-tenue h-8 px-3 py-0 text-xs"
                 >
                   <MapPin className="h-3.5 w-3.5" />
                   Mappa
@@ -432,7 +440,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               {negozio.telefono && (
                 <a
                   href={`tel:${negozio.telefono as string}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  className="rd-azione-tenue h-8 px-3 py-0 text-xs"
                 >
                   <Phone className="h-3.5 w-3.5" />
                   Chiama
@@ -443,7 +451,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                   href={(negozio.sito_web as string).startsWith("http") ? (negozio.sito_web as string) : `https://${negozio.sito_web as string}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  className="rd-azione-tenue h-8 px-3 py-0 text-xs"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                   Sito web

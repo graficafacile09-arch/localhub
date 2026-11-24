@@ -184,7 +184,7 @@ const temaMerchant: TemaLogin = {
   boxSecondarioClass: "rounded-xl border border-slate-300 bg-slate-50 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
-    testo: "Area riservata alle imprese e agli operatori di InCittà.",
+    testo: "Area riservata alle imprese e agli operatori di Radici Calabria.",
     classe: "mt-6 max-w-md text-center text-xs text-slate-500",
   },
 };
@@ -246,7 +246,7 @@ const temaCourier: TemaLogin = {
   boxSecondarioClass: "rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
-    testo: "Area riservata agli operatori di logistica approvati da InCittà.",
+    testo: "Area riservata agli operatori di logistica approvati da Radici Calabria.",
     classe: "mt-6 max-w-md text-center text-xs text-emerald-900/50",
   },
 };

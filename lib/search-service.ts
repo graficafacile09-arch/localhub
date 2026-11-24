@@ -1,7 +1,7 @@
 /**
  * LocalHub — Search Service
  *
- * Punto di accesso unificato alla ricerca PUBBLICA di InCittà.
+ * Punto di accesso unificato alla ricerca PUBBLICA di Radici Calabria.
  *
  * RICERCA NORMALE = 100% DATABASE, zero chiamate AI:
  *   query utente → search() → cercaNegozi()/cercaProdotti() (lib/negozi.ts)

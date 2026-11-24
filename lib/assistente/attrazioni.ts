@@ -22,7 +22,7 @@ const CATALOGO: AttrazionePino[] = [
   ...ATTRAZIONI_LUOGHI.map((v) => ({ nome: v.nome, tipo: v.tipo, descrizione: v.descrizione, queryMaps: v.query, url: extra[v.nome]?.url, alias: [...new Set([v.nome, v.tipo, ...tokensNome(v.nome), ...(extra[v.nome]?.alias ?? [])])] })),
   ...ATTRAZIONI_EVENTI.map((v) => ({ nome: v.nome, tipo: "Eventi e festival", descrizione: v.descrizione + " " + v.periodo + ". Verifica le date sul sito dell'organizzatore.", queryMaps: v.nome + ", Castrovillari, Calabria", url: v.url, alias: [...new Set([v.nome, "evento", "festival", ...tokensNome(v.nome)])] })),
   ...ATTRAZIONI_DINTORNI.map((v) => ({ nome: v.nome, tipo: v.tipo, descrizione: v.descrizione, queryMaps: v.nome + ", Calabria", alias: [...new Set([v.nome, v.tipo, ...tokensNome(v.nome), ...(extra[v.nome]?.alias ?? [])])] })),
-  { nome: "Sapori locali e prodotti tipici", tipo: "Gusto e territorio", descrizione: "La guida di InCittà invita a scoprire le tradizioni gastronomiche di Castrovillari e del Pollino, compresa la Cipolla Bianca. La vetrina Eccellenze Calabresi mostra i prodotti effettivamente pubblicati dai negozi.", queryMaps: "Prodotti tipici Castrovillari Calabria", alias: ["sapori locali", "prodotti tipici", "eccellenze calabresi", "cipolla bianca"] },
+  { nome: "Sapori locali e prodotti tipici", tipo: "Gusto e territorio", descrizione: "La guida di Radici Calabria invita a scoprire le tradizioni gastronomiche di Castrovillari e del Pollino, compresa la Cipolla Bianca. La vetrina Eccellenze Calabresi mostra i prodotti effettivamente pubblicati dai negozi.", queryMaps: "Prodotti tipici Castrovillari Calabria", alias: ["sapori locali", "prodotti tipici", "eccellenze calabresi", "cipolla bianca"] },
 ];
 
 function normalizza(t: string): string {

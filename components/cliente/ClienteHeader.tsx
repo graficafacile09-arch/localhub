@@ -14,12 +14,12 @@ export default function ClienteHeader() {
         <div className="flex items-center gap-5">
           <Link
             href="/"
-            aria-label="LocalHub — torna al sito"
+            aria-label="Radici Calabria — torna al sito"
             className="flex items-center rounded-2xl bg-white p-2 shadow-sm transition hover:bg-blue-50"
           >
             <Image
               src="/logo-transparent.png"
-              alt="LocalHub"
+              alt="Radici Calabria"
               width={1536}
               height={1024}
               preload
@@ -37,7 +37,7 @@ export default function ClienteHeader() {
               </span>
             </div>
             <p className="mt-1 text-sm text-blue-100">
-              La tua area personale su InCittà
+              La tua area personale su Radici Calabria
             </p>
           </div>
         </div>

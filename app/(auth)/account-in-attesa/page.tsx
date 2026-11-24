@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Account in attesa — InCittà",
+  title: "Account in attesa — Radici Calabria",
 };
 
 export default function AccountInAttesaPage() {

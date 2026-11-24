@@ -1,5 +1,5 @@
 /**
- * EMAIL DI CONFERMA ORDINE — InCittà.
+ * EMAIL DI CONFERMA ORDINE — Radici Calabria.
  *
  * Riutilizza l'infrastruttura Resend già presente nel progetto
  * (lib/password-reset-email.ts): stessa chiave API, stessa ENV
@@ -30,7 +30,7 @@ import {
 } from "@/lib/ordine-reclami";
 
 /** Mittente (stessa ENV del password reset). */
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
 
 /** URL del sito (per il link \"Visualizza ordine\"). */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
@@ -100,10 +100,10 @@ export function formattaDataEmail(value: string | null | undefined): string {
   });
 }
 
-/** Oggetto dell'email: \"Conferma ordine LH-000043 — InCittà\". */
+/** Oggetto dell'email: \"Conferma ordine LH-000043 — Radici Calabria\". */
 export function costruisciOggettoOrdine(dati: Pick<DatiEmailOrdine, "numero">): string {
   const numero = (dati.numero || "").trim() || "ordine";
-  return `Conferma ordine ${numero} — InCittà`;
+  return `Conferma ordine ${numero} — Radici Calabria`;
 }
 
 /** Oggetto dell'email di conferma pagamento (inviata post-webhook). */
@@ -267,7 +267,7 @@ export function costruisciHtmlConfermaOrdine(dati: DatiEmailOrdine): string {
 
         <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
           Hai domande? Contatta direttamente ${escapeHtml(dati.negozioNome || "il negozio")}.
-          <br/>Questa email è un riepilogo del tuo ordine su InCittà.
+          <br/>Questa email è un riepilogo del tuo ordine su Radici Calabria.
         </p>
       </div>
     </div>
@@ -402,7 +402,7 @@ export function costruisciHtmlConfermaPagamento(dati: DatiEmailOrdine): string {
 
         <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
           Hai domande? Contatta direttamente ${escapeHtml(dati.negozioNome || "il negozio")}.
-          <br/>Questa email è un riepilogo del tuo ordine su InCittà.
+          <br/>Questa email è un riepilogo del tuo ordine su Radici Calabria.
         </p>
       </div>
     </div>
@@ -811,7 +811,7 @@ export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): stri
 
         <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
           Puoi rispondere direttamente dal dettaglio del tuo ordine.
-          <br/>Questa email riguarda la tua segnalazione su InCittà.
+          <br/>Questa email riguarda la tua segnalazione su Radici Calabria.
         </p>
       </div>
     </div>
@@ -922,7 +922,7 @@ export type OpzioniEmailRispostaCliente = {
   invia?: (dati: DatiRispostaClienteVenditore) => Promise<void>;
 };
 
-/** Oggetto email: "Il cliente ha risposto sul reclamo ordine LH-XXXX — InCittà". */
+/** Oggetto email: "Il cliente ha risposto sul reclamo ordine LH-XXXX — Radici Calabria". */
 export function costruisciOggettoRispostaClienteVenditore(
   numero: string,
   negozioNome: string
@@ -931,7 +931,7 @@ export function costruisciOggettoRispostaClienteVenditore(
   const negozio = (negozioNome || "").trim();
   return negozio
     ? `Il cliente ha risposto sul reclamo ${n} — ${negozio}`
-    : `Il cliente ha risposto sul reclamo ${n} — InCittà`;
+    : `Il cliente ha risposto sul reclamo ${n} — Radici Calabria`;
 }
 
 /**
@@ -1006,7 +1006,7 @@ export function costruisciHtmlRispostaClienteVenditore(
 
         <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
           Puoi rispondere al cliente dal pannello venditore.
-          <br/>Questa email riguarda una segnalazione su InCittà.
+          <br/>Questa email riguarda una segnalazione su Radici Calabria.
         </p>
       </div>
     </div>
@@ -1134,15 +1134,15 @@ export function costruisciOggettoStatoOrdine(
   const n = (numero || "").trim() || "ordine";
   switch (stato) {
     case "confermato":
-      return `Ordine ${n} confermato — InCittà`;
+      return `Ordine ${n} confermato — Radici Calabria`;
     case "pronto":
-      return `Il tuo ordine ${n} è pronto — InCittà`;
+      return `Il tuo ordine ${n} è pronto — Radici Calabria`;
     case "consegnato":
-      return `Ordine ${n} completato — InCittà`;
+      return `Ordine ${n} completato — Radici Calabria`;
     case "cancellato":
-      return `Ordine ${n} annullato — InCittà`;
+      return `Ordine ${n} annullato — Radici Calabria`;
     default:
-      return `Aggiornamento ordine ${n} — InCittà`;
+      return `Aggiornamento ordine ${n} — Radici Calabria`;
   }
 }
 
@@ -1154,7 +1154,7 @@ function messaggioStato(stato: string): string {
     case "pronto":
       return "Il tuo ordine è pronto. Puoi recarti in negozio per il ritiro (o partiremo con la spedizione).";
     case "consegnato":
-      return "Il tuo ordine è stato completato. Grazie per aver acquistato su InCittà!";
+      return "Il tuo ordine è stato completato. Grazie per aver acquistato su Radici Calabria!";
     case "cancellato":
       return "Purtroppo il negozio ha dovuto annullare il tuo ordine.";
     default:

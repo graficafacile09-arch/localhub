@@ -1,7 +1,7 @@
 /**
  * LocalHub — Assistente AI: Tool di retrieval
  *
- * Strato interno dell'assistente: recupera i dati pubblici di InCittà
+ * Strato interno dell'assistente: recupera i dati pubblici di Radici Calabria
  * RIUSANDO le funzioni di ricerca già esistenti (nessuna logica duplicata):
  *   - searchStores   → cercaNegozi() (keyword + sinonimi + ranking)
  *   - searchProducts → cercaProdotti() + filtro prezzo in memoria
@@ -15,12 +15,25 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, getCategorieConNegozi, type SegnalazioneErroriDati } from "@/lib/negozi";
+import {
+  cercaNegozi,
+  getCategorieConNegozi,
+  getProdottiOfferta,
+  getProdottiTipici,
+  mappaProdottoRiga,
+  type SegnalazioneErroriDati,
+} from "@/lib/negozi";
 import { search as searchCatalogoPubblico } from "@/lib/search-service";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
+import { getNotiziePubbliche, type NotiziaPubblica } from "@/lib/notizie-pubbliche";
+import { cercaContenutiPubblici } from "@/lib/contenuti-pubblici";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getFarmacieTurnoCastrovillari, inTurnoFarmacia, type FarmaciaTurno } from "@/lib/farmacie-turno";
+import {
+  getVariantiPubblicheProdotto,
+  type VariantePubblica,
+} from "@/lib/varianti-pubbliche";
 
 /** Prova del turno condivisa con la risposta deterministica di Pino. */
 export { inTurnoFarmacia };
@@ -44,12 +57,14 @@ import {
   prodottoForseRefusoDiSoggetto,
   spiegaPertinenzaProdotto,
 } from "./product-relevance";
+import { appartieneCategoriaGenericaProdotto } from "../sottotipi-prodotto";
 // Soggetti generici e ponti concettuali: unica fonte in `lexicon.ts`, così non
 // esistono due copie da tenere allineate.
 import {
   ATTIVITA_CATALOGO_PINO,
   PONTI_CONCETTUALI_PINO,
   SOGGETTI_GENERICI_PINO,
+  TERMINI_BEVANDE_PINO,
   soggettoAlimentarePino,
 } from "./lexicon.ts";
 import { normalizzaQueryCatalogo } from "./understanding";
@@ -132,7 +147,28 @@ export type EventoAssistente = {
   descrizione: string | null;
   luogo: string | null;
   data_inizio: string | null;
+  data_fine: string | null;
   negozio_nome: string;
+};
+
+export type NotiziaAssistente = {
+  id: string;
+  titolo: string;
+  estratto: string | null;
+  fonte: string;
+  data: string | null;
+  categoria: string;
+  url: string;
+};
+
+export type ContenutoAssistente = {
+  id: string;
+  titolo: string;
+  slug: string;
+  estratto: string | null;
+  autore: string | null;
+  data: string | null;
+  url: string;
 };
 
 export type MeteoAssistente = {
@@ -178,6 +214,11 @@ export type ToolParams = {
    * risultati sui servizi strutturati attivi e sui tag `negozi.servizi`.
    */
   servizio?: string;
+  /**
+   * Richiesta generica dei servizi di un'attività («quali servizi offre X?»):
+   * elenca tutti i servizi pubblicati, non filtra per un servizio nominato.
+   */
+  serviziTutti?: boolean;
   /** Filtro città. */
   citta?: string;
   /** Stato farmacia per il tool locale: aperte, turno o tutte. */
@@ -199,6 +240,8 @@ export type RisultatoRicercaCompleta = {
   prodotti: ProdottoRicerca[];
   offerte: OffertaAssistente[];
   eventi: EventoAssistente[];
+  notizie: NotiziaAssistente[];
+  contenuti: ContenutoAssistente[];
   categorie: { nome: string; count: number }[];
   meteo: MeteoAssistente | null;
   farmacie: FarmaciaAssistente[];
@@ -223,6 +266,8 @@ export type StrumentoPino =
   | "searchProducts"
   | "searchOffers"
   | "searchEvents"
+  | "searchNews"
+  | "searchContent"
   | "searchAll"
   | "getCategories"
   | "getWeather"
@@ -254,7 +299,7 @@ const LIMITE_RISULTATI_MASSIMO = 20;
 /** Chiavi note di `ToolParams`: tutto il resto è una chiave inventata. */
 const CHIAVI_TOOL_PARAMS: ReadonlySet<string> = new Set<string>([
   "query", "maxPrice", "minPrice", "prezzoRigido", "limit", "termini", "categoria",
-  "sottocategoria", "tipo", "servizio", "citta", "stato", "esclusioni",
+  "sottocategoria", "tipo", "servizio", "serviziTutti", "citta", "stato", "esclusioni",
   "colori", "materiali", "escludiNomi", "apertiOra",
 ]);
 
@@ -370,6 +415,13 @@ export function validaToolParams(
     const testo = testoParametro(sorgente.servizio);
     if (testo) params.servizio = testo;
     else problemi.push("servizio_non_valido");
+  }
+  if (sorgente.serviziTutti !== undefined) {
+    if (typeof sorgente.serviziTutti === "boolean") {
+      params.serviziTutti = sorgente.serviziTutti;
+    } else {
+      problemi.push("serviziTutti_non_valido");
+    }
   }
 
   for (const campo of ["termini", "esclusioni", "escludiNomi", "colori", "materiali"] as const) {
@@ -1284,6 +1336,22 @@ function tagServiziPino(record: Record<string, unknown> | null | undefined): str
     .map((voce) => voce.trim());
 }
 
+/**
+ * Tutti i servizi dichiarati dall'attività: prima quelli strutturati (con
+ * prezzo/durata, quando presenti), poi i tag legacy non già inclusi. Nessun
+ * valore viene inventato: i tag restano senza prezzo/durata.
+ */
+export function serviziDichiaratiPino(
+  record: Record<string, unknown> | null | undefined
+): ServizioAttivoPino[] {
+  const strutturati = serviziAttiviPino(record);
+  const visti = new Set(strutturati.map((voce) => normalizza(voce.nome)));
+  const daTag = tagServiziPino(record)
+    .filter((nome) => !visti.has(normalizza(nome)))
+    .map((nome): ServizioAttivoPino => ({ nome, prezzo: null, durataMin: null }));
+  return [...strutturati, ...daTag];
+}
+
 /** Corpus dei token di un insieme di testi di servizio. */
 function corpusTestiServizioPino(testi: string[]): Set<string> {
   const token = new Set<string>();
@@ -1441,6 +1509,29 @@ export function pulisciCorniceRicercaPino(query: string): string {
     .trim() || originale;
 }
 
+/**
+ * Per una richiesta di servizi di un'attività nominata, tiene solo le vetrine
+ * il cui nome contiene un token distintivo del soggetto («zini» per «Panificio
+ * Zini»). La categoria («panificio») non basta: altrimenti verrebbero elencati
+ * tutti i panifici della città.
+ */
+function filtraNegoziPerNomeRichiestoPino<T extends { nome?: unknown }>(
+  negozi: T[],
+  query: string
+): T[] {
+  const distintivi = normalizza(query)
+    .split(/\s+/)
+    .filter((token) => token.length >= 3)
+    .filter(
+      (token) => !ATTIVITA_CATALOGO_PINO.some((voce) => voce.pattern.test(token))
+    );
+  if (distintivi.length === 0) return negozi;
+  return negozi.filter((negozio) => {
+    const nome = normalizza(String(negozio?.nome ?? ""));
+    return distintivi.some((token) => nome.includes(token));
+  });
+}
+
 export async function searchStores(
   query: string,
   opts: ToolParams = {}
@@ -1451,9 +1542,13 @@ export async function searchStores(
   // query di recall (un servizio senza soggetto resta una ricerca di attività).
   const servizioRichiesto = opts?.servizio?.trim() ?? "";
   const richiestoServizio = servizioRichiesto.length > 0;
+  const serviziTutti = opts?.serviziTutti === true;
   if (!q && !(opts?.termini?.length) && !opts?.categoria && !opts?.tipo && !richiestoServizio) {
     return [];
   }
+  // «Tutti i servizi» richiede comunque un soggetto: senza attività non c'è
+  // nulla da elencare e non si deve restituire l'intero catalogo.
+  if (serviziTutti && !q) return [];
 
   // "bar" è un nome di attività di tre lettere: senza passarlo esplicitamente
   // al recall, la ricerca semantica lo scartava come token troppo corto e
@@ -1491,7 +1586,9 @@ export async function searchStores(
   // (servizi_strutturati + tag `servizi`), prima del mapping che li perde.
   // Un servizio inesistente o inattivo non deve ripiegare sulla ricerca
   // generica di attività: la risposta resta vuota e Pino lo dice.
-  const candidati = filtraNegoziPerServizioPino(attivi, servizioRichiesto);
+  const candidati = serviziTutti
+    ? attivi
+    : filtraNegoziPerServizioPino(attivi, servizioRichiesto);
 
   // Filtro esplicito categoria/tipo/servizio: la classificazione è già
   // garantita dal chiamante, quindi non applichiamo il gate sui termini.
@@ -1541,7 +1638,11 @@ export async function searchStores(
     pertinenti = pertinenti.filter((n) => apertoOra(orari.get(String(n.id))) === true);
   }
 
-  const limitati = deduplicaPerId(pertinenti)
+  const pertinentiNominati = serviziTutti
+    ? filtraNegoziPerNomeRichiestoPino(pertinenti, q)
+    : pertinenti;
+
+  const limitati = deduplicaPerId(pertinentiNominati)
     .slice(0, limita(opts?.limit, 6, 20))
     .map((n: Record<string, unknown>) => {
       const base = {
@@ -1554,7 +1655,10 @@ export async function searchStores(
         telefono: (n.telefono as string | null | undefined) ?? null,
         logo_url: (n.logo_url as string | null | undefined) ?? null,
       };
-      if (!richiestoServizio) return base;
+      if (!richiestoServizio && !serviziTutti) return base;
+      if (serviziTutti) {
+        return { ...base, serviziTrovati: serviziDichiaratiPino(n) };
+      }
       // Prezzo e durata arrivano solo se presenti nel servizio strutturato:
       // nessun valore inventato, nessun campo aggiunto alle ricerche ordinarie.
       return {
@@ -1652,7 +1756,7 @@ export function prodottoPertinente(
   // "Pecorino"): il termine generico non compare nel prodotto, ma il prodotto
   // appartiene alla categoria. Il controllo usa solo i metadati identitari.
   const identificaCategoria =
-    !identificaDirettamente && prodottoIdentificaCategoriaGenerica(prodotto, termini[0]);
+    !identificaDirettamente && appartieneCategoriaGenericaProdotto(prodotto, termini[0]);
   if (!identificaDirettamente && !identificaCategoria) return false;
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
@@ -1683,10 +1787,11 @@ export function prodottoPertinente(
 // termini ≥ 4 caratteri, quindi non indebolisce la regola dei termini corti.
 function tokenCompatibile(termine: string, token: string[]): boolean {
   if (termine.length < 4) return false;
-  const radiceTermine = termine.replace(/[aeiou]+$/i, "");
+  // «gh» davanti a vocale è il plurale duro di «g» («funghi» → «fungo»).
+  const radiceTermine = termine.replace(/gh/i, "g").replace(/[aeiou]+$/i, "");
   if (radiceTermine.length < 4) return false;
   return token.some(
-    (t) => t.length >= 4 && t.replace(/[aeiou]+$/i, "") === radiceTermine
+    (t) => t.length >= 4 && t.replace(/gh/i, "g").replace(/[aeiou]+$/i, "") === radiceTermine
   );
 }
 
@@ -1884,8 +1989,8 @@ export function notaDisponibilitaProdottiPino(
   const inglese = lingua === "en";
   if (esito.disponibili.length === 0) {
     return inglese
-      ? `I found ${n} relevant ${n === 1 ? "product" : "products"} in the InCittà catalogue, but none has positive net stock right now. I won't present them as purchasable.`
-      : `Ho trovato ${n} ${n === 1 ? "prodotto pertinente" : "prodotti pertinenti"} nel catalogo InCittà, ma nessuno ha disponibilità netta positiva in questo momento. Non te li propongo come acquistabili.`;
+      ? `I found ${n} relevant ${n === 1 ? "product" : "products"} in the Radici Calabria catalogue, but none has positive net stock right now. I won't present them as purchasable.`
+      : `Ho trovato ${n} ${n === 1 ? "prodotto pertinente" : "prodotti pertinenti"} nel catalogo Radici Calabria, ma nessuno ha disponibilità netta positiva in questo momento. Non te li propongo come acquistabili.`;
   }
   if (inglese) {
     return n === 1
@@ -2047,6 +2152,21 @@ export function soggettoPrincipalePino(query: string): string {
     .filter((t) => t.length >= 3 && !STOPWORD_SOGGETTO_PINO.has(t));
   if (contenuto.length === 0) return "";
   return contenuto.find((t) => !ATTRIBUTI_DESCRITTIVI_PINO.has(t)) ?? contenuto[0];
+}
+
+/**
+ * Un bisogno di bere non è il nome di un prodotto: "sete" e "bevande" non
+ * compaiono nel catalogo. Per queste richieste la ricerca prodotti deve
+ * aggiungere i termini con cui il catalogo pubblica davvero le bevande
+ * (acqua, birra, vino, alcolici…), senza restringere la query originale.
+ */
+const SOGGETTI_BEVANDE_GENERICHE_PINO = new Set([
+  "bevanda", "bevande", "bibita", "bibite", "drink", "sete",
+]);
+
+function richiestaBevandeGenericaPino(query: string): boolean {
+  const soggetto = soggettoPrincipalePino(normalizza(query));
+  return SOGGETTI_BEVANDE_GENERICHE_PINO.has(soggetto);
 }
 
 function contieneSequenzaToken(token: string[], frase: string[]): boolean {
@@ -3004,13 +3124,90 @@ function querySenzaQualificaPino(query: string): string {
   return token.join(" ").trim() || String(query ?? "").trim();
 }
 
+/** Prodotto arricchito con le varianti attive, quando il catalogo le ha. */
+export type ProdottoConVariantiPino = ProdottoRicerca & {
+  varianti?: VariantePubblica[];
+};
+
+/**
+ * Arricchisce i prodotti restituiti con le varianti attive pubblicate. La
+ * lettura avviene solo per i prodotti con `ha_varianti = true`, sugli stessi
+ * ID già selezionati: nessuna query sull'intero catalogo e nessun dato
+ * inventato. Un errore sulle varianti lascia il prodotto senza elenco.
+ */
+async function arricchisciProdottiConVariantiPino(
+  prodotti: ProdottoRicerca[]
+): Promise<ProdottoConVariantiPino[]> {
+  await Promise.all(
+    prodotti.map(async (prodotto) => {
+      if (prodotto.ha_varianti !== true) return;
+      const varianti = await getVariantiPubblicheProdotto(prodotto.id);
+      if (varianti.length > 0) {
+        (prodotto as ProdottoConVariantiPino).varianti = varianti;
+      }
+    })
+  );
+  return prodotti as ProdottoConVariantiPino[];
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
-): Promise<ProdottoRicerca[]> {
+): Promise<ProdottoConVariantiPino[]> {
   opts = validaToolParams("searchProducts", opts).params;
   const q = pulisciCorniceRicercaPino(query);
   if (!q) return [];
+
+  // La vetrina /prodotti-tipici non è un prodotto che si chiama «tipico»: è
+  // l'insieme dei prodotti con flag `prodotto_tipico`. La ricerca generica non
+  // conosce quel flag, quindi per queste richieste si legge la stessa fonte
+  // della pagina e si applicano gli stessi vincoli utente.
+  if (richiestaProdottiTipiciPino(q)) {
+    const qTipici = querySenzaCorniceTipiciPino(q);
+    let tipici = (await getProdottiTipici(80))
+      .map((p) => mappaProdottoRiga(p, String(p.negozio_nome ?? "")))
+      .filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
+
+    if (qTipici) {
+      tipici = tipici.filter((p) =>
+        testoContieneParolePino(
+          `${p.nome} ${p.descrizione ?? ""} ${p.categoria ?? ""}`,
+          qTipici
+        )
+      );
+    }
+    if (opts?.categoria?.trim()) {
+      const categoria = normalizza(opts.categoria);
+      tipici = tipici.filter((p) => normalizza(p.categoria ?? "").includes(categoria));
+    }
+    if (opts?.escludiNomi?.length) {
+      const esclusi = new Set(
+        opts.escludiNomi.map((n) => String(n ?? "").trim().toLowerCase()).filter(Boolean)
+      );
+      tipici = tipici.filter(
+        (p) => !esclusi.has(String(p.nome ?? "").trim().toLowerCase())
+      );
+    }
+    const budgetTipici =
+      opts.prezzoRigido === true && (opts.minPrice != null || opts.maxPrice != null)
+        ? { minPrice: opts.minPrice, maxPrice: opts.maxPrice }
+        : null;
+    if (budgetTipici) {
+      tipici = tipici.filter((p) => prodottoRispettaBudgetPino(p, budgetTipici));
+    }
+    if (opts.maxPrice != null || opts.minPrice != null) {
+      tipici = ordinaProdottiPerBudget(tipici, {
+        maxPrice: opts.maxPrice ?? null,
+        minPrice: opts.minPrice ?? null,
+      });
+    }
+
+    const unici = deduplicaPerId(tipici);
+    assegnaClassiProdotti(unici, qTipici || q);
+    return arricchisciProdottiConVariantiPino(
+      unici.slice(0, limita(opts.limit, 8, 20))
+    );
+  }
 
   // Budget vincolante solo quando il chiamante lo dichiara (limiti espliciti).
   const budgetRigido = opts.prezzoRigido === true && (opts.minPrice != null || opts.maxPrice != null);
@@ -3048,6 +3245,14 @@ export async function searchProducts(
   // I limiti arrivano alla query Supabase (gte/lte sul prezzo) solo in modalità
   // vincolante; senza budget il percorso resta identico a prima.
   const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
+  // Per un bisogno generico di bere il catalogo può classificare i prodotti
+  // con categorie concrete ("alcolici", "birra", "vino", "acqua") che non
+  // contengono la parola "bevande". La seconda ricerca è additiva: la query
+  // originale resta rappresentata e il gate di pertinenza decide poi quali
+  // prodotti sono davvero bevande.
+  const perBevande = richiestaBevandeGenericaPino(q)
+    ? await searchCatalogoPubblico(TERMINI_BEVANDE_PINO.join(" "), opzioniRicerca)
+    : null;
   // Il gate di pertinenza deve usare la stessa query del recupero: se il
   // ripiego toglie un attributo, non può continuare a pretenderlo.
   let qGate = q;
@@ -3064,6 +3269,7 @@ export async function searchProducts(
 
   let filtrate = [
     ...(canonici.prodotti ?? []),
+    ...(perBevande?.prodotti ?? []),
     ...(perFormatoPasta?.prodotti ?? []),
   ].filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 
@@ -3182,7 +3388,9 @@ export async function searchProducts(
   const deduplicate = deduplicaPerId(filtrate);
   // Classe calcolata internamente (non ancora mostrata all'utente).
   assegnaClassiProdotti(deduplicate, qGate);
-  return deduplicate.slice(0, limita(opts.limit, 8, 20));
+  return arricchisciProdottiConVariantiPino(
+    deduplicate.slice(0, limita(opts.limit, 8, 20))
+  );
 }
 
 // ─── searchOffers ────────────────────────────────────────────────────────────
@@ -3216,33 +3424,161 @@ export function normalizzaQueryOfferteEventiPino(query: unknown): string {
   return (testoParametro(query) ?? "").toLowerCase();
 }
 
+/**
+ * Toglie la cornice editoriale dalla query: «ultime notizie sul Pollino» deve
+ * cercare «pollino», non la frase intera che non compare in nessun titolo.
+ * Non tocca i sostantivi utili (luoghi, persone, temi).
+ */
+function queryEditorialePino(query: unknown): string {
+  return normalizza(String(query ?? ""))
+    .replace(
+      /\b(?:notizie?|news|ultime?|ultim[oi]|rassegna|stampa|giornale|aggiornament[oi]|articol[oi]|contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b/g,
+      " "
+    )
+    .replace(
+      /\b(?:su|sul|sulla|sui|sugli|sulle|di|del|dello|della|dei|degli|delle|riguardo|about|a|al|alla|in|nel|nella)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Ogni parola della query deve comparire nel testo del risultato. */
+function testoContieneParolePino(testo: string, query: string): boolean {
+  const parole = query.split(" ").filter(Boolean);
+  if (parole.length === 0) return true;
+  const normale = normalizza(testo);
+  return parole.every((parola) => normale.includes(parola));
+}
+
+/** Le parole della vetrina non sono un filtro sul nome del singolo prodotto. */
+function querySenzaCorniceTipiciPino(query: string): string {
+  return normalizza(query)
+    .replace(
+      /\b(?:prodott[oi]\s+tipic[oi]|prodott[oi]\s+della\s+tradizione|tipic[oi]|eccellenze(?:\s+calabresi)?|calabresi)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function richiestaProdottiTipiciPino(query: string): boolean {
+  return /\b(?:prodott[oi]\s+tipic[oi]|tipic[oi]|eccellenze(?:\s+calabresi)?)\b/.test(
+    normalizza(query)
+  );
+}
+
+// ─── searchNews / searchContent ─────────────────────────────────────────────
+
+export async function searchNews(
+  query?: string,
+  limit = 6
+): Promise<NotiziaAssistente[]> {
+  const q = queryEditorialePino(query);
+  const notizie = await getNotiziePubbliche(120);
+  const filtrate = q
+    ? notizie.filter((n) =>
+        testoContieneParolePino(
+          `${n.title} ${n.excerpt ?? ""} ${n.sourceName} ${n.category}`,
+          q
+        )
+      )
+    : notizie;
+
+  return filtrate.slice(0, limita(limit, 6, 8)).map((n: NotiziaPubblica) => ({
+    id: String(n.id),
+    titolo: n.title,
+    estratto: tronca(n.excerpt, 220),
+    fonte: n.sourceName,
+    data: n.publishedAt,
+    categoria: n.category,
+    url: n.originalUrl,
+  }));
+}
+
+export async function searchContent(
+  query?: string,
+  limit = 6
+): Promise<ContenutoAssistente[]> {
+  const q = queryEditorialePino(query);
+  const contenuti = await cercaContenutiPubblici(q, limita(limit, 6, 8));
+
+  return contenuti.map((c) => ({
+    id: String(c.id),
+    titolo: c.titolo,
+    slug: c.slug,
+    estratto: tronca(
+      c.riassunto?.trim() || c.corpo.replace(/\s+/g, " ").trim(),
+      220
+    ),
+    autore: c.autore,
+    data: c.pubblicato_il ?? c.created_at,
+    url: `/contenuti/${c.slug}`,
+  }));
+}
+
 export async function searchOffers(
   query?: string,
   limit = 8,
   segnalazione: SegnalazioneErroriDati = segnalazioneDatiPino
 ): Promise<OffertaAssistente[]> {
   const q = normalizzaQueryOfferteEventiPino(query);
-  const offerte = await getOffertePubbliche(segnalazione);
 
-  const filtrate = q
-    ? offerte.filter(
-        (o) =>
-          (o.titolo ?? "").toLowerCase().includes(q) ||
-          (o.descrizione ?? "").toLowerCase().includes(q)
+  // La pagina /offerte è alimentata da prodotti con `prodotto_offerta = true`,
+  // mentre la tabella `offerte` contiene promozioni editoriali. Pino deve
+  // leggere ENTRAMBE: prima le vetrine prodotto (la fonte della pagina), poi le
+  // promozioni della tabella. Usare una sola delle due è il motivo per cui
+  // poteva dire «nessuna offerta» mentre /offerte ne mostrava.
+  const [offerteTabella, prodottiOfferta] = await Promise.all([
+    getOffertePubbliche(segnalazione),
+    getProdottiOfferta(80),
+  ]);
+  const nomiTabella = await nomiNegozi(offerteTabella.map((o) => o.negozio_id));
+
+  const tabellaFiltrate = q
+    ? offerteTabella.filter((o) => {
+        const negozio = nomiTabella.get(String(o.negozio_id)) ?? "";
+        return testoContieneParolePino(
+          `${o.titolo ?? ""} ${o.descrizione ?? ""} ${negozio}`,
+          q
+        );
+      })
+    : offerteTabella;
+  const prodottiFiltrati = q
+    ? prodottiOfferta.filter((p) =>
+        testoContieneParolePino(
+          `${String(p.nome ?? "")} ${String(p.descrizione ?? "")} ${String(p.categoria ?? "")} ${String(p.negozio_nome ?? "")}`,
+          q
+        )
       )
-    : offerte;
+    : prodottiOfferta;
 
-  const nomi = await nomiNegozi(filtrate.map((o) => o.negozio_id));
-
-  return filtrate.slice(0, limita(limit, 8, 8)).map((o) => ({
+  const daProdotti: OffertaAssistente[] = prodottiFiltrati.map((p) => {
+    const prezzo = Number(p.prezzo);
+    return {
+      id: String(p.id),
+      titolo: String(p.nome ?? ""),
+      descrizione: tronca(
+        typeof p.descrizione === "string" ? p.descrizione : null,
+        180
+      ),
+      prezzo_originale: null,
+      prezzo_offerta: Number.isFinite(prezzo) ? prezzo : null,
+      negozio_nome: String(p.negozio_nome ?? ""),
+      data_fine: null,
+    };
+  });
+  const daTabella: OffertaAssistente[] = tabellaFiltrate.map((o) => ({
     id: String(o.id),
     titolo: o.titolo,
     descrizione: tronca(o.descrizione, 180),
     prezzo_originale: o.prezzo_originale,
     prezzo_offerta: o.prezzo_offerta,
-    negozio_nome: nomi.get(String(o.negozio_id)) ?? "",
+    negozio_nome: nomiTabella.get(String(o.negozio_id)) ?? "",
     data_fine: o.data_fine,
   }));
+
+  return [...daProdotti, ...daTabella].slice(0, limita(limit, 8, 8));
 }
 
 // ─── searchEvents ────────────────────────────────────────────────────────────
@@ -3262,16 +3598,16 @@ export async function searchEvents(
     ? eventi.filter((evento) => eventoNelPeriodoPino(evento, periodo))
     : eventi;
 
+  const nomi = await nomiNegozi(nelPeriodo.map((e) => e.negozio_id));
   const filtrati = q
-    ? nelPeriodo.filter(
-        (e) =>
-          (e.titolo ?? "").toLowerCase().includes(q) ||
-          (e.descrizione ?? "").toLowerCase().includes(q) ||
-          (e.luogo ?? "").toLowerCase().includes(q)
-      )
+    ? nelPeriodo.filter((e) => {
+        const negozio = nomi.get(String(e.negozio_id)) ?? "";
+        return testoContieneParolePino(
+          `${e.titolo ?? ""} ${e.descrizione ?? ""} ${e.luogo ?? ""} ${negozio}`,
+          q
+        );
+      })
     : nelPeriodo;
-
-  const nomi = await nomiNegozi(filtrati.map((e) => e.negozio_id));
 
   return filtrati.slice(0, limita(limit, 8, 8)).map((e) => ({
     id: String(e.id),
@@ -3279,6 +3615,7 @@ export async function searchEvents(
     descrizione: tronca(e.descrizione, 180),
     luogo: e.luogo,
     data_inizio: e.data_inizio,
+    data_fine: e.data_fine,
     negozio_nome: nomi.get(String(e.negozio_id)) ?? "",
   }));
 }
@@ -3353,10 +3690,20 @@ export async function searchAll(
   opts = validaToolParams("searchAll", opts).params;
   const q = pulisciCorniceRicercaPino(query);
   if (!q) {
-    return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
+    return {
+      negozi: [],
+      prodotti: [],
+      offerte: [],
+      eventi: [],
+      notizie: [],
+      contenuti: [],
+      categorie: [],
+      meteo: null,
+      farmacie: [],
+    };
   }
 
-  const [negozi, prodotti, offerte, eventi, categorie] = await Promise.all([
+  const [negozi, prodotti, offerte, eventi, notizie, contenuti, categorie] = await Promise.all([
     // I vincoli compatibili (città, esclusioni, orari) valgono anche per i
     // negozi: il percorso di fallback non deve aggirare i filtri del piano.
     searchStores(q, { ...opts, limit: 6 }),
@@ -3365,8 +3712,20 @@ export async function searchAll(
     // vuota), per non trasformare un guasto dati in un errore di route.
     searchOffers(q, 5, {}),
     searchEvents(q, 5, {}),
+    searchNews(q, 4),
+    searchContent(q, 4),
     elencoCategorie(),
   ]);
 
-  return { negozi, prodotti, offerte, eventi, categorie, meteo: null, farmacie: [] };
+  return {
+    negozi,
+    prodotti,
+    offerte,
+    eventi,
+    notizie,
+    contenuti,
+    categorie,
+    meteo: null,
+    farmacie: [],
+  };
 }

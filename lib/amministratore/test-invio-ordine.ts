@@ -135,7 +135,7 @@ async function inviaEmailResendTest(
 ): Promise<{ id?: string | null; errore?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { errore: "RESEND_API_KEY non configurata" };
-  const from = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
   try {
     const resend = new Resend(apiKey);
     const { data, error } = await conTimeout(

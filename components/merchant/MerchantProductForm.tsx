@@ -533,7 +533,7 @@ export default function MerchantProductForm({
         <Toggle
           icon={<Tag className="h-4 w-4 text-red-600" aria-hidden />}
           label="Prodotto in offerta"
-          description="Mostra questo prodotto nella pagina &quot;Offerte&quot; di InCittà con il badge rosso OFFERTA. Il prodotto resta nel normale catalogo del negozio."
+          description="Mostra questo prodotto nella pagina &quot;Offerte&quot; di Radici Calabria con il badge rosso OFFERTA. Il prodotto resta nel normale catalogo del negozio."
           checked={prodottoOfferta}
           onChange={(v) => {
             setProdottoOfferta(v);
@@ -571,7 +571,7 @@ export default function MerchantProductForm({
           <div>
             <p className="text-sm font-bold text-slate-900">Peso del prodotto per la spedizione</p>
             <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
-              Inserisci il peso reale del prodotto in grammi. InCittà usa questo dato per determinare automaticamente la fascia tariffaria compatibile per Poste Italiane e BRT.
+              Inserisci il peso reale del prodotto in grammi. Radici Calabria usa questo dato per determinare automaticamente la fascia tariffaria compatibile per Poste Italiane e BRT.
             </p>
           </div>
         </div>

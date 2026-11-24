@@ -47,14 +47,14 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const nome = (negozio.nome as string) ?? "Negozio";
   const descrizione =
     ((negozio.descrizione as string) ?? (negozio.descrizione_completa as string) ?? "")
-      .slice(0, 155) || `Scopri ${nome} su InCittà.`;
+      .slice(0, 155) || `Scopri ${nome} su Radici Calabria.`;
   const slugCanonico = ((negozio.slug as string) ?? "").trim();
   const slugOrId = slugCanonico || (negozio.id as string);
   const canonical = `${getSiteUrl()}/negozio/${slugOrId}`;
 
   return {
-    // title senza suffisso "| InCittà": lo aggiunge il template del layout
-    // (title: { template: "%s | InCittà" }), evitando il duplicato.
+    // title senza suffisso "| Radici Calabria": lo aggiunge il template del layout
+    // (title: { template: "%s | Radici Calabria" }), evitando il duplicato.
     title: nome,
     description: descrizione,
     alternates: { canonical },
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       description: descrizione,
       url: canonical,
       type: "website",
-      siteName: "InCittà",
+      siteName: "Radici Calabria",
     },
   };
 }
@@ -192,7 +192,7 @@ export default async function PaginaNegozio({
   const buildWhatsAppUrl = () => {
     const number = normalizzaNumeroWhatsApp(whatsappNegozio);
     const msg = encodeURIComponent(
-      `Ciao! Ho trovato "${negozio.nome as string}" su InCittà e vorrei informazioni.`
+      `Ciao! Ho trovato "${negozio.nome as string}" su Radici Calabria e vorrei informazioni.`
     );
     return `https://wa.me/${number}?text=${msg}`;
   };

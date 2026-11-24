@@ -8,14 +8,16 @@
  * Ogni caso dichiara SOLO ciò che è verificabile dal catalogo reale:
  * - `mustNot`: testi che non devono mai comparire (vicoli ciechi, accuse false);
  * - `mustMatch`: testo atteso;
+ * - `mustProdotti`: nomi di prodotto che devono comparire (regex);
  * - `minNegozi` / `minProdotti`: quantità minima restituita.
  */
 export const pinoGoldenCases = [
   // Bisogni
   { id: "fame", text: "ho fame", minNegozi: 1, mustNot: [/Non risultano attività con questi criteri/, /Non trovo risultati per questa richiesta/] },
   { id: "fame-en", text: "I'm hungry", minNegozi: 1, mustNot: [/No businesses matching these criteria/] },
-  { id: "sete", text: "ho sete", mustNot: [/Non trovo risultati per questa richiesta/] },
-  { id: "birra", text: "una birra", mustNot: [/Non trovo risultati per questa richiesta/] },
+  { id: "sete", text: "ho sete", minProdotti: 1, mustProdotti: [/\b(?:birra|vino|acqua|bibite?|bevande?)\b/i], mustNot: [/Non trovo risultati per questa richiesta/] },
+  { id: "birra", text: "una birra", minProdotti: 1, mustProdotti: [/\bbirra\b/i], mustNot: [/Non trovo risultati per questa richiesta/] },
+  { id: "bevande", text: "bevande", minProdotti: 1, mustProdotti: [/\b(?:birra|vino|acqua|bibite?|bevande?)\b/i], mustNot: [/Non trovo risultati per questa richiesta/] },
   // Attività e sinonimi
   { id: "panificio", text: "panificio", minNegozi: 1, mustNot: [/Non ho trovato esattamente/] },
   { id: "panetteria", text: "panetteria", minNegozi: 1, mustNot: [/Non risultano attività con questi criteri/] },
@@ -23,7 +25,9 @@ export const pinoGoldenCases = [
   { id: "gastronomia", text: "gastronomia", mustNot: [/Non trovo risultati per questa richiesta/] },
   { id: "bar", text: "bar", mustNot: [/Non trovo risultati per questa richiesta/] },
   { id: "pizzeria", text: "pizzeria", mustNot: [/Prova con un'altra categoria e zona/] },
-  // Prodotti
+  // Prodotti e vetrine
+  { id: "prodotti-tipici", text: "prodotti tipici", minProdotti: 1, mustNot: [/Non trovo risultati per questa richiesta/] },
+  { id: "offerte-vetrina", text: "offerte", mustNot: [/Non trovo risultati per questa richiesta/, /Non risultano offerte attive/] },
   { id: "pane", text: "pane", minProdotti: 1 },
   { id: "panino", text: "un panino", minProdotti: 1 },
   { id: "olio", text: "olio", minProdotti: 1 },
@@ -36,6 +40,9 @@ export const pinoGoldenCases = [
   // Conversazione
   { id: "saluto", text: "ciao", mustMatch: [/Ciao|posso aiutarti|Dimmi/i] },
   { id: "identita", text: "chi sei?", mustMatch: [/Pino/i] },
+  // Notizie e contenuti editoriali
+  { id: "notizie", text: "ultime notizie", minNotizie: 1, mustNot: [/Non trovo risultati per questa richiesta/, /Non risultano notizie/] },
+  { id: "contenuti", text: "articoli sul Pollino", mustMatch: [/contenuti editoriali|Non risultano contenuti|Non trovo risultati/i] },
   // Refusi
   { id: "refuso-panificio", text: "paneficio", minNegozi: 1 },
   // Correzione (il golden set la esegue come turno singolo: deve comunque

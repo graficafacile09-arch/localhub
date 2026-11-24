@@ -91,11 +91,11 @@ export async function generateMetadata({
   const canonical = `${getSiteUrl()}/ricerca${qs ? `?${qs}` : ""}`;
 
   return {
-    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    // title senza suffisso "| Radici Calabria": lo aggiunge il template del layout.
     title: termine ? `Ricerca: ${termine}` : "Ricerca",
     description: termine
-      ? `Risultati per “${termine}” nei negozi e nei prodotti di InCittà.`
-      : "Cerca negozi, prodotti e servizi della tua città su InCittà.",
+      ? `Risultati per “${termine}” nei negozi e nei prodotti di Radici Calabria.`
+      : "Cerca prodotti, produzioni, negozi e attività del territorio su Radici Calabria.",
     alternates: { canonical },
     robots: { index: indicizzabile, follow: true },
   };

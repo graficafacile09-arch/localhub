@@ -141,6 +141,30 @@ test("la chat dichiara il proprio canale alla route", () => {
   assert.ok(client.includes('"x-pino-origine": "ui"'));
 });
 
+// ── 7. Le fonti delle pagine pubbliche sono davvero collegate a Pino ───────
+
+test("offerte e prodotti tipici usano le stesse fonti delle pagine", () => {
+  const tools = sorgente("lib/assistente/tools.ts");
+  assert.ok(tools.includes("getProdottiOfferta(80)"));
+  assert.ok(tools.includes("getProdottiTipici(80)"));
+  assert.ok(tools.includes("searchNews(q, 4)"));
+  assert.ok(tools.includes("searchContent(q, 4)"));
+  assert.ok(tools.includes("data_fine: e.data_fine"));
+});
+
+test("notizie e contenuti sono esposti come tool e instradati", () => {
+  const functionCalling = sorgente("lib/assistente/function-calling.ts");
+  assert.ok(functionCalling.includes('name: "searchNews"'));
+  assert.ok(functionCalling.includes('name: "searchContent"'));
+
+  const index = sorgente("lib/assistente/index.ts");
+  assert.ok(index.includes('case "searchNews"'));
+  assert.ok(index.includes('case "searchContent"'));
+  assert.ok(index.includes("RE_NOTIZIE"));
+  assert.ok(index.includes("notizie: notizie.slice(0, 6)"));
+  assert.ok(index.includes("contenuti: contenuti.slice(0, 6)"));
+});
+
 test("il test di audit è collegato a test:pino", () => {
   const pkg = JSON.parse(sorgente("package.json"));
   assert.ok(pkg.scripts["test:pino"].includes("tests/pino-audit-difetti.test.mjs"));
