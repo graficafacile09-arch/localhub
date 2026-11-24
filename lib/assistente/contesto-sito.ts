@@ -39,7 +39,7 @@ function tokenQuery(query: string): string[] {
 }
 
 const MESI = NOMI_MESI.map(normalizza);
-const MESE_PER_TOKEN = new Map(MESI.map((mese, indice) => [mese, indice + 1]));
+const MESE_PER_TOKEN = new Map<string, number>(MESI.map((mese, indice) => [mese, indice + 1] as const));
 
 function meseRichiesto(query: string): number | null {
   const tokens = normalizza(query).split(/\s+/);
@@ -101,7 +101,7 @@ export function costruisciContestoSitoPino(query: string): string | null {
     /\b(stagionalita|stagione|stagionale|raccolta|raccogliere|raccoglie|raccolgono|maturano|coltivazione|coltivare|vendemmia|molitura|stagionatura|produzione|calendario|mesi|mese)\b/.test(testo) ||
     meseRichiesto(query) !== null ||
     VOCI.some((voce) =>
-      punteggio(voce.nome, [voce.sintesi, voce.zone ?? "", voce.nota ?? ""].join(" "), tokens) > 0
+      punteggio(voce.nome, voce.sintesi, tokens) > 0
     );
 
   const sezioni: string[] = [];
