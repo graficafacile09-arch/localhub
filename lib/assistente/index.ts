@@ -3487,7 +3487,7 @@ async function risolviCorrezioneTurnoPino(
     !rispostaSalutoPino(ultimaUtente.content)
   ) {
     const apprese = await misuraFaseChat("correzioniAppresePino", () =>
-      conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 1_000, [])
+      conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 300, [])
     );
     const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
     if (corretta !== ultimaUtente.content) {
@@ -4097,7 +4097,7 @@ export async function chatConAssistente(
   const memoriaPromise =
     pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
       ? Promise.resolve([])
-      : conTimeoutPino(recuperaMemoria(domandaSemantica), 1_000, []);
+      : conTimeoutPino(recuperaMemoria(domandaSemantica), 300, []);
   const memoria = await misuraFaseChat("memoriaPromise", () => memoriaPromise);
   // Un'attività già riconosciuta dal lessico è una decisione deterministica:
   // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
