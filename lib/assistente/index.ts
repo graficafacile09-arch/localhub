@@ -4473,7 +4473,7 @@ export async function chatConAssistente(
   if (invocazioni.length > 0) {
     esitiInvocazioni = await misuraFaseChat("eseguiInvocazioniPino", () => eseguiInvocazioniPino(invocazioni, (invocazione) =>
       eseguiTool(invocazione.tool as string, invocazione.params ?? {}, queryDefault)
-    ));
+    , { scadenzaMs: Math.max(1_000, tempoRestanteAIPino(budgetAI)) }));
     const merge = mergeEsitiInvocazioniPino(esitiInvocazioni, { regaloGenerico });
     negozi = merge.negozi;
     prodotti = merge.prodotti;
