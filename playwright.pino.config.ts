@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Le suite Pino sono OFFLINE: il planner usa il percorso locale deterministico.
 // I worker ricevono anche l'hook Supabase finto usato dalla suite Node, così
@@ -8,7 +9,7 @@ delete process.env.GROQ_API_KEY;
 delete process.env.GEMINI_API_KEY;
 process.env.NODE_OPTIONS = [
   process.env.NODE_OPTIONS,
-  `--import=${resolve("tests/support/hook-pino.mjs")}`,
+  `--import=${pathToFileURL(resolve("tests/support/hook-pino.mjs")).href}`,
 ].filter(Boolean).join(" ");
 
 /**
@@ -30,7 +31,7 @@ process.env.NODE_OPTIONS = [
  */
 export default defineConfig({
   testDir: "./tests",
-  testMatch: /pino-.*\.spec\.ts$/,
+  testMatch: /(^|[\\/])pino-[^\\/]*\.spec\.ts$/,
   testIgnore: /pino-widget\.spec\.ts$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

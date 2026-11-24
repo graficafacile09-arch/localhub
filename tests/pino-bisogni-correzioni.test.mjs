@@ -109,14 +109,18 @@ test("«ho sete» usa il fallback locale senza sporcare i log con il blocco rete
     assert.deepEqual(r.negozi, []);
 
     // In questo test fetch è volutamente bloccato: il planner AI deve
-    // ripiegare sul piano locale. Verifichiamo l'avviso atteso senza
-    // stamparlo come falso allarme nel log della build.
+    // ripiegare sul piano locale senza chiamate live. Il motivo del fallback
+    // può essere il blocco rete intenzionale oppure, se GROQ_API_KEY non è
+    // configurata, il controllo della chiave che precede ogni chiamata.
+    // In entrambi i casi nessuna richiesta esce dal processo di test.
     assert.ok(
-      avvisi.some(([messaggio, errore]) =>
-        String(messaggio).startsWith("[pino-semantic] planner non disponibile") &&
-        String(errore?.message ?? errore).startsWith("rete disattivata nei test Pino:")
-      ),
-      "il test deve confermare il fallback causato esclusivamente dal blocco rete intenzionale"
+      avvisi.some(([messaggio, errore]) => {
+        const motivo = String(errore?.message ?? errore);
+        return String(messaggio).startsWith("[pino-semantic] planner non disponibile") &&
+          (motivo.startsWith("rete disattivata nei test Pino:") ||
+            motivo.startsWith("Chiave API Groq mancante"));
+      }),
+      "il test deve confermare il fallback causato dal blocco rete o dalla chiave mancante"
     );
   } finally {
     console.warn = warnOriginale;
