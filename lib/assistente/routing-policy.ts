@@ -215,6 +215,50 @@ export function strumentoTerritorioFilierePino(
   return null;
 }
 
+/**
+ * Domanda informativa/discorsiva su un contenuto del sito: «Cos'è la Sila?»,
+ * «Parlami di filiera», «Spiegami i prodotti DOP», «Come funziona il sito?».
+ *
+ * Queste richieste NON vogliono schede di attività commerciali: il testo
+ * arriva dai contenuti editoriali (territori, filiere, FAQ, pagine).
+ *
+ * L'apostrofo è già rimosso da `normalizza`, quindi «cos'è» diventa «cose» e
+ * «che cos'è» diventa «che cose»: entrambe le forme sono riconosciute.
+ */
+export function richiestaConoscenzaPino(query: string): boolean {
+  const q = normalizza(String(query ?? ""));
+  if (!q) return false;
+
+  // «Dove comprare», «mostrami i negozi», «quali produttori» restano nel
+  // dominio commerciale: lì le schede sono la risposta giusta.
+  if (
+    /\b(?:dove|negozi[oi]|attivita|attivita commerciali|aziende|produttori|vendono|vendita|comprare|acquistare|acquisto|prezzi?|offerte?|sconti?|ristoranti?|pizzerie|farmacie|orari|contatti|telefono|indirizzo|cerco|trovami|mostrami)\b/.test(
+      q
+    )
+  ) {
+    return false;
+  }
+
+  if (/^(?:cose|che cose|cosa e|cosa sono|che cosa e|che cosa sono)\b/.test(q)) return true;
+  if (
+    /^(?:mi )?(?:puoi )?(?:parlami|parla di|spiegami|spiega|descrivimi|descrivi|dimmi|raccontami|approfondisci)\b/.test(
+      q
+    )
+  ) {
+    return true;
+  }
+  if (/^(?:come funziona|a cosa serve|a che cosa serve)\b/.test(q)) return true;
+  if (/^(?:la )?storia (?:di|del|della|dei|degli|delle|de)\b/.test(q)) return true;
+  if (/^(?:vorrei|voglio) (?:sapere|capire)\b/.test(q)) return true;
+  if (
+    /^quali sono\b/.test(q) &&
+    /\b(?:dop|igp|pat|prodotti tipici|filiere|territori|parchi|riconoscimenti)\b/.test(q)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function decidiDominioPino(
   query: string
 ): { dominio: DominioRoutingPino; motivo: string } | null {

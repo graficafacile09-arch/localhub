@@ -7,6 +7,7 @@ import {
 import {
   decidiDominioPino,
   strumentoTerritorioFilierePino,
+  richiestaConoscenzaPino,
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
   richiestaRistorazionePino,
@@ -190,6 +191,10 @@ import {
   creaBudgetAIPino,
   tempoRestanteAIPino,
 } from "./budget-ai";
+import {
+  componiRispostaConoscenzaPino,
+  messaggioConoscenzaNonTrovataPino,
+} from "./conoscenza-discorsiva";
 import type { PinoUnderstanding } from "./understanding";
 import {
   correggiTokenCatalogo,
@@ -364,7 +369,7 @@ export async function selezionaStrumentiNativoPino(
 // non consuma il budget delle 3 invocazioni e non resta un'esecuzione vuota
 // silenziosa. Nessuna firma pubblica cambia.
 
-import { cercaConoscenza, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
+import { cercaConoscenzaSito, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
 
 /** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
 export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
@@ -677,7 +682,7 @@ async function eseguiTool(
     case "searchConoscenza":
       return {
         ...vuoto,
-        conoscenza: await cercaConoscenza(params?.query?.trim() || fallbackQuery, limit),
+        conoscenza: await cercaConoscenzaSito(params?.query?.trim() || fallbackQuery, limit),
       };
     case "searchGiftCategories": {
       // S5.1 — Un'unica invocazione tool per gruppo di categorie regalo. Le
@@ -1799,6 +1804,16 @@ function pianoPredefinito(
     return {
       directReply: null,
       tools: [{ tool: "searchNews", params: { query: ultimo, limit: 6 } }],
+    };
+  }
+  // Domanda informativa («Cos'è la Sila?», «Parlami di filiera»): i testi
+  // editoriali del sito sono la fonte. Va prima dei chip territorio/filiere,
+  // che altrimenti risponderebbero con un elenco invece che con una
+  // spiegazione.
+  if (richiestaConoscenzaPino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchConoscenza", params: { query: ultimo, limit: 6 } }],
     };
   }
   const strumentoTerritorio = strumentoTerritorioFilierePino(ultimo);
@@ -4495,6 +4510,66 @@ export async function chatConAssistente(
     if (merge.meteo) meteo = merge.meteo;
     farmacie = merge.farmacie;
     conoscenza = merge.conoscenza ?? [];
+  }
+
+  // ── Modalità INFORMATIVA: i testi del sito, non le schede ────────────────
+  // «Cos'è la Sila?» e «Parlami di filiera» chiedono una spiegazione, non un
+  // elenco di attività. Anche i chip territorio/filiere restituivano risultati
+  // che il renderer a schede non sapeva mostrare: qui la risposta è prosa
+  // costruita sui contenuti editoriali, con i link alle pagine.
+  if (!directReply) {
+    const strumentiEditoriali = invocazioni.some(
+      (t) => t.tool === "searchTerritorio" || t.tool === "searchFiliere"
+    );
+    const domandaInformativa = richiestaConoscenzaPino(domanda);
+    if (domandaInformativa || strumentiEditoriali) {
+      const linguaDiscorsiva = linguaConversazione === "en" ? "en" : "it";
+      const fonti =
+        conoscenza.length > 0 ? conoscenza : await cercaConoscenzaSito(domanda, 6);
+      if (fonti.length > 0) {
+        const rispostaConoscenza = await componiRispostaConoscenzaPino({
+          domanda,
+          fonti,
+          lingua: linguaDiscorsiva,
+          budgetAI,
+        });
+        return esci(
+          "conoscenza",
+          {
+            risposta: rispostaConoscenza,
+            // Nessuna scheda: in modalità informativa non ci sono attività.
+            negozi: [],
+            prodotti: [],
+            processingMs: Date.now() - inizio,
+            source: "assistente",
+            intent: analisi.intent,
+          },
+          {
+            limiti: limitiVincolanti,
+            origine: limitiVincolanti ? "traccia" : "assente",
+            invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+          }
+        );
+      }
+      if (domandaInformativa) {
+        return esci(
+          "conoscenza_vuota",
+          {
+            risposta: messaggioConoscenzaNonTrovataPino(domanda, linguaDiscorsiva),
+            negozi: [],
+            prodotti: [],
+            processingMs: Date.now() - inizio,
+            source: "assistente",
+            intent: analisi.intent,
+          },
+          {
+            limiti: limitiVincolanti,
+            origine: limitiVincolanti ? "traccia" : "assente",
+            invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+          }
+        );
+      }
+    }
   }
 
   // I festival possono essere nella guida Attrazioni anche quando il catalogo

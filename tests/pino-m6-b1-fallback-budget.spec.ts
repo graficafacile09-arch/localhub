@@ -178,22 +178,29 @@ test.describe("M6-B1 — call graph Groq e invarianti", () => {
   const indice = lettura("lib/assistente/index.ts");
   const semantica = lettura("lib/assistente/semantica.ts");
   const planner = lettura("lib/assistente/core-v2/ai-request-planner.ts");
+  // La risposta discorsiva di conoscenza ha un modulo dedicato: il terzo sito
+  // di chiamata non deve tornare dentro `index.ts`.
+  const discorsiva = lettura("lib/assistente/conoscenza-discorsiva.ts");
 
-  test("nel percorso Pino restano due soli siti di chiamata", () => {
+  test("nel percorso Pino restano tre siti di chiamata, uno per modulo", () => {
     const inIndice = indice.match(/callGroqText\(/g) ?? [];
     const inSemantica = semantica.match(/callGroqText\(/g) ?? [];
+    const inDiscorsiva = discorsiva.match(/callGroqText\(/g) ?? [];
     expect(inIndice).toHaveLength(1);
     expect(inSemantica).toHaveLength(1);
+    expect(inDiscorsiva).toHaveLength(1);
+    expect(indice).toContain("} from \"./conoscenza-discorsiva\";");
     // Il planner core-v2 non è importato dal percorso Pino.
     expect(indice).not.toContain("planPinoCoreRequestWithAI");
     expect(semantica).not.toContain("planPinoCoreRequestWithAI");
     expect(planner).toContain("planPinoCoreRequestWithAI");
   });
 
-  test("entrambi i siti passano dal budget condiviso della richiesta", () => {
+  test("i tre siti passano dal budget condiviso della richiesta", () => {
     expect(indice).toContain("const budgetAI = creaBudgetAIPino();");
     expect(indice).toContain("chiamataAIConBudgetPino(budgetAI, () =>");
     expect(semantica).toContain("chiamataAIConBudgetPino(budget, () =>");
+    expect(discorsiva).toContain("chiamataAIConBudgetPino(budgetAI, () =>");
     // Il budget attraversa il planner semantico.
     expect(indice).toContain("statoConversazionale,\n        budgetAI");
     expect(semantica).toContain("budget?: BudgetPinoAI");
