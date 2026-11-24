@@ -99,23 +99,25 @@ export function costruisciContestoSitoPino(query: string): string | null {
     );
   const parlaStagionalita =
     /\b(stagionalita|stagione|stagionale|raccolta|raccogliere|raccoglie|raccolgono|maturano|coltivazione|coltivare|vendemmia|molitura|stagionatura|produzione|calendario|mesi|mese)\b/.test(testo) ||
-    meseRichiesto(query) !== null ||
-    VOCI.some((voce) =>
-      punteggio(voce.nome, voce.sintesi, tokens) > 0
-    );
+    meseRichiesto(query) !== null;
 
   const sezioni: string[] = [];
 
   if (parlaTerritorio) {
-    const risultati = TERRITORI
+    const classificati = TERRITORI
       .map((item) => ({
         item,
         score: punteggio(item.nome, [
           item.gruppo, item.sommario, ...item.racconto,
           ...item.riconoscimenti.map((r) => r.descrizione),
         ].join(" "), tokens),
+        nomeMatch: tokens.some((token) => normalizza(item.nome).split(" ").includes(token)),
       }))
-      .filter((r) => r.score > 0)
+      .filter((r) => r.score > 0);
+    // Se la domanda nomina un territorio preciso, non aggiungere luoghi
+    // soltanto perché il loro testo cita incidentalmente lo stesso toponimo.
+    const nomiDiretti = classificati.filter((r) => r.nomeMatch);
+    const risultati = (nomiDiretti.length ? nomiDiretti : classificati)
       .sort((a, b) => b.score - a.score)
       .slice(0, /\b(territorio|territori|parchi|comuni|borghi)\b/.test(testo) ? 5 : 3);
     if (risultati.length) {
