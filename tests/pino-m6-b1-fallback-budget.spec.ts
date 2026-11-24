@@ -34,7 +34,8 @@ test.describe("M6-B1 — budget AI condiviso", () => {
   test("il tetto è due chiamate per richiesta", () => {
     expect(MASSIMO_CHIAMATE_AI_PINO).toBe(2);
     const budget = creaBudgetAIPino();
-    expect(budget).toEqual({ limite: 2, usate: 0 });
+    expect(budget).toEqual({ limite: 2, usate: 0, scadenzaMs: expect.any(Number) });
+    expect(budget.scadenzaMs).toBeGreaterThan(Date.now());
   });
 
   test("due chiamate partono, la terza è bloccata", async () => {

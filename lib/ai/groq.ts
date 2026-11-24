@@ -19,6 +19,8 @@ export type CallGroqTextParams = {
   temperature?: number;
   json?: boolean;
   timeoutMs?: number;
+  /** Istante assoluto (Date.now()) oltre il quale la chiamata non può più partire. */
+  deadlineMs?: number;
 };
 
 export type GroqToolDeclaration = {
@@ -81,6 +83,7 @@ async function completaGroq(
     maxTokens?: number;
     temperature?: number;
     timeoutMs?: number;
+    deadlineMs?: number;
     json?: boolean;
     tools?: Array<{
       type: "function";
@@ -94,7 +97,11 @@ async function completaGroq(
   }
 
   const model = process.env.GROQ_MODEL?.trim() || MODELLO_FALLBACK;
-  const timeoutMs = options.timeoutMs ?? TIMEOUT_DEFAULT_MS;
+  const restanteMs = options.deadlineMs === undefined ? Infinity : options.deadlineMs - Date.now();
+  if (restanteMs <= 0) {
+    throw new Error("Timeout chiamata Groq (budget esaurito).");
+  }
+  const timeoutMs = Math.min(options.timeoutMs ?? TIMEOUT_DEFAULT_MS, restanteMs);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 

@@ -68,6 +68,13 @@ export const SINONIMI_DIRETTI_PRODOTTO: string[][] = [
   // entrambe le forme. Nessun altro sinonimo viene aggiunto qui.
   ["cuffia", "cuffie", "auricolare", "auricolari"],
   ["borsa", "borse", "borsello", "borselli"],
+  // Prodotti calabresi: varianti singolare/plurale e nomi commerciali comuni.
+  // Ogni gruppo resta stretto sul singolo prodotto: nessun ponte tra categorie.
+  ["soppressata", "soppressate", "salame", "salami"],
+  ["cirò", "ciro", "cirò rosso", "ciro rosso"],
+  ["pecorino", "pecorini"],
+  ["caciocavallo", "caciocavalli"],
+  ["extravergine", "extra vergine", "evo"],
 ];
 
 export function espandiSinonimiDirettiProdotto(query: string): string[] {

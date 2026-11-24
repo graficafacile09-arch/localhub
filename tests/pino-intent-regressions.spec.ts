@@ -22,6 +22,7 @@ import {
 import {
   espandiQueryConSinonimi,
   espandiQueryConSinonimiBase,
+  espandiSinonimiDirettiProdotto,
   sonoSinonimiDirettiProdotto,
 } from "../lib/ricerca-semantica";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
@@ -548,6 +549,16 @@ test.describe("Pino — regressioni di intento", () => {
     );
     expect(espandiQueryConSinonimiBase("borsa").split(/\s+/)).toEqual(
       expect.arrayContaining(["borsa", "borse", "borsello", "borselli"])
+    );
+    // Prodotti calabresi: singolare/plurale e varianti comuni.
+    expect(espandiSinonimiDirettiProdotto("soppressata")).toEqual(
+      expect.arrayContaining(["soppressata", "salame"])
+    );
+    expect(espandiSinonimiDirettiProdotto("cirò")).toEqual(
+      expect.arrayContaining(["ciro", "ciro rosso"])
+    );
+    expect(espandiSinonimiDirettiProdotto("extravergine")).toEqual(
+      expect.arrayContaining(["evo", "extra vergine"])
     );
     // Ricerca negozi: la forme colloquiale arriva allo stesso gruppo.
     expect(espandiQueryConSinonimi("borse").split(/\s+/)).toContain("borsello");

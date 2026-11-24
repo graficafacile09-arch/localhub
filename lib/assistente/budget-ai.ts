@@ -1,9 +1,14 @@
 /** Budget condiviso delle chiamate AI di una singola richiesta Pino. */
 export const MASSIMO_CHIAMATE_AI_PINO = 2;
 
+/** Budget totale del flusso AI di una richiesta (sotto il limite Vercel Hobby). */
+export const BUDGET_TEMPO_AI_MS = 8_500;
+
 export type BudgetPinoAI = {
   limite: number;
   usate: number;
+  /** Scadenza assoluta (epoch ms) condivisa da tutte le chiamate AI della richiesta. */
+  scadenzaMs?: number;
 };
 
 export class ErroreBudgetPinoAI extends Error {
@@ -15,13 +20,20 @@ export class ErroreBudgetPinoAI extends Error {
 }
 
 export function creaBudgetAIPino(
-  limite: number = MASSIMO_CHIAMATE_AI_PINO
+  limite: number = MASSIMO_CHIAMATE_AI_PINO,
+  tempoMs: number = BUDGET_TEMPO_AI_MS
 ): BudgetPinoAI {
   const massimo =
     Number.isFinite(limite) && limite > 0
       ? Math.floor(limite)
       : MASSIMO_CHIAMATE_AI_PINO;
-  return { limite: massimo, usate: 0 };
+  return { limite: massimo, usate: 0, scadenzaMs: Date.now() + tempoMs };
+}
+
+/** Tempo residuo del budget AI (Infinity se il budget non ha scadenza). */
+export function tempoRestanteAIPino(budget: BudgetPinoAI | undefined): number {
+  if (!budget || budget.scadenzaMs === undefined) return Infinity;
+  return Math.max(0, budget.scadenzaMs - Date.now());
 }
 
 export function prelevaChiamataAIPino(budget: BudgetPinoAI | undefined): boolean {

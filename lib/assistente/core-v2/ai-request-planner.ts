@@ -15,6 +15,9 @@ import {
   type PinoCoreConfidence,
 } from "./request-planner.ts";
 
+/** Tempo massimo del planner dentro il budget AI di Pino (vedi budget-ai.ts). */
+const BUDGET_PLANNER_CORE_MS = 8_500;
+
 export type PinoPlannerContextMessage = {
   role: "user" | "model";
   content: string;
@@ -311,6 +314,7 @@ export async function planPinoCoreRequestWithAI(
     history?: PinoPlannerContextMessage[];
     plannerCall?: (prompt: string) => Promise<string>;
     requestId?: string;
+    deadlineMs?: number;
     onDiagnostic?: (diagnostic: PinoPlannerDiagnostic) => void;
   } = {},
 ): Promise<PinoCorePlan> {
@@ -372,6 +376,8 @@ export async function planPinoCoreRequestWithAI(
           temperature: 0,
           maxTokens: 450,
           timeoutMs: 12_000,
+          // Scadenza assoluta: il planner non può superare il budget AI di Pino.
+          deadlineMs: options.deadlineMs ?? inizio + BUDGET_PLANNER_CORE_MS,
         });
   } catch (errore) {
     // Provider outage, missing key, timeout, quota or malformed output must

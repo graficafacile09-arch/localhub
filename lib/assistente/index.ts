@@ -185,6 +185,7 @@ import {
 import {
   chiamataAIConBudgetPino,
   creaBudgetAIPino,
+  tempoRestanteAIPino,
 } from "./budget-ai";
 import type { PinoUnderstanding } from "./understanding";
 import {
@@ -531,6 +532,22 @@ export function selezioneUtilizzabilePino(
 // Gli errori vengono gestiti dai fallback deterministici già presenti in Pino.
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
+
+/**
+ * Attesa limitata per letture accessorie (memoria, correzioni): se scade,
+ * la richiesta prosegue con il valore di ripiego senza bloccare la risposta.
+ */
+async function conTimeoutPino<T>(promessa: Promise<T>, ms: number, ripiego: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const scadenza = new Promise<T>((risolvi) => {
+    timer = setTimeout(() => risolvi(ripiego), ms);
+  });
+  try {
+    return await Promise.race([promessa.catch(() => ripiego), scadenza]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function normalizzaMessaggi(messages: MessaggioAssistente[]): MessaggioAssistente[] {
   return (messages ?? [])
@@ -1420,7 +1437,7 @@ export function messaggioServizioNonTrovatoPino(
 ): string {
   return lingua === "en"
     ? `I couldn't find any business in the Radici Calabria catalogue that lists "${servizio}". I can try a different area or a similar service.`
-    : `Nel catalogo Radici Calabria non ho trovato attività che dichiarino "${servizio}". Posso provare con un'altra zona o un servizio simile.`;
+    : `Nel catalogo Radici Calabria non ho trovato attività che dichiarino "${servizio}". Posso cercare un servizio simile, provare un'altra zona del territorio oppure mostrarti le categorie attive e i negozi più vicini.`;
 }
 
 /**
@@ -2398,8 +2415,8 @@ export function fallbackSelezioneVuotaPino(esito: {
  */
 export function messaggioIndisponibilitaAI(lingua: "it" | "en" = "it"): string {
   return lingua === "en"
-    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, or tell me a category or a shop."
-    : "Il servizio di ricerca intelligente è momentaneamente in difficoltà. Non ho trovato risultati con la ricerca alternativa, ma questo non significa che il prodotto o servizio non esista nel catalogo. Puoi riprovare tra poco oppure indicarmi una categoria o un negozio.";
+    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, browse the Shops section, or tell me a category or a shop."
+    : "Il servizio di ricerca è momentaneamente in difficoltà: non ho potuto consultare il catalogo. Non è un catalogo vuoto, e questo non significa che il prodotto o servizio non esista. Puoi riprovare tra poco, esplorare la sezione Negozi oppure indicarmi una categoria o un negozio della zona.";
 }
 
 export function fallbackTestuale(
@@ -3447,19 +3464,17 @@ export function invocazioniRegaloPino(
  */
 async function risolviCorrezioneTurnoPino(
   storico: MessaggioAssistente[]
-): Promise<CorrezioneRilevataPino | null> {
+): Promise<(CorrezioneRilevataPino & { domandaCorretta: string }) | null> {
   const correzione = rilevaCorrezionePino(storico);
   if (correzione) {
     void registraCorrezionePino(correzione);
-    const indiceUltimo = storico.length - 1;
-    storico[indiceUltimo] = {
-      ...storico[indiceUltimo],
-      content:
-        correzione.tipo === "altro"
-          ? `${correzione.domandaPrecedente} ${correzione.correzione}`
-          : correzione.correzione,
-    };
-    return correzione;
+    const domandaCorretta =
+      correzione.tipo === "altro"
+        ? `${correzione.domandaPrecedente} ${correzione.correzione}`
+        : correzione.correzione;
+    // La domanda dell'utente resta intatta nello storico: la correzione viaggia
+    // come contesto di sistema (vedi `chatConAssistente`).
+    return { ...correzione, domandaCorretta };
   }
 
   const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
@@ -3471,12 +3486,19 @@ async function risolviCorrezioneTurnoPino(
     !rispostaIdentitaPino(ultimaUtente.content) &&
     !rispostaSalutoPino(ultimaUtente.content)
   ) {
-    const apprese = await misuraFaseChat("correzioniAppresePino", () => correzioniAppresePino(ultimaUtente.content));
+    const apprese = await misuraFaseChat("correzioniAppresePino", () =>
+      conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 1_000, [])
+    );
     const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
     if (corretta !== ultimaUtente.content) {
-      const indice = storico.lastIndexOf(ultimaUtente);
-      storico[indice] = { ...ultimaUtente, content: corretta };
+      // Non sovrascrive la domanda: la correzione appresa diventa contesto di sistema.
       console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
+      return {
+        tipo: "altro",
+        domandaPrecedente: ultimaUtente.content,
+        correzione: corretta,
+        domandaCorretta: corretta,
+      };
     }
   }
   return null;
@@ -3552,8 +3574,11 @@ export async function chatConAssistente(
     ? `${SYSTEM_PROMPT}\n\n${opzioni.contestoDatabase.trim()}`
     : SYSTEM_PROMPT;
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
-  // (la storia è già troncata a 300 caratteri per messaggio).
-  const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  // (la storia è già troncata a 1200 caratteri per gli ultimi messaggi).
+  // Se l'utente ha corretto Pino, la domanda di lavoro è quella corretta:
+  // lo storico resta com'è.
+  const domandaGrezza = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  const domanda = (correzioneUtente?.domandaCorretta ?? domandaGrezza).slice(0, 500);
   const restrizioneAlimentareRigida = restrizioneAlimentareRigidaPino(domanda);
 
   type DatiShadowTier0 = {
@@ -4072,7 +4097,7 @@ export async function chatConAssistente(
   const memoriaPromise =
     pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
       ? Promise.resolve([])
-      : recuperaMemoria(domandaSemantica);
+      : conTimeoutPino(recuperaMemoria(domandaSemantica), 1_000, []);
   const memoria = await misuraFaseChat("memoriaPromise", () => memoriaPromise);
   // Un'attività già riconosciuta dal lessico è una decisione deterministica:
   // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
@@ -4218,7 +4243,7 @@ export async function chatConAssistente(
             maxTokens: 450,
             temperature: 0.1,
             // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
-            timeoutMs: 4_500,
+            timeoutMs: Math.max(1_000, Math.min(4_500, tempoRestanteAIPino(budgetAI))),
           })
         );
         const parsed = JSON.parse(extractJsonFromText(raw)) as {
