@@ -93,9 +93,9 @@ export function costruisciContestoSitoPino(query: string): string | null {
   if (!testo || tokens.length === 0) return null;
 
   const parlaTerritorio =
-    /\b(territorio|territori|parco|parchi|comune|comuni|borgo|borghi|area|aree|pollino|sila|aspromonte|sibari|costa|tirreno|ionio)\b/.test(testo) ||
+    /\b(territorio|territori|parco|parchi|comune|comuni|borgo|borghi|area|aree)\b/.test(testo) ||
     TERRITORI.some((item) =>
-      punteggio(item.nome, [item.sommario, ...item.racconto].join(" "), tokens) > 0
+      tokens.some((token) => normalizza(item.nome).split(" ").includes(token))
     );
   const parlaStagionalita =
     /\b(stagionalita|stagione|stagionale|raccolta|raccogliere|raccoglie|raccolgono|maturano|coltivazione|coltivare|vendemmia|molitura|stagionatura|produzione|calendario|mesi|mese)\b/.test(testo) ||
