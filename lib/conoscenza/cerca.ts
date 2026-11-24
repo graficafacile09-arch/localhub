@@ -329,6 +329,19 @@ function cercaNeiDocumenti(
     }));
 }
 
+/**
+ * Ricerca sul solo corpus editoriale locale: stessa tokenizzazione, soglia
+ * relativa e priorità dell'indice di `cercaConoscenzaSito`, ma senza archivio
+ * `pino_conoscenza` e senza contenuti dinamici. È il confine deterministico
+ * con cui i test verificano il ranking dei testi del sito, indipendente dal
+ * database di produzione.
+ */
+export function cercaConoscenzaLocale(query: string, limit = 6): RisultatoConoscenza[] {
+  const q = query.replace(/\s+/g, " ").trim();
+  if (!q) return [];
+  return cercaNeiDocumenti(documentiConoscenzaTutti(), q, limit);
+}
+
 /** Converte un URL assoluto in percorso relativo, per link interni coerenti. */
 function percorsoRelativo(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, "") || "/";
@@ -397,7 +410,7 @@ export async function cercaConoscenzaSito(
   const q = query.replace(/\s+/g, " ").trim();
   if (!q) return [];
 
-  const locali = cercaNeiDocumenti(documentiConoscenzaTutti(), q, limit);
+  const locali = cercaConoscenzaLocale(q, limit);
   const [dinamici, archivio] = await Promise.all([
     contenutiDinamici(q, limit),
     cercaConoscenza(q, limit).catch(() => [] as RisultatoConoscenza[]),

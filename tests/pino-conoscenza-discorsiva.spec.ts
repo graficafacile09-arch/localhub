@@ -4,7 +4,7 @@ import { chatConAssistente } from "../lib/assistente/index";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
 import { pianoLocaleIntelligente } from "../lib/assistente/semantica";
 import { richiestaConoscenzaPino } from "../lib/assistente/routing-policy";
-import { cercaConoscenzaSito } from "../lib/conoscenza/cerca";
+import { cercaConoscenzaLocale, cercaConoscenzaSito } from "../lib/conoscenza/cerca";
 
 // RAG locale: le domande discorsive leggono i testi del sito e rispondono in
 // prosa, senza schede di attività commerciali. Le richieste di acquisto
@@ -28,10 +28,17 @@ test.describe("Ricerca unificata sui contenuti del sito", () => {
   });
 
   test("«Cos'è la Sila?» non si porta dietro ogni testo che nomina la Sila", async () => {
-    const fonti = await cercaConoscenzaSito("Cos'è la Sila?", 6);
+    // Corpus locale puro: il ranking dei testi del sito non deve dipendere
+    // dall'archivio `pino_conoscenza`, che in produzione aggiunge altre voci.
+    const locali = cercaConoscenzaLocale("Cos'è la Sila?", 6);
     // La Piana di Crotone e le filiere citano la Sila di passaggio: non sono
     // la risposta alla domanda.
-    expect(fonti.map((f) => f.url)).toEqual(["/territorio/sila"]);
+    expect(locali.map((f) => f.url)).toEqual(["/territorio/sila"]);
+
+    // La ricerca unificata conserva quel testo come prima fonte, anche quando
+    // l'archivio o i contenuti dinamici aggiungono voci in coda.
+    const fonti = await cercaConoscenzaSito("Cos'è la Sila?", 6);
+    expect(fonti[0].url).toBe("/territorio/sila");
   });
 
   test("«Parlami di filiera» parte dall'indice e porta i testi delle filiere", async () => {
