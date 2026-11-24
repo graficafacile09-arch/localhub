@@ -43,11 +43,13 @@ type Aggiornamenti = {
  */
 export default function ProdottiModule({
   prodotti: prodottiIniziali,
+  ricercaIniziale = "",
 }: {
   prodotti: ProdottoAdminRow[];
+  ricercaIniziale?: string;
 }) {
   const [prodotti, setProdotti] = useState(prodottiIniziali);
-  const [ricerca, setRicerca] = useState("");
+  const [ricerca, setRicerca] = useState(ricercaIniziale);
   const [filtroNegozio, setFiltroNegozio] = useState("tutti");
   const [filtroStato, setFiltroStato] = useState<FiltroStato>("tutti");
   const [filtroCategoria, setFiltroCategoria] = useState("tutte");

@@ -4,7 +4,7 @@ import { canManageStore } from "@/lib/merchant/data";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { diffCorrezioni, mergeSuggestion } from "@/lib/product-assistant/correggi-ai";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/types";
-import { callGeminiText, type GeminiMessage } from "@/lib/ai/gemini-text";
+import { callGroqText, type GroqHistoryMessage } from "@/lib/ai/groq";
 
 /**
  * POST /api/merchant/stores/[negozioId]/products/correggi-ai
@@ -43,15 +43,14 @@ async function callLLM(
   draftJson: string,
   messaggio: string
 ): Promise<{ messaggio: string; suggestion: unknown }> {
-  // Ruoli Gemini: "assistant" → "model" (Gemini non accetta "assistant").
-  const storicoGemini: GeminiMessage[] = storico.map((m) => ({
+  const storicoGroq: GroqHistoryMessage[] = storico.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     content: m.content,
   }));
 
-  const content = await callGeminiText({
+  const content = await callGroqText({
     systemPrompt: SYSTEM_PROMPT,
-    history: storicoGemini,
+    history: storicoGroq,
     userPrompt: `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`,
     maxTokens: 2000,
     temperature: 0.2,

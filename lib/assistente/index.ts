@@ -359,7 +359,6 @@ export async function selezionaStrumentiNativoPino(
 // silenziosa. Nessuna firma pubblica cambia.
 
 import { cercaConoscenza, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
-import { misuraFaseChat } from "./timing-fasi";
 
 /** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
 export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
@@ -824,34 +823,19 @@ export const SCADENZA_INVOCAZIONE_PINO_MS = 20_000;
  * la classifica come timeout. La promessa perdente ha già i gestori di
  * `Promise.race`, quindi non produce rifiuti non gestiti.
  */
-let contatoreScadenzeProbe = 0;
 export function conScadenzaPino<T>(
   promessa: Promise<T>,
   ms: number = SCADENZA_INVOCAZIONE_PINO_MS
 ): Promise<T> {
   const attesa = Number.isFinite(ms) && ms > 0 ? ms : SCADENZA_INVOCAZIONE_PINO_MS;
   let timer: ReturnType<typeof setTimeout> | null = null;
-  const idScadenza = ++contatoreScadenzeProbe;
-  const inizioScadenza = Date.now();
-  console.info("[probe-scadenza]", "id=" + idScadenza, "avvio attesa=" + attesa);
   const scadenza = new Promise<never>((_, rifiuta) => {
     timer = setTimeout(() => {
-      console.info("[probe-scadenza]", "id=" + idScadenza, "timer scattato ms=" + (Date.now() - inizioScadenza));
       rifiuta(new ErroreTimeoutPino(attesa));
     }, attesa);
   });
-  return Promise.race([promessa, scadenza]).then(
-    (valore) => {
-      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=ok ms=" + (Date.now() - inizioScadenza));
-      return valore;
-    },
-    (errore) => {
-      console.info("[probe-scadenza]", "id=" + idScadenza, "esito=errore ms=" + (Date.now() - inizioScadenza));
-      throw errore;
-    }
-  ).finally(() => {
+  return Promise.race([promessa, scadenza]).finally(() => {
     if (timer) clearTimeout(timer);
-    console.info("[probe-scadenza]", "id=" + idScadenza, "fine finally ms=" + (Date.now() - inizioScadenza));
   });
 }
 
@@ -3486,9 +3470,7 @@ async function risolviCorrezioneTurnoPino(
     !rispostaIdentitaPino(ultimaUtente.content) &&
     !rispostaSalutoPino(ultimaUtente.content)
   ) {
-    const apprese = await misuraFaseChat("correzioniAppresePino", () =>
-      conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 300, [])
-    );
+    const apprese = await conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 300, []);
     const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
     if (corretta !== ultimaUtente.content) {
       // Non sovrascrive la domanda: la correzione appresa diventa contesto di sistema.
@@ -3566,7 +3548,7 @@ export async function chatConAssistente(
 
   // La correzione dell'utente (se c'è) viene applicata al turno prima di
   // qualsiasi interpretazione: vedi `risolviCorrezioneTurnoPino`.
-  const correzioneUtente = await misuraFaseChat("risolviCorrezioneTurnoPino", () => risolviCorrezioneTurnoPino(storico));
+  const correzioneUtente = await risolviCorrezioneTurnoPino(storico);
 
   const ultimo = storico[storico.length - 1];
   // Contesto dinamico: dati reali del database già verificati dalla rotta.
@@ -4098,7 +4080,7 @@ export async function chatConAssistente(
     pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
       ? Promise.resolve([])
       : conTimeoutPino(recuperaMemoria(domandaSemantica), 300, []);
-  const memoria = await misuraFaseChat("memoriaPromise", () => memoriaPromise);
+  const memoria = await memoriaPromise;
   // Un'attività già riconosciuta dal lessico è una decisione deterministica:
   // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
   // come "gelateria" o "bar", che il piano sa comunque gestire.
@@ -4121,14 +4103,14 @@ export async function chatConAssistente(
   // prenotate PRIMA di partire (anche quando falliscono o vanno in timeout).
   const budgetAI = creaBudgetAIPino();
   const semanticaGrezza = attivaPlannerSemantico
-    ? await misuraFaseChat("interpretaRichiestaPino", () => interpretaRichiestaPino(
+    ? await interpretaRichiestaPino(
         domandaSemantica,
         storico,
         analisiSemantica,
         memoria,
         statoConversazionale,
         budgetAI
-      ))
+      )
     : undefined;
 
   // Il modello non è la fonte del budget: solo l'estrazione deterministica
@@ -4471,9 +4453,9 @@ export async function chatConAssistente(
   // quindi il merge non dipende dall'indice di array paralleli.
   let esitiInvocazioni: EsitoInvocazionePino[] = [];
   if (invocazioni.length > 0) {
-    esitiInvocazioni = await misuraFaseChat("eseguiInvocazioniPino", () => eseguiInvocazioniPino(invocazioni, (invocazione) =>
+    esitiInvocazioni = await eseguiInvocazioniPino(invocazioni, (invocazione) =>
       eseguiTool(invocazione.tool as string, invocazione.params ?? {}, queryDefault)
-    , { scadenzaMs: Math.max(1_000, tempoRestanteAIPino(budgetAI)) }));
+    , { scadenzaMs: Math.max(1_000, tempoRestanteAIPino(budgetAI)) });
     const merge = mergeEsitiInvocazioniPino(esitiInvocazioni, { regaloGenerico });
     negozi = merge.negozi;
     prodotti = merge.prodotti;
@@ -4539,10 +4521,10 @@ export async function chatConAssistente(
         .includes(String(t.tool ?? ""))
     )
   ) {
-    const alternative = await misuraFaseChat("cercaAlternativeBisognoPino", () => cercaAlternativeBisognoPino(
+    const alternative = await cercaAlternativeBisognoPino(
       domanda,
       linguaConversazione
-    ));
+    );
     negozi = alternative.negozi;
     notaBisogno = alternative.nota;
   }
@@ -4617,7 +4599,7 @@ export async function chatConAssistente(
       t.tool === "searchContent"
     )
   ) {
-    const recupero = await misuraFaseChat("recuperaAlternativeSemantiche", () => recuperaAlternativeSemantiche(
+    const recupero = await recuperaAlternativeSemantiche(
       domanda,
       storico,
       analisi,
@@ -4625,7 +4607,7 @@ export async function chatConAssistente(
       semantica,
       comprensione,
       budgetInvocazioniRecuperoPino(invocazioni.length)
-    ));
+    );
     if (recupero.prodotti.length > 0 || recupero.negozi.length > 0) {
       prodotti = recupero.prodotti;
       negozi = recupero.negozi;
@@ -4872,7 +4854,7 @@ export async function chatConAssistente(
     // trattiene la richiesta. Un timeout non e' un catalogo vuoto: il ramo S19
     // sotto dichiara l'indisponibilita', e i risultati validi restano.
     const fallback = await eseguiFallbackConScadenzaPino(() =>
-      misuraFaseChat("searchAllFallback", () => searchAll(domanda, parametriFallbackPiano(semantica, comprensione, domandaSemantica)))
+      searchAll(domanda, parametriFallbackPiano(semantica, comprensione, domandaSemantica))
     );
     if (fallback.esito) {
       negozi = fallback.esito.negozi;
