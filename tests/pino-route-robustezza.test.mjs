@@ -55,7 +55,7 @@ test("degradazione: cita i risultati reali della ricerca classica", async () => 
     }
   );
 
-  assert.match(risposta.risposta, /ricerca classica/);
+  assert.match(risposta.risposta, /ricerca del catalogo/);
   assert.match(risposta.risposta, /Olio EVO del Pollino/);
   assert.match(risposta.risposta, /12\.50/);
   assert.equal(risposta.source, "assistente");
@@ -83,7 +83,7 @@ test("degradazione: senza messaggio utente non interroga il catalogo", async () 
   });
 
   assert.equal(chiamate, 0);
-  assert.match(risposta.risposta, /non riesco a cercare/);
+  assert.match(risposta.risposta, /non riesco a consultare il catalogo/);
 });
 
 // ─── Routing: acquisto con toponimo vs visita ───────────────────────────────
