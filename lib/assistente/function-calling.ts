@@ -216,6 +216,21 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
     exposed: true,
   },
   {
+    name: "searchConoscenza",
+    description: "Cerca nelle informazioni del sito su territorio, località, filiere e produttori, stagionalità, FAQ, attrazioni e pagine informative. Non cerca prodotti, negozi, prezzi, offerte o eventi.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o parola chiave da cercare nelle informazioni del sito."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
     name: "searchAll",
     description: "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.",
     parameters: {

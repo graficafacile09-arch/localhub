@@ -238,6 +238,7 @@ export type ToolParams = {
 export type RisultatoRicercaCompleta = {
   negozi: NegozioRicerca[];
   prodotti: ProdottoRicerca[];
+  conoscenza?: import("@/lib/conoscenza/cerca").RisultatoConoscenza[];
   offerte: OffertaAssistente[];
   eventi: EventoAssistente[];
   notizie: NotiziaAssistente[];
@@ -268,6 +269,7 @@ export type StrumentoPino =
   | "searchEvents"
   | "searchNews"
   | "searchContent"
+  | "searchConoscenza"
   | "searchAll"
   | "getCategories"
   | "getWeather"

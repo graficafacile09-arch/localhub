@@ -357,6 +357,8 @@ export async function selezionaStrumentiNativoPino(
 // non consuma il budget delle 3 invocazioni e non resta un'esecuzione vuota
 // silenziosa. Nessuna firma pubblica cambia.
 
+import { cercaConoscenza, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
+
 /** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
 export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchStores",
@@ -365,6 +367,7 @@ export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchEvents",
   "searchNews",
   "searchContent",
+  "searchConoscenza",
   "searchAll",
   "getCategories",
   "getWeather",
@@ -554,6 +557,7 @@ async function eseguiTool(
   eventi: Awaited<ReturnType<typeof searchEvents>>;
   notizie: Awaited<ReturnType<typeof searchNews>>;
   contenuti: Awaited<ReturnType<typeof searchContent>>;
+  conoscenza?: RisultatoConoscenza[];
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
@@ -565,6 +569,7 @@ async function eseguiTool(
     eventi: [],
     notizie: [],
     contenuti: [],
+    conoscenza: [],
     categorie: [],
     meteo: null,
     farmacie: [],
@@ -631,6 +636,11 @@ async function eseguiTool(
     }
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
+    case "searchConoscenza":
+      return {
+        ...vuoto,
+        conoscenza: await cercaConoscenza(params?.query?.trim() || fallbackQuery, limit),
+      };
     case "searchGiftCategories": {
       // S5.1 — Un'unica invocazione tool per gruppo di categorie regalo. Le
       // ricerche per singola categoria sono query INTERNE al contratto dello
@@ -687,6 +697,8 @@ export type RisultatoToolPino = {
   /** Opzionali per compatibilità con gli esiti storici e i test M6. */
   notizie?: Awaited<ReturnType<typeof searchNews>>;
   contenuti?: Awaited<ReturnType<typeof searchContent>>;
+  /** Fonti editoriali indicizzate (searchConoscenza), opzionali. */
+  conoscenza?: RisultatoConoscenza[];
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
@@ -1014,6 +1026,7 @@ export function mergeEsitiInvocazioniPino(
   let categorie: RisultatoToolPino["categorie"] = [];
   let meteo: RisultatoToolPino["meteo"] = null;
   let farmacie: RisultatoToolPino["farmacie"] = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   for (const esito of Array.isArray(esiti) ? esiti : []) {
     if (esito.stato !== "ok" && esito.stato !== "vuoto") continue;
     const r = esito.risultati;
@@ -1035,8 +1048,9 @@ export function mergeEsitiInvocazioniPino(
     for (const c of r.categorie ?? []) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
     if (r.meteo && !meteo) meteo = r.meteo;
     for (const f of r.farmacie ?? []) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
+    for (const k of r.conoscenza ?? []) if (!conoscenza.some((x) => x.chiave === k.chiave)) conoscenza = [...conoscenza, k];
   }
-  return { negozi, prodotti, offerte, eventi, notizie, contenuti, categorie, meteo, farmacie };
+  return { negozi, prodotti, offerte, eventi, notizie, contenuti, categorie, meteo, farmacie, conoscenza };
 }
 
 /**
@@ -2176,6 +2190,7 @@ function aRisultatiRecuperati(
     eventi: [],
     notizie: [],
     contenuti: [],
+    conoscenza: extra.conoscenza ?? [],
     categorie: [],
     meteo: null,
     farmacie: [],
@@ -4111,6 +4126,7 @@ export async function chatConAssistente(
   let categorie: Awaited<ReturnType<typeof getCategoriesList>> = [];
   let meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>> = null;
   let farmacie: Awaited<ReturnType<typeof searchPharmacies>> = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   let directReply: string | null = null;
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
@@ -4424,6 +4440,7 @@ export async function chatConAssistente(
     categorie = merge.categorie;
     if (merge.meteo) meteo = merge.meteo;
     farmacie = merge.farmacie;
+    conoscenza = merge.conoscenza ?? [];
   }
 
   // I festival possono essere nella guida Attrazioni anche quando il catalogo
@@ -4948,6 +4965,7 @@ export async function chatConAssistente(
     categorie,
     meteo,
     farmacie,
+    conoscenza,
   });
   const contesto = buildContextoRisultati(risultati);
 

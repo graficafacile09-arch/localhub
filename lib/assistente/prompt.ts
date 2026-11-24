@@ -170,6 +170,8 @@ export type RisultatiRecuperati = {
   eventi: EventoAssistente[];
   notizie: NotiziaAssistente[];
   contenuti: ContenutoAssistente[];
+  /** Fonti editoriali indicizzate (searchConoscenza), opzionali. */
+  conoscenza?: { titolo: string; sezione: string; estratto: string; url: string }[];
   categorie: { nome: string; count: number }[];
   meteo: MeteoAssistente | null;
   farmacie: FarmaciaAssistente[];
@@ -262,6 +264,14 @@ export function buildContextoRisultati(r: RisultatiRecuperati): string {
       righe.push(
         `- "${c.titolo}"${c.autore ? ` — ${c.autore}` : ""}${c.data ? `, ${c.data.slice(0, 10)}` : ""}${c.estratto ? `. ${c.estratto.slice(0, 180)}` : ""} — link: ${c.url}`
       );
+    }
+  }
+
+  if (r.conoscenza && r.conoscenza.length > 0) {
+    righe.push("");
+    righe.push("CONOSCENZA DEL SITO (fonti editoriali, usa solo questi dati):");
+    for (const k of r.conoscenza.slice(0, 6)) {
+      righe.push(`- "${k.titolo}" (${k.sezione}). ${k.estratto} — link: ${k.url}`);
     }
   }
 
