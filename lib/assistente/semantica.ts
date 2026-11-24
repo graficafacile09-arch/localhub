@@ -10,6 +10,7 @@
  * con intent + termini originali.
  */
 import { callGroqText } from "@/lib/ai/groq";
+import { strumentoTerritorioFilierePino } from "./routing-policy";
 import {
   chiamataAIConBudgetPino,
   type BudgetPinoAI,
@@ -787,6 +788,9 @@ export function rimuoviClausoleEsclusionePino(testo: string): string {
 }
 
 export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+  // Filiere, DOP/IGP e parchi hanno il loro tool (dati statici): non devono
+  // diventare una ricerca prodotto. Il piano locale non li copre.
+  if (strumentoTerritorioFilierePino(query)) return null;
   // L'articolo eliso ("l'olio", "dell'olio") non deve impedire il match del
   // soggetto: senza questa normalizzazione "quanto costa l'olio?" cadeva sul
   // fallback generico con la query errata "costa olio".

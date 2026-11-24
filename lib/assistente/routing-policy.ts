@@ -197,6 +197,24 @@ export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
  * `null` quando nessuna regola corrisponde: la richiesta resta generica e la
  * gestisce il resto dell'orchestratore.
  */
+const RE_FILIERE_PINO = /\bfilier[ae]\b/;
+const RE_TERRITORIO_PINO =
+  /\b(?:parch[io]|parco|dop|igp|pat|produttori|eccellenz[ae]|territorio)\b/;
+
+/**
+ * Chip e domande su filiere e territorio: restano sui dati statici di
+ * `searchFiliere` / `searchTerritorio` e non passano dal piano prodotti.
+ * Le notizie sulle filiere hanno già la precedenza in `index.ts` (`searchNews`).
+ */
+export function strumentoTerritorioFilierePino(
+  query: string
+): "searchFiliere" | "searchTerritorio" | null {
+  const testo = normalizza(String(query ?? ""));
+  if (RE_FILIERE_PINO.test(testo)) return "searchFiliere";
+  if (RE_TERRITORIO_PINO.test(testo)) return "searchTerritorio";
+  return null;
+}
+
 export function decidiDominioPino(
   query: string
 ): { dominio: DominioRoutingPino; motivo: string } | null {

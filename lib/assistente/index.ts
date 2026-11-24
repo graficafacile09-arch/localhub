@@ -6,6 +6,7 @@ import {
 } from "./understanding";
 import {
   decidiDominioPino,
+  strumentoTerritorioFilierePino,
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
   richiestaRistorazionePino,
@@ -1798,6 +1799,13 @@ function pianoPredefinito(
     return {
       directReply: null,
       tools: [{ tool: "searchNews", params: { query: ultimo, limit: 6 } }],
+    };
+  }
+  const strumentoTerritorio = strumentoTerritorioFilierePino(ultimo);
+  if (strumentoTerritorio) {
+    return {
+      directReply: null,
+      tools: [{ tool: strumentoTerritorio, params: { query: ultimo, limit: 6 } }],
     };
   }
   if (richiestaContenutiEditorialiPino(ultimo)) {
