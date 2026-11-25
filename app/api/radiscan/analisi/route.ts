@@ -1,7 +1,15 @@
+import { cercaBarcode } from "@/lib/radiscan/barcode";
+import {
+  cookieSessioneRadiciScan,
+  creaTokenSessioneRadiciScan,
+  hashTokenSessioneRadiciScan,
+  leggiTokenSessioneRadiciScan,
+} from "@/lib/radiscan/sessione-anonima";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
-import { creaProviderGemini } from "@/lib/radiscan/gemini";
+import { creaProviderVisionProdotti } from "@/lib/radiscan/provider-vision-prodotti";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
+import { creaRicercaWebIbrida } from "@/lib/radiscan/web-tavily";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -24,6 +32,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Percorso rapido: riconoscimento visivo + verifica sul registro ufficiale.
+// Il timeout interno dell'handler è 18 s, così una richiesta lenta chiude con
+// 504 JSON prima che la piattaforma uccida la funzione a 30 s.
+export const maxDuration = 30;
 
 async function utenteCorrente(): Promise<{ id: string } | null> {
   const supabase = await createServerSupabaseClient();
@@ -47,6 +59,9 @@ async function utenteCorrente(): Promise<{ id: string } | null> {
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const tokenEsistente = leggiTokenSessioneRadiciScan(request);
+  const tokenSessione = tokenEsistente ?? creaTokenSessioneRadiciScan();
+  const sessioneHash = hashTokenSessioneRadiciScan(tokenSessione);
   const handler = creaHandlerAnalisi({
     utenteCorrente,
     creaRepository: () =>
@@ -55,12 +70,45 @@ export async function POST(request: Request): Promise<Response> {
         // compatibile con la forma minima usata da RadiciScan.
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
-    creaProvider: () => creaProviderGemini(),
-    creaRicerca: () => creaRicercaEAmbrosia(),
+    creaProvider: () => creaProviderVisionProdotti(),
+    // eAmbrosia: si amplia il tempo della ricerca e si legge la documentazione
+    // ufficiale entro un budget separato, compatibile con i 18 s dell'handler.
+    // Prima il disciplinare, poi il riepilogo italiano; gli altri riepiloghi
+    // restano consultabili dal link ufficiale ma non rallentano la scansione.
+    creaRicerca: () =>
+      creaRicercaEAmbrosia({
+        // Le chiamate `namelike` impiegano circa 7 s: 9 s lasciano margine
+        // senza superare i 18 s dell'handler con la lettura documentale.
+        timeoutMs: 9_000,
+        lettura: {
+          timeoutTotaleMs: 6_500,
+          timeoutDocumentoMs: 5_500,
+          maxDocumenti: 2,
+          maxPagine: 40,
+          maxBytes: 15_000_000,
+          maxCaratteriTotali: 180_000,
+          concorrenza: 2,
+        },
+      }),
+    creaWeb: () => creaRicercaWebIbrida(),
+    // Ricerca web multifonte in parallelo a eAmbrosia: prima motori gratuiti,
+    // Tavily solo se configurato e se i risultati gratuiti non bastano.
+    // Il riconoscimento visivo resta indipendente e invariato.
+    creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
     segretoCache: process.env.RADISCAN_CACHE_SECRET ?? null,
+    sessioneAnonimaHash: () => sessioneHash,
   });
 
-  return handler(request);
+  const risposta = await handler(request);
+  if (tokenEsistente) return risposta;
+
+  const intestazioni = new Headers(risposta.headers);
+  intestazioni.append("Set-Cookie", cookieSessioneRadiciScan(tokenSessione));
+  return new Response(risposta.body, {
+    status: risposta.status,
+    statusText: risposta.statusText,
+    headers: intestazioni,
+  });
 }
