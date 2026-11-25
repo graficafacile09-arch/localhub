@@ -29,14 +29,6 @@ export async function generateMetadata({
     description:
       "Il catalogo dei prodotti delle imprese locali: immagini, prezzi, descrizioni e negozio di provenienza, con le categorie come filtro.",
     alternates: { canonical },
-    openGraph: {
-      title: filtro ? `Prodotti — ${filtro}` : "Prodotti",
-      description:
-        "Il catalogo dei prodotti delle imprese locali: immagini, prezzi, descrizioni e negozio di provenienza, con le categorie come filtro.",
-      url: canonical,
-      type: "website",
-      siteName: "Radici Calabria",
-    },
   };
 }
 

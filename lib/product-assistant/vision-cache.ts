@@ -32,7 +32,9 @@ export type CacheResult =
   | { hit: true; entry: CacheEntry }
   | { hit: false };
 
-async function computeAverageHash(buffer: Buffer): Promise<string> {
+// Esportata solo per i test di parità della Fase 1 (core vision condiviso).
+// Il comportamento e le firme delle funzioni pubbliche restano invariati.
+export async function computeAverageHash(buffer: Buffer): Promise<string> {
   const { data, info } = await sharp(buffer)
     .greyscale()
     .resize(8, 8, { fit: "fill" })

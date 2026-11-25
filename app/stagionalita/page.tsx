@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   title: "Stagionalità",
   description:
     "Cosa si coltiva, si raccoglie, si produce e si trasforma in Calabria durante l'anno: calendario delle produzioni agroalimentari con periodi, zone e fonti.",
-  alternates: { canonical: `${getSiteUrl()}/stagionalita` },
   openGraph: {
     title: "Stagionalità",
     description:
@@ -41,6 +40,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Radici Calabria",
   },
+  alternates: { canonical: `${getSiteUrl()}/stagionalita` },
 };
 
 function StrisciaMesi({ mesi }: { mesi: Mese[] }) {

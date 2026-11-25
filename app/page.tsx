@@ -93,7 +93,7 @@ export default async function Home() {
       // La vetrina mostra poche decine di prodotti per categoria: 1000 righe
       // (con descrizioni e immagini) erano lavoro e payload inutili.
       getProdottiCatalogoHomepage(120),
-      getProdottiTipici(120),
+      getProdottiTipici(60),
       getStatoPreferitiPerPagina(),
       // Prodotti di tutti i territori in una sola query: servono alle schede
       // aperte della fascia Territorio in homepage.
@@ -486,26 +486,12 @@ export default async function Home() {
             <h3 className="text-xs font-black uppercase tracking-[0.14em] text-gold-soft/75">
               Informazioni
             </h3>
-            <ul className="mt-3 space-y-2.5 text-sm">
-              <li>
-                <Link href="/filiere" className="transition hover:text-gold">Filiere</Link>
-              </li>
-              <li>
-                <Link href="/territorio" className="transition hover:text-gold">Territorio</Link>
-              </li>
-              <li>
-                <Link href="/stagionalita" className="transition hover:text-gold">Stagionalità</Link>
-              </li>
-              <li>
-                <Link href="/notizie" className="transition hover:text-gold">Notizie</Link>
-              </li>
-              <li>
-                <Link href="/contatti" className="transition hover:text-gold">Contatti</Link>
-              </li>
-              <li>
-                <Link href="/faq" className="transition hover:text-gold">FAQ</Link>
-              </li>
-            </ul>
+            <Link
+              href="/notizie"
+              className="mt-3 inline-flex text-sm font-black text-gold transition hover:text-gold-soft hover:underline underline-offset-4"
+            >
+              Notizie
+            </Link>
           </div>
         </div>
       </footer>

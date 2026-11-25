@@ -334,24 +334,12 @@ export default function FilierePage() {
         />
 
         <div className="relative mx-auto flex min-h-[440px] w-full max-w-[1200px] flex-col justify-between px-6 pb-6 pt-24 sm:px-8 md:min-h-[560px] md:px-10 md:pb-8 md:pt-28">
-          {/* Targhetta e accesso al catalogo: stessa riga, nessuna
-              sovrapposizione; su mobile vanno a capo da soli. */}
+          {/* Targhetta della copertina. */}
           <div className="flex flex-wrap items-center gap-2">
             <p className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d5a83a]/60 bg-[#f4efe4]/95 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-[#5c3a22] shadow-[0_6px_20px_-10px_rgba(2,6,23,0.55)] backdrop-blur md:text-[11px]">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#8a5a3b]" />
               Filiere · 2022–2026
             </p>
-
-            {/* Il catalogo vive in /filiere/prodotti: stessa pagina e stesse
-                schede prodotto di sempre, spostate qui quando /prodotti è
-                stata liberata per TerraQ. */}
-            <Link
-              href="/filiere/prodotti"
-              className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d5a83a] bg-[#d5a83a] px-3.5 py-1.5 text-[11px] font-black text-[#16281c] shadow-[0_6px_20px_-10px_rgba(2,6,23,0.55)] transition hover:bg-[#e0cc9a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:text-xs"
-            >
-              <ShoppingBasket className="h-4 w-4 shrink-0" aria-hidden />
-              Scopri i prodotti della filiera
-            </Link>
           </div>
 
           <div className="mt-8">
@@ -368,9 +356,16 @@ export default function FilierePage() {
           </div>
 
           <div className="mt-10 flex flex-wrap items-end justify-end gap-3 border-t border-white/20 pt-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">
-              Calabria · Agroalimentare
-            </p>
+            {/* Il catalogo vive in /filiere/prodotti: stessa pagina e stesse
+                schede prodotto di sempre, spostate qui quando /prodotti è
+                stata liberata per TerraQ. */}
+            <Link
+              href="/filiere/prodotti"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d5a83a] bg-[#d5a83a] px-3.5 py-1.5 text-[11px] font-black text-[#16281c] shadow-[0_6px_20px_-10px_rgba(2,6,23,0.55)] transition hover:bg-[#e0cc9a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:gap-2.5 md:px-5 md:py-2.5 md:text-sm"
+            >
+              <ShoppingBasket className="h-4 w-4 shrink-0 md:h-5 md:w-5" aria-hidden />
+              Scopri i prodotti della filiera
+            </Link>
           </div>
         </div>
         <div

@@ -1,0 +1,209 @@
+/*
+ * RadiciScan — stili dedicati alla pagina /prodotti.
+ *
+ * Estratti dal linguaggio editoriale delle pagine interne, limitatamente ai
+ * selettori .rd-* usati da:
+ *   - app/prodotti/page.tsx
+ *   - components/radiscan/RadiciScanStudio.tsx
+ *   - components/radiscan/ScanRisultato.tsx
+ *   - components/editoriale/IntestazionePagina.tsx
+ *
+ * Il resto del restyle generale resta fuori da questo foglio.
+ */
+
+:root {
+  --brand-earth: #8a5a3b;
+  --surface-editorial: #fbf9f4;
+  --surface-editorial-2: #f4efe4;
+  --border-editorial: #e5ded0;
+  --border-editorial-strong: #d6cab2;
+  --shadow-editorial: 0 1px 2px rgb(27 54 36 / 0.04), 0 20px 44px -34px rgb(27 54 36 / 0.55);
+}
+
+@layer components {
+  .rd-pagina {
+    background: linear-gradient(180deg, var(--surface-editorial) 0%, #f8f5ee 340px, #f6f3ec 100%);
+    color: #1f2937;
+  }
+
+  .rd-guscio {
+    width: 100%;
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 768px) {
+    .rd-guscio { padding-inline: 1.75rem; }
+  }
+
+  .rd-testa {
+    position: relative;
+    border-bottom: 1px solid var(--border-editorial);
+    background:
+      radial-gradient(120% 160% at 100% 0%, rgb(213 168 58 / 0.12) 0%, rgb(213 168 58 / 0) 58%),
+      linear-gradient(180deg, #fdfbf6 0%, var(--surface-editorial-2) 100%);
+  }
+  .rd-testa::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand-gold) 0%, rgb(213 168 58 / 0.35) 38%, rgb(213 168 58 / 0) 78%);
+  }
+  .rd-testa-interna { padding-block: 1.65rem 1.4rem; }
+  @media (min-width: 768px) {
+    .rd-testa-interna { padding-block: 2.4rem 2rem; }
+  }
+
+  .rd-occhiello {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brand-earth);
+  }
+  @media (min-width: 768px) {
+    .rd-occhiello { font-size: 0.75rem; }
+  }
+  .rd-occhiello > svg { width: 0.9rem; height: 0.9rem; }
+
+  .rd-titolo {
+    margin-top: 0.5rem;
+    font-size: clamp(1.9rem, 4.6vw, 2.9rem);
+    line-height: 1.06;
+    letter-spacing: -0.032em;
+    font-weight: 800;
+    color: var(--brand-forest-deep);
+    text-wrap: balance;
+  }
+
+  .rd-regola {
+    display: block;
+    width: 3rem;
+    height: 2px;
+    margin-top: 1rem;
+    background: linear-gradient(90deg, var(--brand-gold) 0%, rgb(213 168 58 / 0.25) 100%);
+  }
+
+  .rd-sommario {
+    margin-top: 0.9rem;
+    max-width: 62ch;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: #57534e;
+  }
+  @media (min-width: 768px) {
+    .rd-sommario { font-size: 0.975rem; line-height: 1.7; color: #52525b; }
+  }
+
+  .rd-titolo-scheda {
+    font-size: 1.0625rem;
+    line-height: 1.32;
+    letter-spacing: -0.015em;
+    font-weight: 800;
+    color: #1c2b22;
+  }
+
+  .rd-scheda {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-editorial);
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: var(--shadow-editorial);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  .rd-fascia {
+    border: 1px solid var(--border-editorial);
+    border-radius: 1.25rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fdfbf6 100%);
+    box-shadow: var(--shadow-editorial);
+  }
+
+  .rd-et {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    background: var(--surface-editorial-2);
+    color: var(--brand-forest);
+    border: 1px solid var(--border-editorial);
+  }
+
+  .rd-azione {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.65rem;
+    background: var(--brand-forest);
+    padding: 0.65rem 1.15rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #ffffff;
+    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+    box-shadow: 0 10px 22px -16px rgb(27 54 36 / 0.9);
+  }
+  .rd-azione:hover { background: var(--brand-forest-deep); }
+  .rd-azione:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-gold); }
+
+  .rd-azione-tenue {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.65rem;
+    border: 1px solid var(--border-editorial-strong);
+    background: #ffffff;
+    padding: 0.6rem 1.05rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--brand-forest);
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+  }
+  .rd-azione-tenue:hover {
+    border-color: var(--brand-gold);
+    background: #fffdf7;
+  }
+  .rd-azione-tenue:focus-visible { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand-gold); }
+
+  .rd-link-freccia {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--brand-forest);
+    transition: gap 0.16s ease, color 0.16s ease;
+  }
+  .rd-link-freccia:hover { gap: 0.5rem; color: var(--brand-forest-deep); }
+}
+
+@keyframes rd-entra {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rd-entra { animation: rd-entra 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rd-entra { animation: none; }
+  .rd-scheda { transition: none; }
+}
+
+.rd-dato {
+  border: 1px solid var(--border-editorial);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  padding: 0.85rem;
+}

@@ -11,7 +11,6 @@ export const metadata: Metadata = {
   title: "Territorio",
   description:
     "Parchi, aree territoriali e comuni tra paesaggio, storia e produzioni tipiche: le schede dei territori di Radici Calabria.",
-  alternates: { canonical: `${getSiteUrl()}/territorio` },
   openGraph: {
     title: "Territorio",
     description:
@@ -20,6 +19,7 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Radici Calabria",
   },
+  alternates: { canonical: `${getSiteUrl()}/territorio` },
 };
 
 /**

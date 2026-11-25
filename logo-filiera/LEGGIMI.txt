@@ -1,0 +1,30 @@
+Radici Calabria (ex InCittà) — logo "CON UN CLICK LA FILIERA A CASA TUA"
+
+File in uso dal sito
+- public/logo-transparent.png   1536x1024, sfondo trasparente
+- public/logo.png               1536x1024, fondo bianco (senza canale alpha)
+- backup dei file precedenti: .backup-logo-radici-20261112/
+- asset originale allegato:   logo-filiera/radici-calabria-sorgente.jpg (1408x768)
+
+Ingombro (invariato: nessuna modifica al codice di header/layout)
+- Canvas 1536x1024 identico al logo precedente: il box dell'immagine in header
+  (380x253 px desktop, 300x200 tablet, 246x164 smartphone) non cambia, quindi
+  header, navigazione e area clienti restano fermi.
+- L'arte del nuovo logo occupa 0,219 -> 1535,760 (1535x542) dentro il canvas:
+  nessun bianco ai lati (prima 107/86 px), +14,3% rispetto alla prima versione
+  (1343x474), centrata sul centro ottico verticale y=490.
+- Limite: la larghezza resa è fissata dalla colonna del logo in header (380 px
+  desktop, 300 tablet, 246 smartphone); l'arte la riempie al 99,9%.
+
+Composizione
+- Emblema circolare a linea con "RADICI", foglie, profilo della Calabria e radici.
+- Wordmark RADICI (blu notte) + CALABRIA (giallo).
+- Payoff: CON UN CLICK LA FILIERA A CASA TUA.
+
+Rigenerare
+- node logo-filiera/build-logo-radici.js   (scrive public/logo-transparent.png,
+  public/logo.png e logo-filiera/radici-art.png; sfondo bianco -> trasparente)
+
+Alt dei due componenti che mostrano il logo
+- components/Header/Header.tsx           alt="Radici Calabria", aria-label "Radici Calabria — Home"
+- components/cliente/ClienteHeader.tsx   alt="Radici Calabria", aria-label "Radici Calabria — torna al sito"

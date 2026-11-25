@@ -1,11 +1,4 @@
-import {
-  LIVELLI,
-  type EsitoAnalisi,
-  type EsitoRicercaDocumentale,
-  type Livello,
-  type RicercaWeb,
-  type RiconoscimentoAi,
-} from "@/lib/radiscan/tipi";
+import { LIVELLI, type EsitoAnalisi, type Livello } from "@/lib/radiscan/tipi";
 
 /**
  * RadiciScan — logica pura dell'interfaccia.
@@ -34,10 +27,11 @@ export const MAX_IMMAGINE_BYTES = 3 * 1024 * 1024;
 export const MAX_FILE_ORIGINALE_BYTES = 25 * 1024 * 1024;
 
 /**
- * Lato massimo della ricodifica: 1800 px. Riduce il payload inviato al modello
- * mantenendo una risoluzione adatta alla lettura delle etichette.
+ * Lato massimo della ricodifica: 2400 px. È volutamente alto perché la
+ * leggibilità delle etichette viene prima della riduzione del peso; la
+ * qualità scende solo se il file supera il limite.
  */
-export const LATO_MASSIMO = 1800;
+export const LATO_MASSIMO = 2400;
 export const LATO_MINIMO = 1200;
 
 export type GruppoEsito =
@@ -71,44 +65,6 @@ export const ETICHETTE_GRUPPO: Record<
       "Alcuni dati non coincidono con la fonte ufficiale e vanno controllati; non è una conclusione.",
   },
 };
-
-/**
- * Una DOP è riconosciuta solo con una prova ufficiale registrata e una
- * corrispondenza esatta della denominazione. Un risultato informativo o una
- * denominazione affine non basta, e non autentica la singola confezione.
- */
-export function denominazioneUfficialmenteRegistrata(
-  prove: readonly {
-    tipo: string;
-    stato: string;
-    schemaQualita: string | null;
-    relazione: string;
-  }[]
-): boolean {
-  return prove.some(
-    (prova) =>
-      prova.tipo === "ufficiale" &&
-      prova.stato === "registrata" &&
-      (prova.schemaQualita === "DOP" ||
-        prova.schemaQualita === "IGP" ||
-        prova.schemaQualita === "STG") &&
-      prova.relazione.startsWith("Corrispondenza esatta")
-  );
-}
-
-/** Compatibilità per i controlli e i test che chiedono specificamente una DOP. */
-export function dopRiconosciuta(
-  prove: readonly {
-    tipo: string;
-    stato: string;
-    schemaQualita: string | null;
-    relazione: string;
-  }[]
-): boolean {
-  return denominazioneUfficialmenteRegistrata(
-    prove.filter((prova) => prova.schemaQualita === "DOP")
-  );
-}
 
 export function gruppoDaLivello(livello: Livello): GruppoEsito {
   switch (livello) {
@@ -354,14 +310,6 @@ export function messaggioErrore(input: {
     return "L'analisi ha impiegato troppo tempo. Riprova con la stessa foto.";
   }
 
-  if (codice === "MODELLO_NON_DISPONIBILE") {
-    return "Il modello di riconoscimento non è disponibile in questo momento. Riprova tra poco.";
-  }
-
-  if (codice === "CONFIGURAZIONE_NON_DISPONIBILE") {
-    return "Il servizio di riconoscimento non è configurato correttamente. Riprova più tardi.";
-  }
-
   if (
     stato >= 500 ||
     codice === "ANALISI_NON_DISPONIBILE" ||
@@ -382,157 +330,4 @@ export function messaggioErrore(input: {
 export function descriviQuota(quota: QuotaApi | undefined): string {
   if (!quota) return "";
   return `Oggi hai usato ${quota.usatiOggi} analisi su ${quota.limiteGiorno}; il limite è ${quota.limiteMinuto} al minuto.`;
-}
-
-// ─── Trasporto progressivo (NDJSON) ───────────────────────────────────────
-//
-// Ogni riga è un evento autonomo emesso quando il dato è realmente
-// disponibile. `preliminare: true` indica un dato non ancora verificato:
-// l'interfaccia lo mostra separatamente e non lo usa per dichiarare un esito.
-
-export type EventoProgressivoClient =
-  | {
-      evento: "riconoscimento";
-      preliminare: true;
-      riconoscimento: RiconoscimentoAi;
-      provider: string;
-      modello: string;
-      durataMs: number;
-    }
-  | {
-      evento: "documentale";
-      preliminare: true;
-      ricerca: EsitoRicercaDocumentale;
-      durataMs: number;
-    }
-  | { evento: "web"; preliminare: true; web: RicercaWeb }
-  | {
-      evento: "esito";
-      preliminare: false;
-      esito: EsitoAnalisi;
-      meta: unknown;
-      cache: boolean;
-    }
-  | { evento: "errore"; errore: ErroreApi; stato: number };
-
-/** Dati parziali già leggibili, distinti dall'esito definitivo. */
-export interface StatoProgressivo {
-  riconoscimento: RiconoscimentoAi | null;
-  documentale: EsitoRicercaDocumentale | null;
-  web: RicercaWeb | null;
-}
-
-export const STATO_PROGRESSIVO_VUOTO: StatoProgressivo = {
-  riconoscimento: null,
-  documentale: null,
-  web: null,
-};
-
-function oggetto(valore: unknown): Record<string, unknown> | null {
-  if (!valore || typeof valore !== "object" || Array.isArray(valore)) return null;
-  return valore as Record<string, unknown>;
-}
-
-/** Valida il minimo indispensabile: una riga strana viene ignorata. */
-export function estraiEvento(valore: unknown): EventoProgressivoClient | null {
-  const record = oggetto(valore);
-  if (!record) return null;
-
-  if (record.evento === "riconoscimento") {
-    const riconoscimento = oggetto(record.riconoscimento);
-    if (!riconoscimento || typeof riconoscimento.prodotto !== "string") return null;
-    return {
-      evento: "riconoscimento",
-      preliminare: true,
-      riconoscimento: riconoscimento as unknown as RiconoscimentoAi,
-      provider: typeof record.provider === "string" ? record.provider : "",
-      modello: typeof record.modello === "string" ? record.modello : "",
-      durataMs: typeof record.durataMs === "number" ? record.durataMs : 0,
-    };
-  }
-
-  if (record.evento === "documentale") {
-    const ricerca = oggetto(record.ricerca);
-    if (!ricerca || typeof ricerca.stato !== "string") return null;
-    return {
-      evento: "documentale",
-      preliminare: true,
-      ricerca: ricerca as unknown as EsitoRicercaDocumentale,
-      durataMs: typeof record.durataMs === "number" ? record.durataMs : 0,
-    };
-  }
-
-  if (record.evento === "web") {
-    const web = oggetto(record.web);
-    if (!web || typeof web.stato !== "string") return null;
-    return { evento: "web", preliminare: true, web: web as unknown as RicercaWeb };
-  }
-
-  if (record.evento === "esito") {
-    try {
-      const risposta = estraiRisposta({
-        success: true,
-        esito: record.esito,
-        cache: record.cache,
-      });
-      return {
-        evento: "esito",
-        preliminare: false,
-        esito: risposta.esito,
-        meta: record.meta ?? null,
-        cache: risposta.cache,
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  if (record.evento === "errore") {
-    const errore = estraiErrore({ errore: record.errore, quota: record.quota });
-    return {
-      evento: "errore",
-      errore: errore ?? { codice: "ERRORE_INTERNO", messaggio: "Errore non specificato." },
-      stato: typeof record.stato === "number" ? record.stato : 0,
-    };
-  }
-
-  return null;
-}
-
-/** Legge lo stream riga per riga: nessun evento parziale viene interpretato. */
-export async function* leggiEventiProgressivi(
-  corpo: ReadableStream<Uint8Array>
-): AsyncGenerator<EventoProgressivoClient> {
-  const lettore = corpo.getReader();
-  const decodifica = new TextDecoder();
-  let residuo = "";
-
-  const consuma = (riga: string): EventoProgressivoClient | null => {
-    const testo = riga.trim();
-    if (!testo) return null;
-    try {
-      return estraiEvento(JSON.parse(testo) as unknown);
-    } catch {
-      return null;
-    }
-  };
-
-  try {
-    for (;;) {
-      const { done, value } = await lettore.read();
-      if (done) break;
-      residuo += decodifica.decode(value, { stream: true });
-      let taglio = residuo.indexOf("\n");
-      while (taglio >= 0) {
-        const evento = consuma(residuo.slice(0, taglio));
-        residuo = residuo.slice(taglio + 1);
-        if (evento) yield evento;
-        taglio = residuo.indexOf("\n");
-      }
-    }
-    const ultimo = consuma(residuo);
-    if (ultimo) yield ultimo;
-  } finally {
-    lettore.releaseLock();
-  }
 }

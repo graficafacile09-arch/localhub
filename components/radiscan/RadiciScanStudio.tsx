@@ -17,45 +17,22 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { EsitoAnalisi } from "@/lib/radiscan/tipi";
-import ScanRisultato, { ScanRisultatoProgressivo } from "./ScanRisultato";
+import ScanRisultato from "./ScanRisultato";
 import {
   LATO_MASSIMO,
   LATO_MINIMO,
   MAX_IMMAGINE_BYTES,
   calcolaLato,
   descriviQuota,
-  STATO_PROGRESSIVO_VUOTO,
   estraiErrore,
   estraiRisposta,
-  leggiEventiProgressivi,
   messaggioErrore,
   validaFileLocale,
   type ErroreApi,
-  type StatoProgressivo,
 } from "./logica";
 
-type Fase = "inizio" | "fotocamera" | "anteprima" | "analisi" | "esito" | "errore";
+type Fase = "inizio" | "anteprima" | "analisi" | "esito" | "errore";
 type SorgenteImmagine = ImageBitmap | HTMLImageElement;
-
-const LATO_MASSIMO_SCATTO = 1800;
-
-function messaggioFotocamera(causa: unknown): string {
-  const nome =
-    typeof causa === "object" && causa !== null && "name" in causa
-      ? String((causa as { name?: unknown }).name ?? "")
-      : "";
-
-  if (nome === "NotAllowedError" || nome === "SecurityError") {
-    return "Permesso fotocamera negato. Abilitalo nelle impostazioni del browser oppure carica un'immagine.";
-  }
-  if (nome === "NotFoundError" || nome === "DevicesNotFoundError") {
-    return "Nessuna fotocamera disponibile su questo dispositivo. Carica un'immagine dalla galleria o dal computer.";
-  }
-  if (nome === "NotReadableError" || nome === "TrackStartError") {
-    return "La fotocamera è occupata da un altro programma. Chiudila e riprova, oppure carica un'immagine.";
-  }
-  return "Non riesco ad aprire la fotocamera. Carica un'immagine dalla galleria o dal computer.";
-}
 
 function dimensioniSorgente(sorgente: SorgenteImmagine): {
   larghezza: number;
@@ -105,7 +82,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, qualità: number): Promise<Blob
 }
 
 /**
- * Normalizzazione conservativa: lato massimo 1800 px, qualità 0,88, nessun
+ * Normalizzazione conservativa: lato massimo 2400 px, qualità 0,92, nessun
  * filtro di contrasto o nitidezza. La qualità scende solo se il file supera
  * i 3 MiB; il ridimensionamento successivo resta sopra i 1200 px.
  */
@@ -119,7 +96,7 @@ async function normalizzaImmagine(file: File): Promise<File> {
     }
 
     let latoMassimo = LATO_MASSIMO;
-    let qualità = 0.88;
+    let qualità = 0.92;
 
     for (let tentativo = 0; tentativo < 7; tentativo++) {
       const dimensioni = calcolaLato(
@@ -174,37 +151,6 @@ async function normalizzaImmagine(file: File): Promise<File> {
   }
 }
 
-interface RilevatoreBarcode {
-  detect(source: ImageBitmap): Promise<Array<{ rawValue?: string }>>;
-}
-
-/**
- * Legge un codice a barre EAN/UPC dal file, se il browser espone
- * BarcodeDetector. Non è un requisito: in assenza dell'API si procede senza.
- */
-async function rilevaCodiceBarre(file: File): Promise<string | null> {
-  const costruttore = (
-    globalThis as unknown as {
-      BarcodeDetector?: new (opzioni?: { formats?: string[] }) => RilevatoreBarcode;
-    }
-  ).BarcodeDetector;
-  if (!costruttore || typeof createImageBitmap !== "function") return null;
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    try {
-      const rilevatore = new costruttore({ formats: ["ean_13", "ean_8", "upc_a"] });
-      const codici = await rilevatore.detect(bitmap);
-      const cifre = (codici[0]?.rawValue ?? "").replace(/\D/g, "");
-      return cifre.length >= 8 && cifre.length <= 13 ? cifre : null;
-    } finally {
-      bitmap.close();
-    }
-  } catch {
-    return null;
-  }
-}
-
 export default function RadiciScanStudio() {
   const [fase, setFase] = useState<Fase>("inizio");
   const [file, setFile] = useState<File | null>(null);
@@ -215,40 +161,15 @@ export default function RadiciScanStudio() {
   const [erroreStato, setErroreStato] = useState(0);
   const [erroreLocale, setErroreLocale] = useState<string | null>(null);
   const [trascinando, setTrascinando] = useState(false);
-  const [avvioFotocamera, setAvvioFotocamera] = useState(false);
-  const [erroreFotocamera, setErroreFotocamera] = useState<string | null>(null);
-  const [scattoDaFotocamera, setScattoDaFotocamera] = useState(false);
-  // Dati parziali già leggibili, tenuti separati dall'esito definitivo.
-  const [progressivo, setProgressivo] = useState<StatoProgressivo>(
-    STATO_PROGRESSIVO_VUOTO
-  );
-  const richiestaRef = useRef<AbortController | null>(null);
 
   const inputGalleria = useRef<HTMLInputElement | null>(null);
   const inputFotocamera = useRef<HTMLInputElement | null>(null);
   const anteprimaRef = useRef<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const risultatoRef = useRef<HTMLDivElement | null>(null);
   const idGalleria = useId();
   const idFotocamera = useId();
 
-  function fermaFotocamera() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((traccia) => traccia.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }
-
   useEffect(() => {
     return () => {
-      fermaFotocamera();
-      // Uscendo dalla pagina la richiesta viene annullata: il server chiude
-      // lo stream e interrompe le operazioni ancora pendenti.
-      richiestaRef.current?.abort();
       if (anteprimaRef.current) {
         URL.revokeObjectURL(anteprimaRef.current);
         anteprimaRef.current = null;
@@ -256,167 +177,7 @@ export default function RadiciScanStudio() {
     };
   }, []);
 
-  // Quando l'analisi termina, porta il risultato principale in primo piano.
-  useEffect(() => {
-    if (fase !== "esito") return;
-
-    const frame = window.requestAnimationFrame(() => {
-      risultatoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [fase]);
-
-  // Appena arriva il primo dato utile, lo riporta in primo piano (una sola volta
-  // per analisi): il resto aggiorna la stessa area senza ulteriori scroll.
-  const primoDatoArrivato =
-    fase === "analisi" &&
-    Boolean(progressivo.riconoscimento || progressivo.documentale || progressivo.web);
-
-  useEffect(() => {
-    if (!primoDatoArrivato) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      risultatoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [primoDatoArrivato]);
-
-  useEffect(() => {
-    if (fase !== "fotocamera") return;
-
-    let annullato = false;
-    const video = videoRef.current;
-
-    async function avviaFotocamera() {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error("getUserMedia non disponibile");
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
-
-        if (annullato) {
-          stream.getTracks().forEach((traccia) => traccia.stop());
-          return;
-        }
-
-        streamRef.current = stream;
-        if (video) {
-          video.srcObject = stream;
-          await video.play().catch(() => undefined);
-        }
-      } catch (causa) {
-        if (!annullato) setErroreFotocamera(messaggioFotocamera(causa));
-      } finally {
-        if (!annullato) setAvvioFotocamera(false);
-      }
-    }
-
-    void avviaFotocamera();
-
-    return () => {
-      annullato = true;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((traccia) => traccia.stop());
-        streamRef.current = null;
-      }
-      if (video) {
-        video.srcObject = null;
-      }
-    };
-  }, [fase]);
-
-  function apriFotocamera() {
-    if (fase === "analisi") return;
-    setErroreLocale(null);
-    setAvvioFotocamera(true);
-    setErroreFotocamera(null);
-    setFase("fotocamera");
-  }
-
-  function annullaFotocamera() {
-    fermaFotocamera();
-    setAvvioFotocamera(false);
-    setErroreFotocamera(null);
-    setFase("inizio");
-  }
-
-  function riapriFotocamera() {
-    if (anteprimaRef.current) {
-      URL.revokeObjectURL(anteprimaRef.current);
-      anteprimaRef.current = null;
-    }
-    setAnteprima(null);
-    setFile(null);
-    setEsito(null);
-    setDaCache(false);
-    setErrore(null);
-    setErroreStato(0);
-    setErroreLocale(null);
-    setAvvioFotocamera(true);
-    setErroreFotocamera(null);
-    setScattoDaFotocamera(false);
-    setFase("fotocamera");
-  }
-
-  function scattaFoto() {
-    const video = videoRef.current;
-    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
-      setErroreFotocamera(
-        "La fotocamera non è ancora pronta. Attendi un istante e riprova."
-      );
-      return;
-    }
-
-    const scala = Math.min(
-      1,
-      LATO_MASSIMO_SCATTO / Math.max(video.videoWidth, video.videoHeight)
-    );
-    const larghezza = Math.max(1, Math.round(video.videoWidth * scala));
-    const altezza = Math.max(1, Math.round(video.videoHeight * scala));
-    const canvas = document.createElement("canvas");
-    canvas.width = larghezza;
-    canvas.height = altezza;
-    const contesto = canvas.getContext("2d");
-
-    if (!contesto) {
-      setErroreFotocamera("Non riesco a preparare lo scatto. Riprova.");
-      return;
-    }
-
-    contesto.drawImage(video, 0, 0, larghezza, altezza);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          setErroreFotocamera("Non riesco a salvare lo scatto. Riprova.");
-          return;
-        }
-
-        fermaFotocamera();
-        const scatto = new File([blob], "radiscan-scatto.jpg", {
-          type: "image/jpeg",
-        });
-        setScattoDaFotocamera(true);
-        void gestisciFile(scatto, true);
-      },
-      "image/jpeg",
-      0.92
-    );
-  }
-
-  async function gestisciFile(
-    scelto: File | null | undefined,
-    daFotocamera = false
-  ) {
+  async function gestisciFile(scelto: File | null | undefined) {
     if (!scelto || fase === "analisi") return;
 
     setErroreLocale(null);
@@ -426,7 +187,6 @@ export default function RadiciScanStudio() {
     const validazione = validaFileLocale(scelto);
     if (!validazione.ok) {
       setErroreLocale(validazione.messaggio);
-      if (daFotocamera) setFase("inizio");
       return;
     }
 
@@ -443,10 +203,8 @@ export default function RadiciScanStudio() {
       setFile(normalizzato);
       setEsito(null);
       setDaCache(false);
-      setScattoDaFotocamera(daFotocamera);
       setFase("anteprima");
     } catch (causa) {
-      if (daFotocamera) setFase("inizio");
       setErroreLocale(
         causa instanceof Error ? causa.message : "Immagine non leggibile."
       );
@@ -456,7 +214,7 @@ export default function RadiciScanStudio() {
   function onFileInput(event: ChangeEvent<HTMLInputElement>) {
     const scelto = event.target.files?.[0] ?? null;
     event.target.value = "";
-    void gestisciFile(scelto, false);
+    void gestisciFile(scelto);
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
@@ -478,78 +236,20 @@ export default function RadiciScanStudio() {
     setErrore(null);
     setErroreStato(0);
     setErroreLocale(null);
-    setProgressivo(STATO_PROGRESSIVO_VUOTO);
 
     const corpo = new FormData();
     corpo.append("immagine", file);
-    // Il codice a barre è facoltativo: il server lo rivalida comunque.
-    const codiceBarre = await rilevaCodiceBarre(file);
-    if (codiceBarre) corpo.append("codiceBarre", codiceBarre);
-
-    // Un solo invio: se la pagina viene lasciata, la richiesta si annulla e il
-    // server interrompe le operazioni ancora pendenti.
-    const annulla = new AbortController();
-    richiestaRef.current = annulla;
 
     try {
       // Il Content-Type non viene impostato a mano: il browser aggiunge il
-      // boundary corretto per il multipart. Con Accept NDJSON il server manda
-      // un evento per riga appena il dato è realmente disponibile.
+      // boundary corretto per il multipart.
       const risposta = await fetch("/api/radiscan/analisi", {
         method: "POST",
         body: corpo,
         credentials: "same-origin",
-        signal: annulla.signal,
-        headers: { Accept: "application/x-ndjson" },
+        headers: { Accept: "application/json" },
       });
 
-      const tipoContenuto = (risposta.headers.get("content-type") ?? "").toLowerCase();
-
-      if (risposta.body && tipoContenuto.includes("application/x-ndjson")) {
-        let concluso = false;
-
-        for await (const evento of leggiEventiProgressivi(risposta.body)) {
-          if (evento.evento === "riconoscimento") {
-            setProgressivo((precedente) => ({
-              ...precedente,
-              riconoscimento: evento.riconoscimento,
-            }));
-          } else if (evento.evento === "documentale") {
-            setProgressivo((precedente) => ({
-              ...precedente,
-              documentale: evento.ricerca,
-            }));
-          } else if (evento.evento === "web") {
-            setProgressivo((precedente) => ({ ...precedente, web: evento.web }));
-          } else if (evento.evento === "esito") {
-            // Solo l'esito definitivo sostituisce la schermata: i parziali non
-            // vengono mai promossi a livello.
-            setEsito(evento.esito);
-            setDaCache(evento.cache);
-            setFase("esito");
-            concluso = true;
-          } else if (evento.evento === "errore") {
-            setErrore(evento.errore);
-            setErroreStato(evento.stato);
-            setFase("errore");
-            concluso = true;
-          }
-        }
-
-        if (!concluso) {
-          setErrore({
-            codice: "STREAM_INTERROTTO",
-            messaggio:
-              "Il collegamento si è interrotto prima dell'esito definitivo. I dati parziali restano quelli letti finora: riprova l'analisi.",
-          });
-          setErroreStato(0);
-          setFase("errore");
-        }
-        return;
-      }
-
-      // Risposta JSON: errore precedente all'analisi (quota, immagine,
-      // registro) oppure client che non ha chiesto lo stream.
       const dati: unknown = await risposta.json().catch(() => null);
 
       if (risposta.ok) {
@@ -582,26 +282,17 @@ export default function RadiciScanStudio() {
       setErroreStato(risposta.status);
       setFase("errore");
     } catch {
-      // Annullamento volontario (pagina lasciata): nessun errore da mostrare.
-      if (annulla.signal.aborted) return;
       setErrore({
         codice: "RETE",
         messaggio: "Connessione non disponibile.",
       });
       setErroreStato(0);
       setFase("errore");
-    } finally {
-      if (richiestaRef.current === annulla) richiestaRef.current = null;
     }
   }
 
   function reset() {
     if (fase === "analisi") return;
-
-    fermaFotocamera();
-    setAvvioFotocamera(false);
-    setErroreFotocamera(null);
-    setScattoDaFotocamera(false);
 
     if (anteprimaRef.current) {
       URL.revokeObjectURL(anteprimaRef.current);
@@ -615,7 +306,6 @@ export default function RadiciScanStudio() {
     setErrore(null);
     setErroreStato(0);
     setErroreLocale(null);
-    setProgressivo(STATO_PROGRESSIVO_VUOTO);
     setTrascinando(false);
     setFase("inizio");
 
@@ -633,11 +323,25 @@ export default function RadiciScanStudio() {
     : "";
 
   return (
-    <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
-      <div className="mb-3 flex justify-end">
+    <section className="rd-fascia p-5 md:p-8" aria-busy={fase === "analisi"}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="rd-occhiello">
+            <ScanLine aria-hidden />
+            Fotografia e verifica
+          </p>
+          <h2 className="rd-titolo-scheda mt-1 text-xl md:text-2xl">
+            Analizza un prodotto
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[#57534e]">
+            Scatta o carica una foto dell&apos;etichetta. RadiciScan legge le
+            informazioni visibili e le confronta con il registro delle fonti
+            ufficiali.
+          </p>
+        </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
           <ShieldCheck className="h-3.5 w-3.5 text-[#24462f]" aria-hidden />
-          Foto non conservata
+          Nessuna immagine conservata
         </span>
       </div>
 
@@ -651,125 +355,19 @@ export default function RadiciScanStudio() {
         </div>
       ) : null}
 
-      {fase === "fotocamera" ? (
-        <div className="mt-5 rounded-2xl border border-[#e5ded0] bg-[#0d1a12] p-3">
-          <div className="relative overflow-hidden rounded-xl bg-black">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="max-h-[420px] w-full object-contain"
-              aria-label="Anteprima della fotocamera"
-            />
-            {avvioFotocamera ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 text-white">
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                <p className="text-xs font-semibold">Apertura fotocamera…</p>
-              </div>
-            ) : null}
-          </div>
-
-          {erroreFotocamera ? (
-            <div
-              role="alert"
-              className="mt-3 rounded-xl border border-red-300/40 bg-red-950/40 p-3 text-sm leading-6 text-red-100"
-            >
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <span>{erroreFotocamera}</span>
-              </div>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <label
-                  htmlFor={idGalleria}
-                  className="rd-azione cursor-pointer justify-center px-4 py-2.5"
-                >
-                  <ImagePlus className="h-4 w-4" aria-hidden />
-                  Carica un&apos;immagine
-                </label>
-                <label
-                  htmlFor={idFotocamera}
-                  className="rd-azione-tenue cursor-pointer justify-center px-4 py-2.5"
-                >
-                  <Camera className="h-4 w-4" aria-hidden />
-                  Usa fotocamera del dispositivo
-                </label>
-                <button
-                  type="button"
-                  onClick={annullaFotocamera}
-                  className="px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:text-white"
-                >
-                  Annulla
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <p className="mt-3 text-center text-xs leading-5 text-white/70">
-                Inquadra l&apos;etichetta e scatta. Su smartphone viene richiesta
-                la fotocamera posteriore, quando disponibile.
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={scattaFoto}
-                  disabled={avvioFotocamera}
-                  className="rd-azione flex-1 justify-center px-4 py-2.5 disabled:cursor-wait disabled:opacity-60"
-                >
-                  <Camera className="h-4 w-4" aria-hidden />
-                  Scatta foto
-                </button>
-                <label
-                  htmlFor={idGalleria}
-                  className="rd-azione-tenue cursor-pointer justify-center px-4 py-2.5"
-                >
-                  <ImagePlus className="h-4 w-4" aria-hidden />
-                  Carica dalla galleria
-                </label>
-                <button
-                  type="button"
-                  onClick={annullaFotocamera}
-                  className="px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:text-white"
-                >
-                  Annulla
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      ) : null}
-
-      <input
-        ref={inputGalleria}
-        id={idGalleria}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="sr-only"
-        onChange={onFileInput}
-      />
-      <input
-        ref={inputFotocamera}
-        id={idFotocamera}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="environment"
-        className="sr-only"
-        onChange={onFileInput}
-      />
-
       {fase === "inizio" ? (
         <div
           onDrop={onDrop}
           onDragOver={onDragOver}
           onDragLeave={() => setTrascinando(false)}
-          className={`mt-4 rounded-2xl border-2 border-dashed p-4 text-center transition md:p-5 ${
+          className={`mt-5 rounded-2xl border-2 border-dashed p-5 text-center transition md:p-8 ${
             trascinando
               ? "border-[#d5a83a] bg-[#fbf6e8]"
               : "border-[#e5ded0] bg-[#fffdf7]"
           }`}
         >
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#24462f] text-white shadow-[0_12px_24px_-16px_rgba(27,54,36,0.9)]">
-            <ImagePlus className="h-5 w-5" aria-hidden />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#24462f] text-white shadow-[0_12px_24px_-16px_rgba(27,54,36,0.9)]">
+            <ImagePlus className="h-6 w-6" aria-hidden />
           </div>
           <p className="mt-3 text-sm font-bold text-[#1b3624]">
             Trascina qui una foto, oppure
@@ -783,23 +381,36 @@ export default function RadiciScanStudio() {
               <ImagePlus className="h-4 w-4" aria-hidden />
               Carica immagine
             </label>
-            <button
-              type="button"
-              onClick={apriFotocamera}
-              className="rd-azione-tenue px-5 py-2.5"
+            <label
+              htmlFor={idFotocamera}
+              className="rd-azione-tenue cursor-pointer px-5 py-2.5 sm:hidden"
             >
               <Camera className="h-4 w-4" aria-hidden />
               Scatta foto
-            </button>
+            </label>
           </div>
 
-          <p className="mt-2 text-[11px] leading-4 text-[#8a8378]">
-            Su PC si apre la webcam; su smartphone la fotocamera posteriore,
-            quando disponibile.
-            <span className="mt-0.5 block">
-              JPEG, PNG o WebP · massimo 3 MB · la foto non viene conservata.
-            </span>
+          <p className="mt-3 text-xs leading-5 text-[#8a8378]">
+            JPEG, PNG o WebP · ridotta a massimo 3 MB · la foto non viene conservata
           </p>
+
+          <input
+            ref={inputGalleria}
+            id={idGalleria}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={onFileInput}
+          />
+          <input
+            ref={inputFotocamera}
+            id={idFotocamera}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            className="sr-only"
+            onChange={onFileInput}
+          />
         </div>
       ) : null}
 
@@ -818,7 +429,12 @@ export default function RadiciScanStudio() {
             <div>
               <p className="text-sm font-bold text-[#1b3624]">Foto pronta</p>
               <p className="mt-1 text-sm leading-6 text-[#57534e]">
-                Controlla che l&apos;etichetta sia leggibile.
+                Controlla che l&apos;etichetta sia leggibile e che il prodotto sia
+                centrato nell&apos;immagine.
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[#8a8378]">
+                L&apos;immagine viene ridimensionata nel browser e inviata solo per
+                questa analisi.
               </p>
             </div>
 
@@ -838,17 +454,6 @@ export default function RadiciScanStudio() {
                   ? "Analisi in corso…"
                   : "Analizza con RadiciScan"}
               </button>
-              {scattoDaFotocamera ? (
-                <button
-                  type="button"
-                  onClick={riapriFotocamera}
-                  disabled={fase === "analisi"}
-                  className="rd-azione-tenue w-full px-5 py-2.5 disabled:opacity-60"
-                >
-                  <Camera className="h-4 w-4" aria-hidden />
-                  Ripeti foto
-                </button>
-              ) : null}
               <button
                 type="button"
                 onClick={reset}
@@ -863,17 +468,20 @@ export default function RadiciScanStudio() {
       ) : null}
 
       {fase === "analisi" ? (
-        <div ref={risultatoRef} className="scroll-mt-6">
-          <ScanRisultatoProgressivo stato={progressivo} inCorso />
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-4 flex items-center gap-3 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-4"
+        >
+          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#24462f]" aria-hidden />
+          <div>
+            <p className="text-sm font-bold text-[#1b3624]">Analisi in corso</p>
+            <p className="text-xs leading-5 text-[#57534e]">
+              Sto leggendo l&apos;etichetta e confrontando la denominazione con le
+              fonti ufficiali.
+            </p>
+          </div>
         </div>
-      ) : null}
-
-      {fase === "errore" && errore ? (
-        // Se lo stream si è rotto dopo un parziale, i dati già letti restano
-        // visibili e distinti dall'errore.
-        progressivo.riconoscimento || progressivo.documentale || progressivo.web ? (
-          <ScanRisultatoProgressivo stato={progressivo} inCorso={false} />
-        ) : null
       ) : null}
 
       {fase === "errore" && errore ? (
@@ -918,15 +526,15 @@ export default function RadiciScanStudio() {
       ) : null}
 
       {fase === "esito" && esito ? (
-        <div ref={risultatoRef} className="scroll-mt-6">
-          <ScanRisultato esito={esito} cache={daCache} onReset={reset} />
-        </div>
+        <ScanRisultato esito={esito} cache={daCache} onReset={reset} />
       ) : null}
 
-      <div className="mt-5 flex items-start gap-2 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-3">
+      <div className="mt-6 flex items-start gap-2 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]" aria-hidden />
         <p className="text-xs leading-5 text-[#57534e]">
-          La foto è usata solo per questa analisi. L&apos;esito non autentica il singolo lotto.
+          RadiciScan verifica la documentazione della denominazione, non
+          certifica il singolo esemplare. L&apos;immagine non viene conservata:
+          viene inviata solo per l&apos;analisi in corso.
         </p>
       </div>
     </section>
