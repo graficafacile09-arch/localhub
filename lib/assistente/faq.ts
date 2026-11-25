@@ -29,6 +29,14 @@ export const FAQ_PINO = [
     "risposta": "Puoi contattarci tramite la pagina Contatti. Le regole per produttori e operatori sono descritte nella pagina Produttori e Filiere."
   },
   {
+    "domanda": "Cos'è RadiciScan e che uso ne posso fare?",
+    "risposta": "RadiciScan è uno strumento digitale di esplorazione e supporto a titolo esclusivamente informativo e divulgativo, per conoscere prodotti e produzioni del territorio calabrese. Il suo utilizzo è libero e non comporta alcun obbligo."
+  },
+  {
+    "domanda": "I risultati di RadiciScan certificano un prodotto?",
+    "risposta": "No. I risultati generati tramite Intelligenza Artificiale hanno carattere puramente orientativo: non costituiscono certificazione ufficiale (DOP, IGP, PAT, De.Co., Biologico), perizia tecnica, garanzia commerciale né parere sanitario, nutrizionale o sugli allergeni. Fa sempre fede l'etichetta fisica del prodotto e quanto dichiarato dal produttore."
+  },
+  {
     "domanda": "Come posso creare un account?",
     "risposta": "Puoi registrarti con email e password oppure, quando disponibile, con Google o Apple."
   },

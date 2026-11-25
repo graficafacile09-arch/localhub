@@ -1,6 +1,6 @@
 // Generato da scripts/sync-conoscenza-pino.mjs: non modificare a mano.
 export const INDICE_GENERATO = {
-  "generatoIl": "2026-11-25T15:55:44.836Z",
+  "generatoIl": "2026-11-25T16:47:23.219Z",
   "pagine": [
     {
       "percorso": "/attrazioni",

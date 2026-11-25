@@ -134,7 +134,30 @@ const sezioni = [
     ),
   },
   {
-    titolo: "10. Legge applicabile e modifiche",
+    titolo: "10. RadiciScan",
+    contenuto: (
+      <>
+        <p>
+          RadiciScan è uno strumento digitale di esplorazione e supporto a titolo esclusivamente
+          informativo e divulgativo, per conoscere prodotti e produzioni del territorio calabrese.
+          Il suo utilizzo è libero e non comporta alcun obbligo per l'utente.
+        </p>
+        <p>
+          I risultati generati tramite Intelligenza Artificiale (Regolamento UE 2024/1689, AI Act)
+          hanno carattere puramente orientativo. Non costituiscono certificazione ufficiale (DOP,
+          IGP, PAT, De.Co., Biologico), perizia tecnica, garanzia commerciale né parere sanitario,
+          nutrizionale o sugli allergeni. Fa sempre fede l'etichetta fisica del prodotto e quanto
+          dichiarato dal produttore.
+        </p>
+        <p>
+          L'analisi di immagini ed etichette è elaborata con modelli di intelligenza artificiale di
+          fornitori terzi e può consultare fonti web pubbliche per confrontare le informazioni.
+        </p>
+      </>
+    ),
+  },
+  {
+    titolo: "11. Legge applicabile e modifiche",
     contenuto: (
       <p>
         I presenti termini sono regolati dalla legge italiana. Radici Calabria può aggiornarli in
