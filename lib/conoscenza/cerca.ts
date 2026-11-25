@@ -1,7 +1,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { TERRITORI, getTerritorio } from "@/lib/territori";
-import { FILIERE_EDITORIALI } from "@/lib/filiere-editoriali";
+import { FILIERE_EDITORIALI, slugFiliera } from "@/lib/filiere-editoriali";
 import { FAQ_PINO } from "@/lib/assistente/faq";
 import { ATTRAZIONI_LUOGHI } from "@/lib/attrazioni-data";
 import { CATEGORIE, NOMI_MESI, VOCI as VOCI_STAGIONALI } from "@/lib/stagionalita/calendario";
@@ -163,7 +163,7 @@ function estrattoRicco(doc: DocumentoConoscenza, termini: string[], massimo = 14
  * i testi dei comuni (e i loro prodotti certificati) entrano tra le fonti.
  */
 const COMUNI_PER_AREA: Record<string, string[]> = {
-  pollino: ["rotonda", "castrovillari", "morano-calabro", "mormanno"],
+  pollino: ["rotonda", "castrovillari", "morano-calabro", "mormanno", "saracena", "civita"],
   sila: [],
   aspromonte: [],
 };
@@ -221,7 +221,7 @@ function documentiStatici(): DocumentoConoscenza[] {
       ]
         .filter(Boolean)
         .join(" "),
-      url: "/filiere",
+      url: `/filiere/${slugFiliera(f)}`,
     });
   }
 

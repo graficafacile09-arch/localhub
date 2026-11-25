@@ -448,7 +448,16 @@ export default async function Home() {
                 <Link href="/filiere" className="transition hover:text-gold">Filiere</Link>
               </li>
               <li>
-                <Link href="/negozi" className="transition hover:text-gold">Negozi</Link>
+                <Link href="/negozi" className="transition hover:text-gold">Aziende</Link>
+              </li>
+              <li>
+                <Link href="/territorio" className="transition hover:text-gold">Territorio</Link>
+              </li>
+              <li>
+                <Link href="/stagionalita" className="transition hover:text-gold">Stagionalità</Link>
+              </li>
+              <li>
+                <Link href="/prodotti" className="transition hover:text-gold">RadiciScan</Link>
               </li>
               <li>
                 <Link href="/categorie" className="transition hover:text-gold">Categorie</Link>
@@ -490,7 +499,7 @@ export default async function Home() {
               href="/notizie"
               className="mt-3 inline-flex text-sm font-black text-gold transition hover:text-gold-soft hover:underline underline-offset-4"
             >
-              Notizie
+              FOCUS / Notizie
             </Link>
           </div>
         </div>

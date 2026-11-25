@@ -1,5 +1,6 @@
 import { createAdminSupabaseClient } from "./supabase/admin";
 import type { ProdottoTerritorio } from "./territori";
+import { isDemoPubblico } from "@/lib/demo-pubblico";
 
 /**
  * Lettura dei prodotti del catalogo da mostrare nelle pagine territoriali.
@@ -55,6 +56,7 @@ export async function getProdottiTerritorio(
   const perSlug = new Map(prodotti.map((p) => [p.slug, p]));
   return (data as Record<string, unknown>[])
     .filter((p) => nomiNegozi.has(p.negozio_id as string))
+    .filter((p) => !isDemoPubblico(p))
     .map((p) => ({
       ...p,
       negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",

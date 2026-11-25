@@ -444,6 +444,121 @@ export const TERRITORI: Territorio[] = [
       fonte: "Wikimedia Commons",
     },
   },
+  {
+    slug: "saracena",
+    nome: "Saracena",
+    gruppo: "Comuni",
+    ordine: 5,
+    sommario:
+      "Il borgo del Pollino cosentino noto per il Moscato al governo, Presidio Slow Food, e per le gole del Garga.",
+    racconto: [
+      "Saracena sorge sulle pendici del Pollino, in provincia di Cosenza, nella valle che scende verso la Piana di Sibari. Il paese conserva un impianto antico, raccolto attorno al centro storico e alle chiese che ne scandiscono la vita religiosa e sociale.",
+      "Il territorio è noto per il Moscato al governo di Saracena, un vino ottenuto da uve fatte appassire e poi rifermentate con il mosto fresco, una tecnica che i contadini hanno tramandato per generazioni. La produzione è riconosciuta come Presidio Slow Food, a tutela di un sapere agricolo raro.",
+      "Poco fuori dal paese si aprono le Gole del Garga, un canyon calcareo scavato dal torrente nel corso dei secoli, meta di escursioni che attraversano un paesaggio di pareti rocciose e vegetazione mediterranea.",
+    ],
+    riconoscimenti: [],
+    prodotti: [{ slug: "moscato-al-governo-di-saracena", riconoscimento: null }],
+    immagine: {
+      src: "/territorio/castrovillari.jpg",
+      alt: "Paesaggio del Pollino cosentino",
+      credito: "Archivio Radici Calabria",
+      licenza: "",
+      fonte: "Radici Calabria",
+    },
+  },
+  {
+    slug: "civita",
+    nome: "Civita",
+    gruppo: "Comuni",
+    ordine: 6,
+    sommario:
+      "Il borgo arbëreshë nel cuore del Parco del Pollino, porta d'accesso alle Gole del Raganello.",
+    racconto: [
+      "Civita sorge nel cuore del Parco Nazionale del Pollino, in provincia di Cosenza, ed è uno dei centri della minoranza arbëreshë giunta in Calabria tra il XV e il XVI secolo. La lingua, il rito bizantino e le tradizioni di questa comunità sono ancora parte viva dell'identità del paese.",
+      "Il borgo è stato inserito tra i Borghi più belli d'Italia per il suo impianto medievale e per il rapporto stretto con il paesaggio montano. L'economia è stata a lungo legata alla pastorizia e all'agricoltura di montagna, con la coltivazione di cereali e legumi nei terreni più accessibili.",
+      "Da Civita si raggiungono le Gole del Raganello, un canyon scavato dal torrente tra pareti calcaree che superano in alcuni tratti i duecento metri, meta di escursioni guidate e di interesse naturalistico per tutto l'anno.",
+    ],
+    riconoscimenti: [],
+    prodotti: [],
+    immagine: {
+      src: "/territorio/pollino.jpg",
+      alt: "Veduta del Parco Nazionale del Pollino",
+      credito: "Archivio Radici Calabria",
+      licenza: "",
+      fonte: "Radici Calabria",
+    },
+  },
+  {
+    slug: "rocca-imperiale",
+    nome: "Rocca Imperiale",
+    gruppo: "Comuni",
+    ordine: 7,
+    sommario:
+      "Il comune dell'Alto Ionio cosentino, dove si coltiva il Limone di Rocca Imperiale IGP sotto il Castello Svevo.",
+    racconto: [
+      "Rocca Imperiale sorge su un promontorio affacciato sul Mar Ionio, nell'Alto Ionio cosentino. Il centro storico domina la costa dal Castello Svevo, fortificazione di epoca normanno-sveva che ne ha segnato la storia difensiva.",
+      "Il paesaggio agricolo è caratterizzato dagli agrumeti che scendono verso il mare. Il Limone di Rocca Imperiale è coltivato in questa fascia costiera, dove il clima mite e i terreni sciolti ne favoriscono la qualità.",
+      "Il limone ha ottenuto il riconoscimento di Indicazione Geografica Protetta, che tutela la zona di produzione e il metodo tradizionale di coltivazione lungo la costa ionica.",
+    ],
+    riconoscimenti: [
+      {
+        sigla: "IGP",
+        descrizione: "Limone di Rocca Imperiale IGP — zona di produzione dell'Alto Ionio cosentino.",
+      },
+    ],
+    prodotti: [{ slug: "igp-limone-rocca-imperiale", riconoscimento: "IGP" }],
+    immagine: {
+      src: "/territorio/piana-di-sibari.jpg",
+      alt: "Costa e agrumeti della Piana di Sibari",
+      credito: "Archivio Radici Calabria",
+      licenza: "",
+      fonte: "Radici Calabria",
+    },
+  },
+  {
+    slug: "corigliano-rossano",
+    nome: "Corigliano-Rossano",
+    gruppo: "Comuni",
+    ordine: 8,
+    sommario:
+      "La città della Piana di Sibari, tra agrumeti, Liquirizia di Calabria DOP e il Castello Ducale con il Codex Purpureus.",
+    racconto: [
+      "Corigliano-Rossano è il comune nato dalla fusione di Corigliano Calabro e Rossano, nella Piana di Sibari, sul versante ionico della Calabria settentrionale. La città unisce un centro storico medievale a una vasta pianura agricola.",
+      "Il territorio è da sempre legato alla coltivazione della liquirizia, la cui radice ha dato origine alla Liquirizia di Calabria DOP, e agli agrumeti che si estendono nella piana.",
+      "Il Castello Ducale di Corigliano domina il centro storico, mentre Rossano custodisce il Codex Purpureus, un codice miniato greco del VI secolo tra i più importanti manoscritti bizantini conservati in Italia.",
+    ],
+    riconoscimenti: [],
+    prodotti: [{ slug: "liquirizia-calabria-dop-100g", riconoscimento: "DOP" }],
+    immagine: {
+      src: "/territorio/piana-di-sibari.jpg",
+      alt: "Piana di Sibari con campi e agrumeti",
+      credito: "Archivio Radici Calabria",
+      licenza: "",
+      fonte: "Radici Calabria",
+    },
+  },
+  {
+    slug: "tropea",
+    nome: "Tropea",
+    gruppo: "Comuni",
+    ordine: 9,
+    sommario:
+      "La perla della Costa degli Dei, celebre per la Cipolla Rossa IGP e per il Santuario di Santa Maria dell'Isola.",
+    racconto: [
+      "Tropea si affaccia dalla rupe sulla Costa degli Dei, nel Vibonese, con il centro storico arroccato sopra il mare. Il suo impianto medievale conserva vicoli, palazzi e scorci che si aprono sulla spiaggia sottostante.",
+      "La Cipolla Rossa di Tropea IGP è coltivata nella piana costiera e raccolta nella primavera-estate. Il sapore dolce e la consistenza croccante la rendono una delle produzioni più riconoscibili della Calabria.",
+      "Il Santuario di Santa Maria dell'Isola sorge su uno sperone roccioso sul mare, raggiungibile dal centro storico, ed è uno dei simboli religiosi e paesaggistici della città.",
+    ],
+    riconoscimenti: [],
+    prodotti: [{ slug: "fileja-di-tropea-500g", riconoscimento: null }],
+    immagine: {
+      src: "/territorio/costa-degli-dei.jpg",
+      alt: "Costa degli Dei a Tropea",
+      credito: "Archivio Radici Calabria",
+      licenza: "",
+      fonte: "Radici Calabria",
+    },
+  },
 ];
 
 /**

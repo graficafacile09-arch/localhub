@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import ProdottoImmagine from "@/components/home/ProdottoImmagine";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { slugFiliera } from "@/lib/filiere-editoriali";
 
 /**
  * Le dieci filiere agroalimentari calabresi.
@@ -344,11 +345,9 @@ export default function HomepageFiliereShowcase({
               className="flex min-w-0 flex-1 snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-1 [scrollbar-width:none] md:gap-5"
             >
               {FILIERE.map((voce, indice) => (
-                <button
+                <Link
                   key={voce.nome}
-                  type="button"
-                  onClick={() => setAperta(indice)}
-                  aria-expanded={false}
+                  href={`/filiere/${slugFiliera(voce)}`}
                   aria-label={`Apri la scheda: ${voce.nome}`}
                   className="group flex w-[86vw] max-w-[420px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[#e5ded0] bg-white text-left shadow-sm transition hover:border-[#d5a83a] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24462f] md:w-[min(46vw,620px)] md:max-w-none"
                 >
@@ -385,7 +384,7 @@ export default function HomepageFiliereShowcase({
                       </span>
                     </div>
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
 

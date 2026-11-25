@@ -14,6 +14,7 @@ import {
 import { estraiCitta } from "./localita";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
+import { isDemoPubblico } from "./demo-pubblico";
 import type { ProdottoRicerca } from "./ricerca-ai";
 import {
   patternIlikeTolleranti,
@@ -853,15 +854,19 @@ async function getProdottiPubbliciConNomi(
   const negoziValidi = await getNegoziPubbliciIds(db);
   if (negoziValidi.length === 0) return [];
 
-  const { data, error } = await db
+  const { data: righe, error } = await db
     .from("prodotti")
     .select("*")
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .limit(limit + 20);
 
   if (error) return [];
+
+  const data = ((righe ?? []) as Record<string, unknown>[])
+    .filter((p) => !isDemoPubblico(p as { slug?: unknown; nome?: unknown }))
+    .slice(0, limit);
 
   const negozioIds = Array.from(
     new Set(((data ?? []) as Record<string, unknown>[]).map((p) => p.negozio_id).filter(Boolean))
@@ -896,26 +901,29 @@ export async function getProdottiTipici(limit = 8): Promise<Record<string, unkno
   const negoziValidi = await getNegoziPubbliciIds(db);
   if (negoziValidi.length === 0) return [];
 
-  const { data, error } = await db
+  const { data: righeTipici, error } = await db
     .from("prodotti")
     .select("*")
     .eq("attivo", true)
     .eq("prodotto_tipico", true)
     .in("negozio_id", negoziValidi)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .limit(limit + 20);
 
   if (error) return [];
+  const data = ((righeTipici ?? []) as Record<string, unknown>[])
+    .filter((p) => !isDemoPubblico(p))
+    .slice(0, limit);
 
   const negozioIds = Array.from(
-    new Set(((data ?? []) as Record<string, unknown>[]).map((p) => p.negozio_id).filter(Boolean))
+    new Set(data.map((p) => p.negozio_id).filter(Boolean))
   );
   const { data: negozi } = negozioIds.length
     ? await db.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((n) => [n.id, n.nome]));
 
-  return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
+  return data.map((p) => ({
     ...p,
     negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
@@ -1614,9 +1622,11 @@ export async function mappaProdottoRicerca(
   if (error) segnalaErroreDati(segnalazione, error);
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
-  return risultati.map((p) =>
-    mappaProdottoRiga(p, nomiNegozi.get(p.negozio_id as string) ?? "")
-  );
+  return risultati
+    .filter((p) => !isDemoPubblico(p))
+    .map((p) =>
+      mappaProdottoRiga(p, nomiNegozi.get(p.negozio_id as string) ?? "")
+    );
 }
 
 // ─── Metadati prodotto per il percorso interno ───────────────────────────────
@@ -2049,6 +2059,9 @@ export async function cercaNegozi(
   if (citta) {
     righe = righe.filter((n) => negozioMatchaCitta(n, citta));
   }
+
+  // Negozi di prova/dimostrativi esclusi dalla vetrina pubblica.
+  righe = righe.filter((n) => !isDemoPubblico(n as { slug?: unknown; nome?: unknown }));
 
   // Nessun candidato → ricerca tollerante (refusi, accenti, plurali).
   if (righe.length === 0) {

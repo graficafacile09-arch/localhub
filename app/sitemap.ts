@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { TERRITORI_ORDINATI } from "@/lib/territori";
+import { isDemoPubblico } from "@/lib/demo-pubblico";
+import { FILIERE_EDITORIALI, slugFiliera } from "@/lib/filiere-editoriali";
 
 const SITE_URL = getSiteUrl();
 
@@ -14,6 +16,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/filiere`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/filiere/prodotti`, changeFrequency: "weekly", priority: 0.8 },
+    ...FILIERE_EDITORIALI.map((filiera) => ({
+      url: `${SITE_URL}/filiere/${slugFiliera(filiera)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
     { url: `${SITE_URL}/territorio`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/stagionalita`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/attrazioni`, changeFrequency: "monthly", priority: 0.7 },
@@ -48,12 +55,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: negozi } = await db
     .from("negozi")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("attivo", true)
     .is("deleted_at", null)
     .not("slug", "is", null);
 
-  for (const negozio of negozi ?? []) {
+  for (const negozio of (negozi ?? []).filter((n) => !isDemoPubblico(n))) {
     urls.push({
       url: `${SITE_URL}/negozio/${negozio.slug}`,
       ...(negozio.updated_at
@@ -66,11 +73,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: prodotti } = await db
     .from("prodotti")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("attivo", true)
     .not("slug", "is", null);
 
-  for (const prodotto of prodotti ?? []) {
+  for (const prodotto of (prodotti ?? []).filter((p) => !isDemoPubblico(p))) {
     urls.push({
       url: `${SITE_URL}/prodotto/${prodotto.slug}`,
       ...(prodotto.updated_at
@@ -83,7 +90,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: contenuti } = await db
     .from("contenuti")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("stato", "pubblicato")
     .not("slug", "is", null);
 

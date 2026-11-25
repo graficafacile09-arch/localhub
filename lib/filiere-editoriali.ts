@@ -243,3 +243,18 @@ export const FILIERE_EDITORIALI: FilieraEditoriale[] = [
     riconoscimenti: [],
   },
 ];
+
+/** Slug stabile di una filiera, derivato dal nome (senza la parola iniziale "Filiera"). */
+export function slugFiliera(filiera: FilieraEditoriale): string {
+  return filiera.nome
+    .replace(/^Filiera\s+/i, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function getFilieraEditoriale(slug: string): FilieraEditoriale | undefined {
+  return FILIERE_EDITORIALI.find((f) => slugFiliera(f) === slug);
+}
