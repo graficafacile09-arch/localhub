@@ -3563,9 +3563,29 @@ export function searchTerritorio(query?: string, limit = 6): TerritorioAssistent
   }));
 }
 
+/**
+ * Parole di cornice di una domanda sulle filiere («parlami di filiera», «cos'è
+ * la filiera», «esplora le filiere calabresi»): non sono il nome di una filiera.
+ * Tolte queste, resta solo il tema richiesto (es. «olio»), se c'è.
+ */
+function queryFilierePino(query: unknown): string {
+  return String(query ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(
+      /\b(?:filier[ae]|parlami|parla|dimmi|raccontami|spiegami|cos|cose|che|cosa|e|una|un|uno|di|del|della|dei|degli|delle|su|sul|sulla|sui|sugli|sulle|in|nel|nella|a|esplora|esplorare|scopri|scoprire|elenco|elenca|tutte|tutti|le|la|il|lo|calabres[ei]|della calabria|calabria|regione)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Le dieci filiere della homepage, nell'ordine della vetrina, filtrabili per nome. */
 export function searchFiliere(query?: string, limit = 10): FiliereAssistente[] {
-  const q = queryEditorialePino(query);
+  const q = queryFilierePino(query);
   return ORDINE_FILIERE.filter((nome) => !q || testoContieneParolePino(nome, q))
     .slice(0, limita(limit, 10, 10))
     .map((nome) => ({ nome, url: "/filiere" }));

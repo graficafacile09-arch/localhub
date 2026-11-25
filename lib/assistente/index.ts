@@ -1933,6 +1933,12 @@ function pianoPredefinito(
       tools: [],
     };
   }
+  if (richiestaFilierePino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchFiliere", params: { query: ultimo, limit: 10 } }],
+    };
+  }
   if (richiestaNotiziePino(ultimo)) {
     return {
       directReply: null,
@@ -3238,6 +3244,18 @@ const RE_NOTIZIE_PINO =
 // secca o quella con un complemento di tema ("articoli sul Pollino").
 const RE_CONTENUTI_PINO =
   /\b(?:contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b|\barticol[oi]\s+(?:su|sul|sulla|sui|sugli|sulle|di|del|della|dei|degli|delle|riguardo|about)\b|^articol[oi]$/;
+
+/**
+ * Domande sulle dieci filiere calabresi («parlami di filiera», «esplora le
+ * filiere calabresi»). Hanno la precedenza sulle notizie: la parola «filiera»
+ * da sola non chiede notizie, e la regola notizie scatta solo se la richiesta
+ * le nomina esplicitamente.
+ */
+export function richiestaFilierePino(query: string): boolean {
+  const q = String(query ?? "").toLocaleLowerCase("it-IT");
+  if (!/\bfilier[ae]\b/.test(q)) return false;
+  return !/\b(?:notizi[ae]|notizie|novit[aà]|news|ultim[oi]|ultim['’]?ora|articol[oi]|aggiornament[oi]|rassegna|contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b/.test(q);
+}
 
 export function richiestaNotiziePino(query: string): boolean {
   return RE_NOTIZIE_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
