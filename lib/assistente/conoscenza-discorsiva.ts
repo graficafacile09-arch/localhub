@@ -1,5 +1,6 @@
 import { callGroqText } from "@/lib/ai/groq";
 import type { RisultatoConoscenza } from "@/lib/conoscenza/cerca";
+import { INDICE_GENERATO } from "@/lib/conoscenza/indice-generato";
 import {
   chiamataAIConBudgetPino,
   tempoRestanteAIPino,
@@ -31,10 +32,21 @@ export function messaggioConoscenzaNonTrovataPino(
   domanda: string,
   lingua: "it" | "en"
 ): string {
+  const sezioni = sezioniAttivePino().map((s) => s.titolo).slice(0, 8);
+  const elenco = sezioni.length > 0 ? ` Le sezioni del sito che posso spiegarti sono: ${sezioni.join(", ")}.` : "";
   if (lingua === "en") {
-    return `I could not find an explanation of "${domanda}" in the site content. I can still search for shops, products or local businesses if you tell me what you need.`;
+    return `I could not find an explanation of "${domanda}" in the site content.${elenco} I can also search for shops, products or local businesses.`;
   }
-  return `Nei contenuti del sito non trovo una spiegazione per «${domanda}». Se vuoi, posso cercare attività, negozi o prodotti del territorio: dimmi cosa ti interessa.`;
+  return `Nei contenuti del sito non trovo una spiegazione per «${domanda}».${elenco} Posso anche cercare attività, negozi o prodotti del territorio.`;
+}
+
+/**
+ * Sezioni pubbliche attualmente attive sul sito, lette dall'indice generato in
+ * build (`lib/conoscenza/indice-generato.ts`). Se l'indice manca, nessuna
+ * sezione viene inventata: l'elenco resta vuoto.
+ */
+export function sezioniAttivePino(): { percorso: string; titolo: string }[] {
+  return INDICE_GENERATO.pagine.map((p) => ({ percorso: p.percorso, titolo: p.titolo }));
 }
 
 /**

@@ -369,10 +369,39 @@ function percorsoRelativo(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, "") || "/";
 }
 
+/**
+ * Letture live da Supabase (contenuti e notizie) con cache breve: un cambio
+ * fatto nel database entra in Pino entro 60 secondi, senza redeploy. Le
+ * chiavi includono query e limite, così ogni domanda ha il suo risultato.
+ */
+const CACHE_LIVE_SECONDI = 60;
+
+/**
+ * La cache di Next è caricata solo quando serve: fuori da Next (test Node puri)
+ * le letture restano dirette, senza cache, e funzionano lo stesso.
+ */
+async function conCacheLive<T>(chiave: string[], leggi: () => Promise<T>): Promise<T> {
+  try {
+    const { unstable_cache } = await import("next/cache");
+    return await unstable_cache(leggi, chiave, { revalidate: CACHE_LIVE_SECONDI })();
+  } catch (errore) {
+    if (errore instanceof Error && /next\/cache/.test(errore.message)) return leggi();
+    throw errore;
+  }
+}
+
+const contenutiLiveCache = (query: string, limit: number) =>
+  conCacheLive(["pino-conoscenza-contenuti", query, String(limit)], () =>
+    cercaContenutiPubblici(query, limit)
+  );
+
+const notizieLiveCache = (limit: number) =>
+  conCacheLive(["pino-conoscenza-notizie", String(limit)], () => getNotiziePubbliche(limit));
+
 async function contenutiDinamici(query: string, limit: number): Promise<RisultatoConoscenza[]> {
   const risultati: RisultatoConoscenza[] = [];
   try {
-    const contenuti = await cercaContenutiPubblici(query, Math.min(limit, 4));
+    const contenuti = await contenutiLiveCache(query, Math.min(limit, 4));
     for (const c of contenuti) {
       risultati.push({
         chiave: `contenuto:${c.slug}`,
@@ -389,7 +418,7 @@ async function contenutiDinamici(query: string, limit: number): Promise<Risultat
     // Nessun database: restano i testi compilati nel repository.
   }
   try {
-    const notizie = await getNotiziePubbliche(60);
+    const notizie = await notizieLiveCache(60);
     const termini = tokenConoscenza(query);
     for (const n of notizie) {
       const testo = `${n.title} ${n.excerpt ?? ""} ${n.category}`;

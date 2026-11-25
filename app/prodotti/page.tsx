@@ -12,7 +12,7 @@ import { ScanLine } from "lucide-react";
 // /filiere/prodotti. Qui vive RadiciScan, collegato esclusivamente al proprio
 // motore in lib/radiscan e alla route /api/radiscan/analisi.
 export const metadata: Metadata = {
-  title: "RadiciScan",
+  title: "Catalogo Prodotti e Eccellenze",
   description:
     "RadiciScan è il servizio di Radici Calabria per riconoscere i prodotti e verificare la denominazione sulle fonti ufficiali. Carica o scatta una foto dell'etichetta.",
   alternates: { canonical: `${getSiteUrl()}/prodotti` },
