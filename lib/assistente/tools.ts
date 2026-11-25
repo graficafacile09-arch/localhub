@@ -3605,7 +3605,11 @@ export function searchTerritorio(query?: string, limit = 6): TerritorioAssistent
 
 /** Le dieci filiere della homepage, nell'ordine della vetrina, filtrabili per nome. */
 export function searchFiliere(query?: string, limit = 10): FiliereAssistente[] {
-  const q = queryTerritorioPino(query);
+  const grezza = String(query ?? "").replace(/\bche cos['’]?\s*[eè]\b|\bcos['’]?\s*[eè]\b/gi, " ").replace(/\bcos['’´`]?\s*[eèé]+(?![a-zà-ù])/gi, " ");
+  const q = queryTerritorioPino(grezza)
+    .replace(/\b(?:cos|cose|che|cosa|una|un|uno|di|del|della|dei|degli|delle|le|la|il|lo|filier[ae])\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return ORDINE_FILIERE.filter((nome) => !q || testoContieneParolePino(nome, q))
     .slice(0, limita(limit, 10, 10))
     .map((nome) => ({ nome, url: "/filiere" }));

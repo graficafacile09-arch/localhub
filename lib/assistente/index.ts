@@ -1800,6 +1800,12 @@ function pianoPredefinito(
       tools: [],
     };
   }
+  if (richiestaFilierePino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchFiliere", params: { query: ultimo, limit: 10 } }],
+    };
+  }
   if (richiestaNotiziePino(ultimo)) {
     return {
       directReply: null,
@@ -3126,6 +3132,16 @@ const RE_CONTENUTI_PINO =
 
 export function richiestaNotiziePino(query: string): boolean {
   return RE_NOTIZIE_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
+}
+
+/**
+ * Domande sulle filiere ("Parlami di filiera", "Esplora le filiere calabresi")
+ * vanno al catalogo delle 10 filiere, mai alle notizie, salvo che chiedano
+ * esplicitamente notizie/novità/articoli.
+ */
+export function richiestaFilierePino(query: string): boolean {
+  const q = String(query ?? "").toLocaleLowerCase("it-IT");
+  return /\bfilier[ae]\b/.test(q) && !RE_NOTIZIE_PINO.test(q);
 }
 
 export function richiestaContenutiEditorialiPino(query: string): boolean {
