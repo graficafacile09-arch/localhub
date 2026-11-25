@@ -105,7 +105,7 @@ test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => 
 });
 
 test("Pino recupera le risposte pubblicate nelle FAQ", () => {
-  assert.match(trovaRispostaFaqPino("Come funziona Radici Calabria?")?.risposta ?? "", /piattaforma digitale/i);
+  assert.match(trovaRispostaFaqPino("Come funziona Radici Calabria?")?.risposta ?? "", /piattaforma informativa/i);
   assert.match(trovaRispostaFaqPino("Quali metodi di pagamento posso utilizzare?")?.risposta ?? "", /checkout/i);
   assert.equal(trovaRispostaFaqPino("Che tempo farà domani?"), null);
 });

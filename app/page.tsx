@@ -454,7 +454,7 @@ export default async function Home() {
                 <Link href="/categorie" className="transition hover:text-gold">Categorie</Link>
               </li>
               <li>
-                <Link href="/prodotti-tipici" className="transition hover:text-gold">ECCELLENZE CALABRESI</Link>
+                <Link href="/prodotti-tipici" className="transition hover:text-gold">Eccellenze calabresi</Link>
               </li>
             </ul>
           </div>
@@ -486,12 +486,26 @@ export default async function Home() {
             <h3 className="text-xs font-black uppercase tracking-[0.14em] text-gold-soft/75">
               Informazioni
             </h3>
-            <Link
-              href="/notizie"
-              className="mt-3 inline-flex text-sm font-black text-gold transition hover:text-gold-soft hover:underline underline-offset-4"
-            >
-              Notizie
-            </Link>
+            <ul className="mt-3 space-y-2.5 text-sm">
+              <li>
+                <Link href="/filiere" className="transition hover:text-gold">Filiere</Link>
+              </li>
+              <li>
+                <Link href="/territorio" className="transition hover:text-gold">Territorio</Link>
+              </li>
+              <li>
+                <Link href="/stagionalita" className="transition hover:text-gold">Stagionalità</Link>
+              </li>
+              <li>
+                <Link href="/notizie" className="transition hover:text-gold">Notizie</Link>
+              </li>
+              <li>
+                <Link href="/contatti" className="transition hover:text-gold">Contatti</Link>
+              </li>
+              <li>
+                <Link href="/faq" className="transition hover:text-gold">FAQ</Link>
+              </li>
+            </ul>
           </div>
         </div>
       </footer>

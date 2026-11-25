@@ -4,8 +4,9 @@ import Header from "@/components/Header/Header";
 import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Termini per i Venditori",
-  description: "Termini e condizioni per i Venditori che utilizzano la piattaforma Radici Calabria.",
+  title: "Produttori e Filiere",
+  description:
+    "Regole per i produttori, le imprese e gli operatori che pubblicano le proprie schede su Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/venditori`,
   },
@@ -13,511 +14,111 @@ export const metadata: Metadata = {
 
 const sezioni = [
   {
-    titolo: "1. Premessa e ambito di applicazione",
+    titolo: "1. Natura della piattaforma",
     contenuto: (
       <>
         <p>
-          I presenti Termini e condizioni disciplinano l'utilizzo della piattaforma Radici Calabria
-          da parte dei soggetti che pubblicano e gestiscono offerte rivolte ai clienti.
-        </p>
-        <p>
-          I Termini si applicano alle funzioni rese disponibili al Venditore, insieme alle
-          condizioni della piattaforma, alle regole operative comunicate da Radici Calabria e alla
-          normativa applicabile.
+          Radici Calabria è una piattaforma informativa e di connessione territoriale. Mette in
+          relazione produttori, imprese e filiere del territorio calabrese con i visitatori. Radici
+          Calabria non è parte di alcuna vendita, accordo o rapporto commerciale tra utenti e
+          produttori: ogni rapporto diretto è concluso esclusivamente tra le parti.
         </p>
       </>
     ),
   },
   {
-    titolo: "2. Definizioni",
+    titolo: "2. Schede produttore e obblighi dell'operatore",
     contenuto: (
-      <ul>
-        <li><strong>Radici Calabria</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
-        <li><strong>Gestore</strong>: [DENOMINAZIONE DEL GESTORE], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
-        <li><strong>Venditore</strong>: il soggetto che utilizza Radici Calabria per pubblicare e offrire prodotti, servizi o altre prestazioni.</li>
-        <li><strong>Cliente</strong>: il soggetto che consulta un'offerta o acquista dal Venditore.</li>
-        <li><strong>Negozio</strong>: lo spazio o profilo del Venditore pubblicato sulla piattaforma.</li>
-        <li><strong>Offerta</strong>: la proposta relativa a un prodotto, servizio o prestazione pubblicata dal Venditore.</li>
-        <li><strong>Ordine</strong>: la richiesta del Cliente relativa a un'offerta, secondo il flusso applicabile.</li>
-        <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l'infrastruttura tecnica per il metodo di pagamento selezionato.</li>
-      </ul>
+      <p>
+        Ogni operatore che pubblica una scheda è responsabile della veridicità e dell'aggiornamento
+        dei dati dichiarati: identità dell'impresa, localizzazione, prodotti, prezzi, disponibilità e
+        informazioni sulla filiera.
+      </p>
     ),
   },
   {
-    titolo: "3. Ruolo del Venditore sulla piattaforma",
+    titolo: "3. Denominazioni protette e certificazioni",
     contenuto: (
       <>
         <p>
-          Il Venditore determina i prodotti, i servizi o le prestazioni che intende offrire
-          tramite il proprio spazio sulla piattaforma, nei limiti delle regole di Radici Calabria e
-          della normativa applicabile. È responsabile dei dati identificativi, delle
-          informazioni dell'offerta, dei prezzi, della disponibilità, delle caratteristiche,
-          della conformità e della sicurezza di ciò che pubblica.
+          Le denominazioni di origine e le indicazioni geografiche protette, ai sensi del Regolamento
+          (UE) 2024/1143, sono riservate a chi ne ha diritto. Per le denominazioni tutelate dal
+          Regolamento UE 2024/1143 e per le certificazioni dichiarate (DOP, IGP, PAT, De.Co., Biologico),
+          l'operatore garantisce che:
         </p>
+        <ul>
+          <li>il prodotto rientra effettivamente nella denominazione o certificazione indicata;</li>
+          <li>la certificazione è in corso di validità e l'operatore può documentarla su richiesta;</li>
+          <li>non sono utilizzati nomi, loghi o riferimenti che inducano in errore sull'origine.</li>
+        </ul>
         <p>
-          Il Venditore cura la gestione degli ordini, l'esecuzione della vendita o della
-          prestazione, la consegna o il ritiro, la documentazione fiscale, i reclami, il
-          recesso, i resi e la garanzia secondo la normativa applicabile. Deve inoltre
-          collaborare con Radici Calabria per gli aspetti tecnici, documentali e di sicurezza necessari
-          al funzionamento della piattaforma.
+          Le schede che indicano denominazioni o certificazioni non veritiere vengono rimosse o
+          corrette.
         </p>
       </>
     ),
   },
   {
-    titolo: "4. Ruolo di Radici Calabria",
-    contenuto: (
-      <>
-        <p>
-          Radici Calabria mette a disposizione un'infrastruttura tecnologica per pubblicare e
-          consultare offerte, gestire il checkout, trasmettere dati dell'ordine, fornire
-          comunicazioni operative e supportare tecnicamente alcune fasi del rapporto tra
-          Venditore e Cliente.
-        </p>
-        <p>
-          Radici Calabria può integrare provider di pagamento, strumenti di comunicazione e altri
-          servizi tecnici necessari al funzionamento del marketplace. Restano fermi gli
-          obblighi propri della piattaforma previsti dalla normativa applicabile.
-        </p>
-        <p>
-          Radici Calabria non assume, per il solo fatto di mettere a disposizione questi strumenti, il
-          ruolo commerciale del Venditore. Questa distinzione non limita eventuali diritti
-          inderogabili del Cliente o obblighi direttamente applicabili a Radici Calabria.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "5. Requisiti per l'apertura e gestione del negozio",
-    contenuto: (
-      <>
-        <p>
-          Per aprire o gestire un negozio il Venditore deve fornire le informazioni richieste
-          dalla piattaforma, completare gli eventuali passaggi di registrazione e rispettare i
-          requisiti applicabili al proprio ruolo e alla propria attività.
-        </p>
-        <p>
-          L'accesso alle funzioni operative può dipendere dallo stato dell'account, dalle
-          verifiche previste e dalla disponibilità dei servizi tecnici necessari.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "6. Identificazione del Venditore",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore deve fornire informazioni accurate e aggiornate richieste da Radici Calabria
-          per la propria identificazione, per la pubblicazione delle offerte e per gli
-          obblighi applicabili alla piattaforma o all'attività del Venditore.
-        </p>
-        <p>
-          Radici Calabria può richiedere chiarimenti o documentazione aggiuntiva quando ciò sia
-          necessario per il funzionamento della piattaforma, per la sicurezza, per la gestione
-          dei pagamenti, per la tracciabilità del Venditore o per obblighi previsti dalla legge.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "7. Accuratezza e aggiornamento dei dati",
+    titolo: "4. Obblighi di legge e responsabilità",
     contenuto: (
       <p>
-        Il Venditore deve mantenere aggiornati i dati del proprio account, del negozio, delle
-        offerte e dei recapiti utilizzati per le comunicazioni. Deve correggere senza ritardo
-        le informazioni non più accurate e collaborare con Radici Calabria quando un dato risulta
-        incompleto, incoerente o non verificabile.
+        L'operatore è tenuto al rispetto della normativa applicabile alla propria attività (commercio,
+        sicurezza alimentare, etichettatura, fiscalità, tutela dei consumatori). Radici Calabria non
+        verifica preventivamente tutte le informazioni pubblicate e non garantisce la vendita, la
+        consegna o la qualità dei prodotti.
       </p>
     ),
   },
   {
-    titolo: "8. Relazione tra Venditore, negozio e account",
-    contenuto: (
-      <>
-        <p>
-          L'account utilizzato dal Venditore, il profilo del Venditore e il negozio sono
-          elementi collegati secondo le regole tecniche della piattaforma. Il Venditore deve
-          utilizzare soltanto account e profili per i quali dispone dell'autorizzazione
-          necessaria.
-        </p>
-        <p>
-          Radici Calabria può chiedere al Venditore di confermare il collegamento tra il soggetto che
-          utilizza l'account, il profilo del Venditore e il negozio gestito. Il Venditore non
-          deve trasferire o condividere credenziali in modo contrario alle regole di sicurezza.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "9. Offerte, prodotti e servizi",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore è responsabile della predisposizione delle proprie offerte e delle
-          informazioni relative a prodotti, servizi e prestazioni. Le descrizioni devono essere
-          comprensibili, pertinenti e coerenti con ciò che viene effettivamente offerto.
-        </p>
-        <p>
-          Il Venditore deve considerare le caratteristiche del prodotto o servizio, le
-          eventuali limitazioni applicabili e gli obblighi informativi previsti dalla normativa
-          pertinente.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "10. Prezzi, disponibilità e informazioni commerciali",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore inserisce e mantiene aggiornati i prezzi, la disponibilità, i costi
-          eventualmente applicabili e le altre informazioni commerciali delle proprie offerte,
-          nei limiti degli strumenti della piattaforma e della normativa applicabile.
-        </p>
-        <p>
-          Radici Calabria può effettuare controlli tecnici sui dati ricevuti e può chiedere correzioni
-          quando un'informazione appare incompleta, incoerente o potenzialmente fuorviante.
-          Tali controlli non sostituiscono la responsabilità del Venditore sulle proprie offerte.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "11. Ordini ricevuti tramite Radici Calabria",
+    titolo: "5. Contenuti generati con l'IA",
     contenuto: (
       <p>
-        Il Venditore può ricevere tramite Radici Calabria informazioni relative agli ordini effettuati
-        dai Clienti. Le informazioni disponibili dipendono dal flusso tecnico, dal metodo di
-        pagamento, dalla modalità di consegna o ritiro e dalle impostazioni applicabili al
-        negozio.
+        Alcune funzioni della piattaforma, come l'assistente Pino e gli strumenti di compilazione
+        assistita, producono testi automaticamente. L'operatore è tenuto a verificarne il contenuto
+        prima della pubblicazione. Pino è un sistema di intelligenza artificiale generativa e non è un
+        operatore umano.
       </p>
     ),
   },
   {
-    titolo: "12. Accettazione e gestione degli ordini",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore deve verificare e gestire gli ordini ricevuti secondo le proprie
-          procedure e le condizioni applicabili alla vendita. Deve mantenere aggiornata la
-          disponibilità e comunicare tempestivamente eventuali impedimenti all'esecuzione.
-        </p>
-        <p>
-          L'ordine può essere soggetto a verifiche tecniche, pagamento, disponibilità e
-          altri passaggi previsti dal flusso. La gestione tecnica della piattaforma non
-          sostituisce gli adempimenti commerciali del Venditore.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "13. Preparazione, consegna, ritiro o esecuzione della prestazione",
+    titolo: "6. Segnalazioni e rimozione dei contenuti",
     contenuto: (
       <p>
-        Il Venditore cura la preparazione del prodotto, la consegna, il ritiro o l'esecuzione
-        del servizio secondo quanto indicato nell'offerta e nell'ordine. Deve rispettare i
-        tempi e le modalità comunicati al Cliente, nei casi e nei limiti previsti dalla
-        normativa applicabile, informando il Cliente e Radici Calabria degli impedimenti rilevanti.
+        Chiunque può segnalare contenuti inesatti o non conformi, inclusi quelli relativi a
+        denominazioni e certificazioni, tramite la pagina{" "}
+        <Link href="/contatti" className="font-semibold text-blue-700 underline">
+          Contatti
+        </Link>
+        . Radici Calabria esamina la segnalazione e può modificare o rimuovere il contenuto, sospendere
+        la scheda o chiedere documentazione all'operatore.
       </p>
     ),
   },
   {
-    titolo: "14. Comunicazioni con il Cliente",
+    titolo: "7. Sospensione e recesso",
     contenuto: (
       <p>
-        Il Venditore deve utilizzare i canali messi a disposizione dalla piattaforma per le
-        comunicazioni operative relative ai propri ordini, quando richiesto dal flusso. Le
-        comunicazioni devono essere pertinenti, corrette e rispettose e non devono essere usate
-        per inviare contenuti illeciti o non autorizzati.
+        Radici Calabria può sospendere o rimuovere le schede che violano questi principi, previa
+        comunicazione all'operatore quando possibile. L'operatore può chiedere la rimozione della
+        propria scheda tramite la pagina Contatti.
       </p>
     ),
   },
   {
-    titolo: "15. Pagamenti e flussi economici",
-    contenuto: (
-      <>
-        <p>
-          Radici Calabria mette a disposizione un checkout e si interfaccia tecnicamente con Stripe e,
-          quando previsto, Stripe Connect sui relativi account collegati del Venditore. Il
-          catalogo può comprendere carta, Klarna, PayPal, SEPA Direct Debit e bonifico
-          istantaneo, soltanto quando il metodo è attivo e disponibile per il negozio secondo il
-          flusso applicabile. Il provider selezionato gestisce tecnicamente le operazioni e le
-          proprie condizioni.
-        </p>
-        <p>
-          Gli importi, gli stati tecnici, le commissioni e gli eventuali payout sono gestiti
-          secondo la configurazione applicabile. L'eventuale commissione spettante a Radici Calabria è
-          distinta dal prezzo della vendita secondo gli accordi e il flusso del provider. Il
-          Venditore deve collaborare per le verifiche tecniche e fornire le informazioni
-          necessarie quando richiesto.
-        </p>
-        <p>
-          Il bonifico istantaneo è il metodo integrato tramite provider e non è un bonifico
-          bancario ordinario eseguito direttamente dall'Acquirente al Venditore. Il vecchio
-          metodo di bonifico ordinario non appartiene al catalogo checkout attuale e non viene
-          reintrodotto da questi Termini.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "16. Fatturazione, ricevute e adempimenti fiscali",
+    titolo: "8. Contatti",
     contenuto: (
       <p>
-        Il Venditore cura la documentazione fiscale, le ricevute, la fatturazione e gli altri
-        adempimenti fiscali propri della vendita o della prestazione, nei casi e nei modi
-        previsti dalla normativa applicabile. Radici Calabria può fornire dati o strumenti tecnici
-        disponibili nel flusso, ma la verifica degli obblighi fiscali del Venditore richiede
-        valutazione professionale e non è sostituita dalla piattaforma.
+        Per richieste su questi termini, sulla propria scheda o per segnalazioni, utilizza la pagina{" "}
+        <Link href="/contatti" className="font-semibold text-blue-700 underline">
+          Contatti
+        </Link>
+        .
       </p>
-    ),
-  },
-  {
-    titolo: "17. Recesso, resi e rimborsi",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore gestisce le richieste relative a recesso, reso e rimborso commerciale
-          nei casi e nei termini previsti dalla normativa applicabile e dalle condizioni della
-          specifica vendita. La decisione commerciale resta distinta dall'esecuzione tecnica
-          del pagamento.
-        </p>
-        <p>
-          Radici Calabria può fornire strumenti tecnici per comunicare una richiesta e, dopo le
-          autorizzazioni previste dal workflow, eseguire tecnicamente un rimborso tramite il
-          provider. L'esecuzione tecnica non sostituisce la valutazione commerciale del
-          soggetto competente.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "18. Garanzia legale e conformità",
-    contenuto: (
-      <p>
-        Il Venditore gestisce gli obblighi relativi alla garanzia legale, alla conformità e ai
-        rimedi applicabili ai propri prodotti, servizi o prestazioni, nei casi e nei termini
-        previsti dalla normativa applicabile. Il Venditore deve fornire al Cliente informazioni corrette e collaborare alla gestione delle richieste.
-      </p>
-    ),
-  },
-  {
-    titolo: "19. Reclami e assistenza al Cliente",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore è il referente commerciale per le questioni relative ai propri prodotti,
-          servizi e prestazioni. Deve leggere e gestire le comunicazioni ricevute dal Cliente e
-          fornire una risposta coerente con il rapporto commerciale e la normativa applicabile.
-        </p>
-        <p>
-          Radici Calabria può mettere a disposizione un sistema tecnico di reclami, messaggistica,
-          notifiche e conservazione delle comunicazioni. Il sistema non determina
-          automaticamente l'esito commerciale della questione.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "20. Sicurezza dei prodotti e conformità normativa",
-    contenuto: (
-      <p>
-        Il Venditore deve offrire prodotti e servizi conformi ai requisiti applicabili alla
-        propria attività e deve adottare le misure necessarie per la sicurezza, l'informazione
-        e la tracciabilità richieste dalla normativa pertinente. Deve informare tempestivamente
-        Radici Calabria di rischi, richiami, divieti o altri eventi che possano rendere un'offerta non
-        idonea alla pubblicazione.
-      </p>
-    ),
-  },
-  {
-    titolo: "21. Contenuti pubblicati dal Venditore",
-    contenuto: (
-      <p>
-        Il Venditore deve disporre del titolo o delle autorizzazioni necessarie per utilizzare
-        sulla piattaforma descrizioni, immagini, loghi, fotografie, marchi e altri materiali.
-        Deve verificare che i contenuti non violino diritti di terzi, norme applicabili o regole
-        della piattaforma. Radici Calabria può rimuovere o limitare la visibilità di contenuti nei casi
-        previsti dai presenti Termini, dalla normativa o dagli accordi applicabili.
-      </p>
-    ),
-  },
-  {
-    titolo: "22. Proprietà intellettuale",
-    contenuto: (
-      <>
-        <p>
-          Il Venditore conserva i diritti sui materiali che legittimamente pubblica, salvo i
-          diritti di terzi e gli utilizzi necessari al funzionamento della piattaforma.
-        </p>
-        <p>
-          Il Venditore autorizza Radici Calabria a trattare e visualizzare tecnicamente tali materiali
-          nella misura necessaria per pubblicare le offerte, mostrare il negozio, gestire gli
-          ordini e fornire le funzioni richieste.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "23. Protezione dei dati personali",
-    contenuto: (
-      <>
-        <p>
-          Il trattamento dei dati personali da parte di Radici Calabria è descritto nella Privacy
-          Policy applicabile. Il Venditore deve leggere la documentazione privacy e rispettare
-          gli obblighi che gli competono in relazione alla propria attività, ai Clienti, ai
-          dipendenti, ai collaboratori e ai fornitori.
-        </p>
-        <p>
-          Questa sezione non determina autonomamente il ruolo privacy di Radici Calabria o del
-          Venditore per ogni singolo trattamento. Le qualificazioni e gli accordi eventualmente
-          necessari devono essere verificati separatamente.
-        </p>
-      </>
-    ),
-  },
-  {
-    titolo: "24. Obblighi del Venditore nell'utilizzo della piattaforma",
-    contenuto: (
-      <ul>
-        <li>utilizzare l'account e il negozio per finalità lecite e autorizzate;</li>
-        <li>mantenere corretti i dati identificativi e commerciali;</li>
-        <li>aggiornare offerte, prezzi e disponibilità;</li>
-        <li>gestire gli ordini e le comunicazioni in modo tempestivo;</li>
-        <li>collaborare alle verifiche tecniche e documentali;</li>
-        <li>proteggere le credenziali e segnalare accessi sospetti;</li>
-        <li>rispettare le regole della piattaforma e la normativa applicabile.</li>
-      </ul>
-    ),
-  },
-  {
-    titolo: "25. Divieti e utilizzi non consentiti",
-    contenuto: (
-      <p>
-        Non è consentito utilizzare Radici Calabria per pubblicare offerte o contenuti illeciti,
-        fraudolenti, ingannevoli, pericolosi o privi delle autorizzazioni necessarie; aggirare
-        i controlli della piattaforma; manipolare ordini, disponibilità o pagamenti; utilizzare
-        account altrui; violare i diritti di terzi; o compromettere la sicurezza, la continuità
-        e il corretto funzionamento dei servizi.
-      </p>
-    ),
-  },
-  {
-    titolo: "26. Sospensione o rimozione del negozio/account",
-    contenuto: (
-      <p>
-        Radici Calabria può limitare, sospendere o rimuovere un contenuto, un negozio o un account
-        quando ciò sia ragionevolmente necessario in presenza di violazioni dei Termini, dati
-        non corretti, attività fraudolente, rischi per la sicurezza, violazioni normative,
-        richieste delle autorità, mancata collaborazione o violazioni reiterate.
-        L'intervento deve essere comunicato o motivato secondo quanto previsto dagli accordi
-        applicabili e dalla normativa, salvo esigenze di sicurezza, riservatezza o urgenza che
-        richiedano modalità diverse.
-      </p>
-    ),
-  },
-  {
-    titolo: "27. Collaborazione con Radici Calabria e richieste di informazioni",
-    contenuto: (
-      <p>
-        Il Venditore deve collaborare in buona fede alle richieste ragionevoli di informazioni,
-        chiarimenti o documenti necessarie per la sicurezza, la gestione tecnica degli ordini,
-        la verifica delle offerte, la gestione delle segnalazioni o l'adempimento di obblighi
-        applicabili alla piattaforma. Le richieste devono essere valutate nel rispetto delle
-        regole di protezione dei dati e degli obblighi di riservatezza.
-      </p>
-    ),
-  },
-  {
-    titolo: "28. Commissioni, costi e pagamenti dovuti alla piattaforma",
-    contenuto: (
-      <p>
-        Eventuali commissioni, costi o importi dovuti alla piattaforma sono quelli comunicati
-        nelle condizioni commerciali o nelle configurazioni applicabili al Venditore. Per i
-        pagamenti Stripe/Stripe Connect, l'eventuale commissione tecnica di Radici Calabria è distinta
-        dal prezzo della vendita e viene gestita secondo la configurazione effettiva del
-        provider e gli accordi applicabili. Il calcolo e il trattamento tecnico degli importi
-        seguono i flussi della piattaforma e dei provider coinvolti; il relativo trattamento
-        fiscale deve essere verificato.
-      </p>
-    ),
-  },
-  {
-    titolo: "29. Disponibilità tecnica della piattaforma",
-    contenuto: (
-      <p>
-        Radici Calabria adotta misure ragionevoli per mantenere disponibili e sicuri i propri strumenti,
-        ma possono verificarsi manutenzioni, aggiornamenti, errori, ritardi o interruzioni
-        dovuti a fattori tecnici, a servizi di terzi o ad altri eventi. Il Venditore deve
-        utilizzare i canali disponibili per segnalare problemi che incidano sugli ordini o sui
-        Clienti.
-      </p>
-    ),
-  },
-  {
-    titolo: "30. Modifiche ai Termini per i Venditori",
-    contenuto: (
-      <p>
-        I presenti Termini possono essere aggiornati per esigenze tecniche, organizzative,
-        normative o di servizio. La versione pubblicata dovrà indicare la data di decorrenza e
-        le modalità con cui il Venditore sarà informato. Gli effetti delle modifiche sui rapporti
-        già in corso e sui negozi già attivi devono essere valutati secondo gli accordi e la
-        normativa applicabile.
-      </p>
-    ),
-  },
-  {
-    titolo: "31. Durata e cessazione del rapporto con la piattaforma",
-    contenuto: (
-      <p>
-        Il rapporto tra Venditore e Radici Calabria dura secondo le condizioni applicabili all'account
-        e ai servizi utilizzati. Il Venditore può chiedere la cessazione dell'utilizzo del
-        negozio secondo le procedure disponibili. La cessazione non elimina gli obblighi che,
-        per loro natura, devono restare applicabili agli ordini, ai pagamenti, alle comunicazioni,
-        ai dati o agli adempimenti già maturati.
-      </p>
-    ),
-  },
-  {
-    titolo: "32. Legge applicabile e foro",
-    contenuto: (
-      <p>
-        La legge applicabile e l'eventuale foro competente saranno indicati tenendo conto della
-        natura del Venditore, del rapporto con Radici Calabria e delle norme inderogabili eventualmente
-        applicabili.
-      </p>
-    ),
-  },
-  {
-    titolo: "33. Contatti",
-    contenuto: (
-      <ul>
-        <li><strong>Gestore:</strong> [DENOMINAZIONE DEL GESTORE]</li>
-        <li><strong>Sede:</strong> [SEDE LEGALE]</li>
-        <li><strong>P.IVA:</strong> [P.IVA]</li>
-        <li><strong>PEC:</strong> [PEC]</li>
-        <li><strong>Email:</strong> [EMAIL LEGALE]</li>
-        <li><strong>Segnalazioni:</strong> [EMAIL SEGNALAZIONI]</li>
-      </ul>
-    ),
-  },
-  {
-    titolo: "34. Versione e data del documento",
-    contenuto: (
-      <dl className="grid gap-2 sm:grid-cols-[180px_1fr]">
-        <dt className="font-semibold text-slate-900">Versione</dt>
-        <dd>[VERSIONE DEL DOCUMENTO]</dd>
-        <dt className="font-semibold text-slate-900">Data pubblicazione</dt>
-        <dd>[DATA DI PUBBLICAZIONE]</dd>
-        <dt className="font-semibold text-slate-900">Data validità</dt>
-        <dd>[DATA DI ENTRATA IN VIGORE]</dd>
-      </dl>
     ),
   },
 ];
 
-export default function TerminiVenditoriPage() {
+export default function VenditoriPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <Header />
@@ -533,14 +134,18 @@ export default function TerminiVenditoriPage() {
         <article className="mt-5 overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
           <header className="border-b border-slate-100 px-6 py-7 md:px-10 md:py-9">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">
-              Documentazione per i Venditori
+              Produttori e Filiere
             </p>
             <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
-              Termini e condizioni per i Venditori
+              Regole per produttori e operatori
             </h1>
           </header>
 
           <div className="space-y-8 px-6 py-7 text-[15px] leading-7 text-slate-700 md:px-10 md:py-9">
+            <p>
+              Progetto Radici Calabria — Piattaforma digitale di valorizzazione delle filiere
+              agroalimentari e dei territori della Calabria · Castrovillari (CS).
+            </p>
             {sezioni.map((sezione) => (
               <section key={sezione.titolo}>
                 <h2 className="text-xl font-black tracking-tight text-slate-900">

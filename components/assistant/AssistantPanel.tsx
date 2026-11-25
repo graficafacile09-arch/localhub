@@ -314,6 +314,12 @@ export default function AssistantPanel() {
             isLoading={isLoading}
             placeholder="Chiedi qualcosa..."
           />
+          <p className="mt-2 text-center text-[10px] leading-4 text-slate-500">
+            Pino è un sistema di IA generativa: le risposte non sostituiscono consulenza professionale e non provengono da un operatore umano.{" "}
+            <a href="/privacy" className="font-semibold text-blue-700 underline">
+              Privacy
+            </a>
+          </p>
         </div>
       </div>
     </>

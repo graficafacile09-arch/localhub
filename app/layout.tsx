@@ -114,17 +114,11 @@ export default async function RootLayout({
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4">
             <span>{footerText}</span>
             <span aria-hidden="true">·</span>
-            <a href="/privacy" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Privacy</a>
+            <a href="/privacy" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Privacy Policy</a>
             <span aria-hidden="true">·</span>
-            <a href="/termini" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini e condizioni</a>
+            <a href="/termini" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini d&apos;Uso</a>
             <span aria-hidden="true">·</span>
-            <a href="/acquirenti" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini per gli Acquirenti</a>
-            <span aria-hidden="true">·</span>
-            <a href="/condizioni-vendita" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Condizioni di vendita</a>
-            <span aria-hidden="true">·</span>
-            <a href="/venditori" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini per i Venditori</a>
-            <span aria-hidden="true">·</span>
-            <a href="/regolamento-consegne" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Regolamento Consegne</a>
+            <a href="/venditori" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Produttori e Filiere</a>
             <span aria-hidden="true">·</span>
             <a href="/cookie" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Cookie Policy</a>
             <span aria-hidden="true">·</span>

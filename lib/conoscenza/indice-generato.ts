@@ -1,16 +1,11 @@
 // Generato da scripts/sync-conoscenza-pino.mjs: non modificare a mano.
 export const INDICE_GENERATO = {
-  "generatoIl": "2026-11-25T14:46:07.078Z",
+  "generatoIl": "2026-11-25T15:55:44.836Z",
   "pagine": [
     {
       "percorso": "/attrazioni",
       "titolo": "Attrazioni ed eventi a Castrovillari",
       "descrizione": "Scopri monumenti, musei, cultura, eventi, sapori e borghi nei dintorni di Castrovillari e del Parco Nazionale del Pollino."
-    },
-    {
-      "percorso": "/condizioni-vendita",
-      "titolo": "Condizioni di vendita",
-      "descrizione": "Condizioni di vendita per gli ordini effettuati tramite Radici Calabria."
     },
     {
       "percorso": "/contatti",
@@ -25,12 +20,12 @@ export const INDICE_GENERATO = {
     {
       "percorso": "/cookie",
       "titolo": "Cookie Policy",
-      "descrizione": "Informazioni sui cookie e sulle tecnologie analoghe utilizzate da Radici Calabria."
+      "descrizione": "Cookie e tecnologie di archiviazione locale utilizzati da Radici Calabria."
     },
     {
       "percorso": "/faq",
       "titolo": "FAQ",
-      "descrizione": "Domande frequenti su Radici Calabria, acquisti, ordini, pagamenti, venditori e utilizzo della piattaforma."
+      "descrizione": "Domande frequenti su Radici Calabria: cos'è la piattaforma, come usarla, Pino, produttori e dati personali."
     },
     {
       "percorso": "/filiere",
@@ -59,8 +54,8 @@ export const INDICE_GENERATO = {
     },
     {
       "percorso": "/termini",
-      "titolo": "Termini e condizioni",
-      "descrizione": "Termini e condizioni della piattaforma Radici Calabria."
+      "titolo": "Termini d'Uso",
+      "descrizione": "Termini d'uso della piattaforma informativa e di connessione territoriale Radici Calabria."
     },
     {
       "percorso": "/territorio",

@@ -5,193 +5,174 @@ import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
-  description: "Informazioni sui cookie e sulle tecnologie analoghe utilizzate da Radici Calabria.",
+  description: "Cookie e tecnologie di archiviazione locale utilizzati da Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/cookie`,
   },
 };
 
+const cookieTecnici = [
+  {
+    nome: "Cookie di sessione Supabase",
+    finalita: "Mantengono l'accesso autenticato dell'utente registrato (consumatori, imprese, amministratori).",
+    durata: "Secondo la durata della sessione di autenticazione.",
+  },
+  {
+    nome: "lh_area",
+    finalita: "Ricorda l'area di accesso selezionata (consumatori, imprese o amministrazione) per instradare correttamente la navigazione.",
+    durata: "Per la durata della sessione o secondo le impostazioni del cookie.",
+  },
+  {
+    nome: "lh_guest",
+    finalita: "Identifica il carrello e le operazioni di un utente non registrato, senza richiedere un account.",
+    durata: "30 giorni.",
+  },
+  {
+    nome: "Cookie di accesso all'ordine",
+    finalita: "Consente di consultare lo stato di un ordine senza necessità di login, limitatamente all'ordine interessato.",
+    durata: "Secondo la durata dell'ordine.",
+  },
+];
+
+const storageLocale = [
+  {
+    nome: "lh_lang",
+    tipo: "Cookie e localStorage",
+    finalita: "Memorizza la lingua scelta dall'utente per l'interfaccia.",
+    durata: "1 anno.",
+  },
+  {
+    nome: "incitta_cookie_notice_v1",
+    tipo: "cookie",
+    finalita: "Registra che l'utente ha preso visione dell'informativa cookie, per non riproporla a ogni visita.",
+    durata: "1 anno.",
+  },
+  {
+    nome: "localhub.carrello.v1",
+    tipo: "localStorage",
+    finalita: "Conserva il contenuto del carrello sul dispositivo.",
+    durata: "Fino alla rimozione da parte dell'utente o alla svuotatura del carrello.",
+  },
+  {
+    nome: "lh_ricordami_credenziali",
+    tipo: "localStorage",
+    finalita: "Solo se l'utente seleziona \"Ricordami\" al login: ricompila email e password nel form di accesso. Il dato non viene inviato al database e viene cancellato quando l'utente accede senza \"Ricordami\" o lo disattiva.",
+    durata: "Fino alla cancellazione da parte dell'utente.",
+  },
+  {
+    nome: "radici-cronologia-interna",
+    tipo: "sessionStorage",
+    finalita: "Consente al pulsante \"indietro\" di tornare correttamente alla pagina precedente all'interno del sito.",
+    durata: "Fino alla chiusura della scheda del browser.",
+  },
+  {
+    nome: "prodotti_ai_immagine",
+    tipo: "sessionStorage",
+    finalita: "Conserva temporaneamente l'immagine caricata dall'impresa nello strumento di inserimento prodotto assistito da IA.",
+    durata: "Fino alla chiusura della scheda del browser.",
+  },
+];
+
 const sezioni = [
   {
-    titolo: "1. Cosa sono i cookie",
+    titolo: "1. Cosa sono i cookie e lo storage locale",
     contenuto: (
       <p>
-        I cookie sono piccoli file o stringhe di informazioni che un sito può memorizzare sul
-        dispositivo dell'utente. Possono essere utilizzate anche tecnologie analoghe per
-        riconoscere una sessione, conservare preferenze o supportare il funzionamento dei
-        servizi.
+        I cookie sono piccoli file che un sito memorizza sul dispositivo dell'utente. Il
+        localStorage e il sessionStorage sono aree di memoria del browser con funzione simile. Questa
+        pagina descrive quelli effettivamente utilizzati da Radici Calabria.
       </p>
     ),
   },
   {
-    titolo: "2. Perché vengono utilizzati",
+    titolo: "2. Cookie tecnici e di sessione",
+    contenuto: (
+      <>
+        <p>
+          Sono necessari al funzionamento della piattaforma e non richiedono consenso. Radici Calabria
+          non utilizza cookie di profilazione né cookie pubblicitari.
+        </p>
+        <ul>
+          {cookieTecnici.map((c) => (
+            <li key={c.nome}>
+              <strong>{c.nome}</strong>: {c.finalita} Durata: {c.durata}
+            </li>
+          ))}
+        </ul>
+      </>
+    ),
+  },
+  {
+    titolo: "3. Preferenze e storage locale",
+    contenuto: (
+      <>
+        <p>
+          I seguenti elementi sono salvati nel browser per le funzioni indicate. Alcuni sono tecnici;
+          altri dipendono da una scelta esplicita dell'utente.
+        </p>
+        <ul>
+          {storageLocale.map((s) => (
+            <li key={s.nome}>
+              <strong>{s.nome}</strong> ({s.tipo}): {s.finalita} Durata: {s.durata}
+            </li>
+          ))}
+        </ul>
+      </>
+    ),
+  },
+  {
+    titolo: "4. Cookie analitici, di profilazione e di marketing",
     contenuto: (
       <p>
-        Radici Calabria può utilizzare cookie e tecnologie analoghe per rendere disponibili le funzioni
-        richieste, mantenere la sicurezza, gestire la sessione, ricordare preferenze e migliorare
-        il funzionamento tecnico della piattaforma. Le categorie non necessarie vengono trattate
-        secondo le regole e le scelte applicabili all'utente.
+        Al momento Radici Calabria non utilizza cookie analitici di terze parti, strumenti di
+        profilazione o cookie di marketing. Se in futuro questi strumenti venissero introdotti, questa
+        Cookie Policy sarà aggiornata e, ove richiesto, verrà raccolto il consenso preventivo.
       </p>
     ),
   },
   {
-    titolo: "3. Cookie tecnici e necessari",
+    titolo: "5. Fornitori tecnici",
     contenuto: (
       <p>
-        Possono essere utilizzati strumenti tecnici necessari alla navigazione, alla sicurezza,
-        alla gestione della sessione, all'accesso alle funzioni richieste e al corretto
-        funzionamento della piattaforma. Questi strumenti possono essere indispensabili per
-        fornire il servizio richiesto dall'utente.
+        Alcuni servizi tecnici collegati alla piattaforma agiscono come fornitori e possono trattare
+        dati tecnici necessari all'erogazione del servizio: Supabase (autenticazione e database),
+        Vercel (hosting), Stripe (pagamenti, quando attivati dall'utente), Groq (assistente Pino) e
+        Resend (email transazionali). Per il dettaglio consulta la Privacy Policy.
       </p>
     ),
   },
   {
-    titolo: "4. Cookie funzionali",
+    titolo: "6. Messaggi email",
     contenuto: (
       <p>
-        I cookie funzionali possono supportare preferenze o caratteristiche aggiuntive richieste
-        dall'utente. Il loro utilizzo dipende dalle funzioni effettivamente disponibili e dalle
-        configurazioni della piattaforma; non vengono indicati in questa pagina nomi o strumenti
-        specifici non verificati.
+        Le email inviate dalla piattaforma (conferme, aggiornamenti ordine, reimpostazione password)
+        non contengono tracking pixel né altri strumenti di monitoraggio dell'apertura. Radici Calabria
+        non utilizza pixel di tracciamento nelle comunicazioni e-mail, in conformità alle Linee guida
+        del Garante (Provv. n. 284 del 17 aprile 2026).
       </p>
     ),
   },
   {
-    titolo: "5. Cookie analitici",
+    titolo: "7. Come gestire cookie e storage",
     contenuto: (
       <p>
-        I cookie analitici, quando presenti e attivati, possono essere utilizzati per comprendere
-        in forma aggregata come vengono utilizzati i servizi e per migliorarne il funzionamento.
-        Non si dichiara in questa pagina l'utilizzo effettivo di uno specifico strumento
-        analitico non verificato nel progetto.
+        L'utente può eliminare o bloccare cookie e dati locali dalle impostazioni del proprio browser.
+        La disattivazione dei cookie tecnici può impedire l'accesso all'area riservata, il carrello e
+        il checkout. Le preferenze relative ai dati di "Ricordami" possono essere eliminate svuotando i
+        dati del sito nel browser.
       </p>
     ),
   },
   {
-    titolo: "6. Cookie di profilazione e marketing",
+    titolo: "8. Aggiornamenti e contatti",
     contenuto: (
       <p>
-        I cookie di profilazione o marketing possono essere utilizzati, quando previsti e
-        autorizzati secondo la normativa applicabile, per finalità di personalizzazione o
-        comunicazione promozionale. Non si dichiara l'attivazione di strumenti di questo tipo in
-        assenza di una verifica tecnica specifica.
-      </p>
-    ),
-  },
-  {
-    titolo: "7. Cookie di terze parti",
-    contenuto: (
-      <p>
-        Alcuni servizi esterni collegati alla piattaforma possono utilizzare proprie tecnologie
-        secondo le rispettive informative e configurazioni. Radici Calabria non indica in questa pagina
-        fornitori o cookie specifici che non siano stati verificati nel progetto.
-      </p>
-    ),
-  },
-  {
-    titolo: "8. Tecnologie analoghe ai cookie",
-    contenuto: (
-      <p>
-        La piattaforma può utilizzare tecnologie analoghe ai cookie, come strumenti tecnici per
-        la gestione della sessione, della sicurezza o delle preferenze. Tali tecnologie sono
-        considerate insieme ai cookie quando producono effetti analoghi sul dispositivo o sul
-        browser dell'utente.
-      </p>
-    ),
-  },
-  {
-    titolo: "9. Gestione delle preferenze",
-    contenuto: (
-      <p>
-        Le preferenze relative alle tecnologie non necessarie possono essere gestite attraverso
-        gli strumenti eventualmente resi disponibili dalla piattaforma. Se una funzione di
-        gestione delle preferenze non è presente o non è disponibile in una determinata pagina,
-        l'utente può utilizzare le impostazioni del proprio browser.
-      </p>
-    ),
-  },
-  {
-    titolo: "10. Consenso e revoca del consenso",
-    contenuto: (
-      <p>
-        Quando richiesto dalla normativa applicabile, le tecnologie non necessarie vengono
-        utilizzate sulla base del consenso dell'utente. Il consenso può essere revocato secondo
-        le modalità rese disponibili dalla piattaforma o tramite le impostazioni del browser,
-        senza pregiudicare la liceità del trattamento basato sul consenso precedente alla revoca.
-      </p>
-    ),
-  },
-  {
-    titolo: "11. Durata dei cookie",
-    contenuto: (
-      <p>
-        La durata dei cookie può dipendere dalla loro funzione e dalla configurazione del
-        servizio. Alcuni strumenti possono restare attivi solo per la sessione, mentre altri
-        possono rimanere memorizzati per un periodo successivo. Non vengono indicati durate
-        specifiche non verificate.
-      </p>
-    ),
-  },
-  {
-    titolo: "12. Cookie utilizzati dalla piattaforma",
-    contenuto: (
-      <p>
-        La piattaforma può utilizzare strumenti tecnici necessari al funzionamento delle pagine,
-        alla sicurezza, alla gestione della sessione e alle funzioni richieste dall'utente. Un
-        elenco dettagliato di nomi, finalità, durata e soggetti deve essere pubblicato o
-        aggiornato sulla base dell'inventario tecnico effettivamente verificato.
-      </p>
-    ),
-  },
-  {
-    titolo: "13. Servizi esterni",
-    contenuto: (
-      <p>
-        I servizi esterni eventualmente utilizzati per funzioni tecniche o operative possono
-        trattare informazioni secondo le proprie condizioni e informative. Per conoscere il
-        dettaglio di uno specifico servizio occorre fare riferimento alla relativa documentazione
-        resa disponibile dal servizio e dalla piattaforma.
-      </p>
-    ),
-  },
-  {
-    titolo: "14. Come gestire i cookie dal browser",
-    contenuto: (
-      <p>
-        L'utente può gestire, bloccare o eliminare i cookie tramite le impostazioni del proprio
-        browser. Le modalità dipendono dal browser e dal dispositivo utilizzati; le istruzioni
-        aggiornate sono disponibili nella documentazione del relativo produttore.
-      </p>
-    ),
-  },
-  {
-    titolo: "15. Conseguenze della disabilitazione dei cookie",
-    contenuto: (
-      <p>
-        La disabilitazione dei cookie tecnici o di tecnologie necessarie può impedire o
-        compromettere alcune funzioni della piattaforma, della sessione, della sicurezza o del
-        checkout. La disabilitazione di strumenti non necessari può invece incidere sulle relative
-        funzioni, preferenze o misurazioni.
-      </p>
-    ),
-  },
-  {
-    titolo: "16. Modifiche alla Cookie Policy",
-    contenuto: (
-      <p>
-        Questa Cookie Policy può essere aggiornata in caso di modifiche tecniche, organizzative,
-        normative o dei servizi utilizzati. La versione pubblicata indica, quando previsto, la
-        data di aggiornamento o di entrata in vigore.
-      </p>
-    ),
-  },
-  {
-    titolo: "17. Contatti",
-    contenuto: (
-      <p>
-        Per informazioni sui cookie e sulle tecnologie analoghe è possibile utilizzare i canali
-        di contatto indicati nella sezione contatti della piattaforma o nella Privacy Policy. Non
-        vengono inseriti in questa pagina recapiti non verificati.
+        La presente Cookie Policy può essere aggiornata in caso di modifiche tecniche o normative.
+        Per domande sui cookie è possibile scrivere tramite il modulo della pagina{" "}
+        <Link href="/contatti" className="font-semibold text-blue-700 underline">
+          Contatti
+        </Link>
+        .
       </p>
     ),
   },
@@ -222,8 +203,9 @@ export default function CookiePolicyPage() {
 
           <div className="space-y-8 px-6 py-7 text-[15px] leading-7 text-slate-700 md:px-10 md:py-9">
             <p>
-              Questa Cookie Policy integra la Privacy Policy di Radici Calabria per quanto riguarda i
-              cookie e le tecnologie analoghe utilizzate in relazione alla piattaforma.
+              Questa Cookie Policy integra la Privacy Policy di Progetto Radici Calabria — Piattaforma
+              digitale di valorizzazione delle filiere agroalimentari e dei territori della Calabria ·
+              Castrovillari (CS).
             </p>
             {sezioni.map((sezione) => (
               <section key={sezione.titolo}>

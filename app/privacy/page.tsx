@@ -2,6 +2,33 @@
 
 import Link from "next/link";
 
+const fornitori = [
+  {
+    nome: "Supabase",
+    ruolo: "Database, autenticazione e archiviazione dei dati dell'account, degli ordini e dei contenuti della piattaforma.",
+  },
+  {
+    nome: "Vercel",
+    ruolo: "Hosting e distribuzione del sito, con registrazione dei log tecnici necessari al funzionamento e alla sicurezza.",
+  },
+  {
+    nome: "Stripe",
+    ruolo: "Elaborazione dei pagamenti e, per le imprese, gestione dei pagamenti verso i produttori (Stripe Connect). Stripe tratta i dati di pagamento secondo le proprie condizioni.",
+  },
+  {
+    nome: "Groq",
+    ruolo: "Esecuzione dei modelli linguistici che generano le risposte dell'assistente Pino. Il testo delle domande inviate a Pino viene elaborato da Groq.",
+  },
+  {
+    nome: "Resend",
+    ruolo: "Invio delle email transazionali (conferme d'ordine, aggiornamenti, registrazione, reimpostazione della password).",
+  },
+  {
+    nome: "Google (Gemini) e OpenRouter",
+    ruolo: "Funzioni di IA per l'analisi di testi e immagini caricati dalle imprese nello strumento di inserimento prodotto e per alcune funzioni di supporto interne alla piattaforma.",
+  },
+];
+
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-white text-slate-900">
@@ -19,128 +46,137 @@ export default function PrivacyPage() {
           Informativa Privacy
         </h1>
         <p className="mt-3 text-sm text-slate-500">
-          Ultimo aggiornamento: 19 settembre 2026
+          Ultimo aggiornamento: novembre 2026
         </p>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700">
           <section>
             <h2 className="text-xl font-bold text-slate-900">1. Titolare del trattamento</h2>
             <p className="mt-2">
-              Radici Calabria è la piattaforma digitale dedicata a negozi, prodotti,
-              servizi, offerte, contenuti e iniziative del territorio.
-              Il titolare del trattamento è il soggetto che gestisce la
-              piattaforma Radici Calabria. Per le richieste relative alla privacy è
-              possibile utilizzare i recapiti pubblicati sul sito e le
-              funzionalità di contatto disponibili sulla piattaforma.
+              Il titolare del trattamento è il Progetto Radici Calabria — Piattaforma digitale di
+              valorizzazione delle filiere agroalimentari e dei territori della Calabria · Castrovillari
+              (CS). Radici Calabria è una piattaforma informativa e di connessione territoriale. Per
+              qualsiasi richiesta relativa ai tuoi dati personali utilizza il modulo della pagina{" "}
+              <Link href="/contatti" className="font-semibold text-blue-700 underline">
+                Contatti
+              </Link>
+              .
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-900">2. Dati trattati</h2>
             <p className="mt-2">
-              A seconda dei servizi utilizzati, Radici Calabria può trattare dati
-              identificativi e di contatto, credenziali di accesso, dati
-              necessari alla gestione dell'account, dati relativi agli ordini
-              e alle richieste effettuate, dati forniti dagli esercenti per la
-              gestione della propria attività, oltre ai dati tecnici necessari
-              al funzionamento e alla sicurezza del sito.
+              A seconda dei servizi utilizzati, trattiamo: dati identificativi e di contatto (nome,
+              email, telefono se forniti); credenziali di accesso; dati dell'account e delle imprese
+              registrate; dati degli ordini e dei pagamenti; contenuti inviati alla piattaforma
+              (recensioni, segnalazioni, testi e immagini caricati); le domande rivolte all'assistente
+              Pino; dati tecnici necessari al funzionamento e alla sicurezza (indirizzo IP, log di
+              accesso, informazioni sul browser).
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-900">3. Registrazione e autenticazione</h2>
             <p className="mt-2">
-              Per la registrazione con email e password i dati vengono
-              utilizzati per creare e gestire l'account. Radici Calabria consente
-              inoltre l'autenticazione tramite Google e, quando disponibile,
-              Apple. In questi casi il provider comunica a Radici Calabria i dati
-              necessari a identificare l'account, nel rispetto delle
-              impostazioni e delle autorizzazioni previste dal provider.
+              L'account può essere creato con email e password. Quando l'utente sceglie l'accesso con
+              Google o Apple, il provider comunica a Radici Calabria i dati necessari a identificare
+              l'account, nei limiti delle autorizzazioni concesse dall'utente. La funzione "Ricordami"
+              nel form di accesso memorizza email e password solo nel browser dell'utente, non sul
+              server; si veda la Cookie Policy.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">4. Finalità del trattamento</h2>
+            <h2 className="text-xl font-bold text-slate-900">4. Finalità e basi giuridiche</h2>
+            <ul className="mt-2 list-disc space-y-2 pl-5">
+              <li>Creare e gestire l'account, fornire le funzioni richieste e gestire ordini e pagamenti: esecuzione del contratto o di misure precontrattuali (art. 6.1.b GDPR).</li>
+              <li>Inviare comunicazioni di servizio (conferme, aggiornamenti d'ordine, reimpostazione password): esecuzione del contratto.</li>
+              <li>Sicurezza, prevenzione di abusi e accessi non autorizzati: legittimo interesse (art. 6.1.f GDPR).</li>
+              <li>Adempiere agli obblighi di legge, anche fiscali e in materia di segnalazioni: obbligo legale (art. 6.1.c GDPR).</li>
+              <li>Trattamenti non necessari al servizio, se previsti: consenso dell'interessato (art. 6.1.a GDPR), revocabile in ogni momento.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-slate-900">5. Fornitori e destinatari dei dati</h2>
             <p className="mt-2">
-              I dati sono trattati, in particolare, per creare e gestire gli
-              account, consentire l'accesso ai servizi, gestire ordini e
-              richieste, fornire le funzionalità richieste dagli utenti,
-              prevenire abusi e accessi non autorizzati, garantire la sicurezza
-              della piattaforma e adempiere agli obblighi di legge.
+              Per far funzionare la piattaforma utilizziamo i seguenti fornitori, che trattano i dati
+              in qualità di responsabili del trattamento o, dove previsto, come titolari autonomi:
+            </p>
+            <ul className="mt-3 list-disc space-y-2 pl-5">
+              {fornitori.map((f) => (
+                <li key={f.nome}>
+                  <strong>{f.nome}</strong>: {f.ruolo}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3">
+              Non utilizziamo strumenti di analisi del traffico o di profilazione pubblicitaria di
+              terze parti. Non inviamo pixel di tracciamento nelle email.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">5. Base giuridica</h2>
+            <h2 className="text-xl font-bold text-slate-900">6. Assistente Pino e intelligenza artificiale</h2>
             <p className="mt-2">
-              Il trattamento può essere fondato sull'esecuzione di un contratto
-              o di misure precontrattuali, sull'adempimento di obblighi di legge,
-              sul legittimo interesse del titolare per sicurezza e prevenzione
-              degli abusi e, nei casi in cui sia necessario, sul consenso
-              dell'interessato.
+              Pino è un sistema di intelligenza artificiale generativa basato su modelli linguistici
+              (LLM) eseguiti tramite Groq. Pino elabora risposte automatiche a partire dai contenuti
+              pubblicati sul portale; le risposte non sostituiscono una consulenza professionale e
+              Pino non è un operatore umano. Le domande inviate a Pino possono essere elaborate dal
+              fornitore del modello per generare la risposta. Non inserire dati sensibili o personali
+              di terzi nelle domande.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">6. Servizi di terze parti</h2>
+            <h2 className="text-xl font-bold text-slate-900">7. Conservazione dei dati</h2>
             <p className="mt-2">
-              La piattaforma può utilizzare fornitori tecnologici per
-              autenticazione, hosting, database, pagamenti, comunicazioni,
-              sicurezza e altri servizi necessari al funzionamento di Radici Calabria.
-              Quando l'utente sceglie un'autenticazione sociale, il relativo
-              trattamento da parte del provider è disciplinato anche dalla
-              documentazione privacy del provider stesso.
+              I dati dell'account sono conservati per la durata del rapporto e per il tempo successivo
+              necessario agli obblighi di legge o alla tutela dei diritti. I dati degli ordini sono
+              conservati per il periodo richiesto dagli adempimenti fiscali e contabili. I dati tecnici
+              di sicurezza sono conservati per il tempo strettamente necessario.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">7. Conservazione</h2>
+            <h2 className="text-xl font-bold text-slate-900">8. Trasferimenti extra UE</h2>
             <p className="mt-2">
-              I dati sono conservati per il tempo necessario alle finalità per
-              cui sono stati raccolti e, successivamente, nei limiti dei tempi
-              richiesti dalla legge o necessari per la tutela dei diritti del
-              titolare.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-slate-900">8. Sicurezza</h2>
-            <p className="mt-2">
-              Radici Calabria adotta misure tecniche e organizzative ragionevoli per
-              proteggere i dati da accessi non autorizzati, perdita, uso
-              improprio o alterazione.
+              Alcuni fornitori possono trattare dati al di fuori dell'Unione europea. In tali casi il
+              trasferimento avviene sulla base delle garanzie previste dal GDPR, come le clausole
+              contrattuali standard o le decisioni di adeguatezza.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-900">9. Diritti dell'interessato</h2>
             <p className="mt-2">
-              Nei limiti previsti dal Regolamento (UE) 2016/679, l'interessato
-              può chiedere accesso, rettifica, cancellazione, limitazione del
-              trattamento, opposizione e, quando applicabile, portabilità dei
-              dati. Le richieste possono essere rivolte al titolare attraverso
-              i recapiti pubblicati sul sito.
+              Puoi chiedere l'accesso, la rettifica, la cancellazione, la limitazione, la portabilità
+              dei dati e opporti al trattamento, e revocare il consenso dove previsto. Puoi esercitare
+              questi diritti tramite la pagina{" "}
+              <Link href="/contatti" className="font-semibold text-blue-700 underline">
+                Contatti
+              </Link>
+              . Hai inoltre diritto di proporre reclamo al Garante per la protezione dei dati personali.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-900">10. Cookie e tecnologie simili</h2>
             <p className="mt-2">
-              Radici Calabria può utilizzare cookie e tecnologie tecniche necessarie
-              alla navigazione, alla gestione della sessione, alla sicurezza e
-              al corretto funzionamento del servizio. Eventuali cookie non
-              necessari saranno utilizzati secondo le impostazioni e le
-              informative applicabili.
+              Per l'elenco dettagliato di cookie e spazi di archiviazione locale utilizzati, consulta la{" "}
+              <Link href="/cookie" className="font-semibold text-blue-700 underline">
+                Cookie Policy
+              </Link>
+              .
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">11. Aggiornamenti</h2>
+            <h2 className="text-xl font-bold text-slate-900">11. Modifiche alla informativa</h2>
             <p className="mt-2">
-              Questa informativa può essere aggiornata per riflettere
-              modifiche ai servizi, alla normativa o alle modalità di
-              trattamento. La versione pubblicata su questa pagina è quella
-              applicabile.
+              La presente informativa può essere aggiornata. La versione pubblicata indica la data
+              dell'ultimo aggiornamento.
             </p>
           </section>
         </div>
