@@ -15,6 +15,7 @@ const VOCI_CON_IMMAGINE = new Set<string>([
   "clementine",
   "arance",
   "cipolla-tropea",
+  "cipolla-bianca-castrovillari",
   "peperoncino",
   "ortaggi-estivi",
   "ortaggi-invernali",

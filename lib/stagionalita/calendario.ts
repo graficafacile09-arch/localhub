@@ -110,6 +110,18 @@ export const FONTI = {
     url: "https://www.masaf.gov.it/flex/files/1/2/7/D.f9912062703bc9664534/gennaio2024Disciplinare_Caciocavallo_Silano.pdf",
     nota: "Stagionatura minima 30 giorni; «Extra» da 4 mesi, «Gran Riserva» da 9 mesi.",
   },
+  "slowfood-cipolla-castrovillari": {
+    titolo: "Fondazione Slow Food – Cipolla bianca di Castrovillari (Presidio)",
+    breve: "Slow Food · cipolla bianca",
+    url: "https://www.fondazioneslowfood.com/it/presidi-slow-food/cipolla-bianca-di-castrovillari/",
+    nota: "Scheda del Presidio: ecotipo locale del Pollino, bulbo dolce e a basso contenuto di acido piruvico.",
+  },
+  "arsac-deco-cipolla": {
+    titolo: "ARSAC – La Cipolla Bianca di Castrovillari conquista la De.Co.",
+    breve: "ARSAC · cipolla De.Co.",
+    url: "https://www.arsacweb.it/la-cipolla-bianca-di-castrovillari-conquista-la-denominazione-comunale-de-co",
+    nota: "Denominazione Comunale (De.Co.) e disciplinare di produzione predisposto con ARSAC.",
+  },
   "disciplinare-tropea": {
     titolo: "MIPAAF – Disciplinare Cipolla Rossa di Tropea Calabria IGP",
     breve: "Disciplinare cipolla IGP",
@@ -268,6 +280,20 @@ export const VOCI: Voce[] = [
       { etichetta: "Essiccazione e conservazione", mesi: [7, 8, 9] },
     ],
     fonti: ["disciplinare-tropea", "qualigeo-tropea"],
+  },
+  {
+    id: "cipolla-bianca-castrovillari",
+    nome: "Cipolla Bianca di Castrovillari D.E.C.O.",
+    categoria: "coltivazioni",
+    sintesi: "raccolta del cipollotto fresco e del bulbo maturo",
+    mesi: [2, 3, 4, 5, 6, 7],
+    zone: "contrada Jardìni e valle del Coscile, Castrovillari",
+    nota: "Ecotipo locale coltivato nella valle del Coscile e in contrada Jardìni. Bulbo bianco con leggere striature rosate, dolce e digeribile per il basso contenuto di acido piruvico; ottimo a crudo, nel panicòttu, in zuppe e frittate. Cipollotto fresco da febbraio a maggio, bulbo maturo da giugno a luglio.",
+    fasi: [
+      { etichetta: "Raccolta cipollotto fresco", mesi: [2, 3, 4, 5] },
+      { etichetta: "Raccolta bulbo maturo", mesi: [6, 7] },
+    ],
+    fonti: ["slowfood-cipolla-castrovillari", "arsac-deco-cipolla"],
   },
   {
     id: "peperoncino",
