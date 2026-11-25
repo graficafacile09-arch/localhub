@@ -22,6 +22,13 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `Negozi e attività di ${citta}`,
     description: `L'elenco dei negozi e delle attività di ${citta}: orari, contatti, prodotti e servizi delle imprese locali.`,
     alternates: { canonical: `${getSiteUrl()}/negozi` },
+    openGraph: {
+      title: `Negozi e attività di ${citta}`,
+      description: `L'elenco dei negozi e delle attività di ${citta}: orari, contatti, prodotti e servizi delle imprese locali.`,
+      url: `${getSiteUrl()}/negozi`,
+      type: "website",
+      siteName: "Radici Calabria",
+    },
   };
 }
 

@@ -19,7 +19,7 @@ async function callLLM(prompt: string, systemPrompt: string): Promise<string> {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://www.incitta.online",
+        "HTTP-Referer": "https://radicicalabria.vercel.app",
         "X-Title": "Radici Calabria Admin Assistant",
       },
       body: JSON.stringify({

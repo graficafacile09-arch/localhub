@@ -33,7 +33,7 @@ import {
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
 
 /** URL del sito (per il link \"Visualizza ordine\"). */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://radicicalabria.vercel.app";
 
 /** Esito dell'invio (mai un'eccezione: l'ordine non deve fallire). */
 export type EsitoEmailOrdine =

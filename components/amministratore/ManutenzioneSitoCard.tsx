@@ -40,7 +40,7 @@ export default function ManutenzioneSitoCard() {
     finally { setSalvataggio(false); }
   }
 
-  const ambiente = stato?.target === "production" ? "Sito pubblico · www.incitta.online" : "Anteprima Vercel";
+  const ambiente = stato?.target === "production" ? "Sito pubblico · radicicalabria.vercel.app" : "Anteprima Vercel";
   return (
     <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
       <header className="flex items-center gap-3 border-b border-slate-100 px-6 py-5">

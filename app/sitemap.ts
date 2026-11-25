@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
+import { TERRITORI_ORDINATI } from "@/lib/territori";
 
 const SITE_URL = getSiteUrl();
 
@@ -11,14 +12,31 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const urls: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/filiere`, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${SITE_URL}/filiere/prodotti`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${SITE_URL}/territorio`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/stagionalita`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/attrazioni`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/venditori`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/negozi`, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/ricerca`, changeFrequency: "daily", priority: 0.7 },
-    { url: `${SITE_URL}/categorie`, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/offerte`, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/contenuti`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/notizie`, changeFrequency: "hourly", priority: 0.7 },
+    { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/contatti`, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${SITE_URL}/termini`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/cookie`, changeFrequency: "yearly", priority: 0.3 },
   ];
+
+  for (const territorio of TERRITORI_ORDINATI) {
+    urls.push({
+      url: `${SITE_URL}/territorio/${territorio.slug}`,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
+  }
 
   // Durante una build su ambienti che non hanno ancora la chiave server,
   // restituiamo le URL statiche senza interrompere il deploy.
@@ -27,20 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const db = createAdminSupabaseClient();
-
-  const { data: categorie } = await db
-    .from("categorie")
-    .select("slug")
-    .eq("attivo", true)
-    .not("slug", "is", null);
-
-  for (const categoria of categorie ?? []) {
-    urls.push({
-      url: `${SITE_URL}/categorie/${categoria.slug}`,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    });
-  }
 
   const { data: negozi } = await db
     .from("negozi")

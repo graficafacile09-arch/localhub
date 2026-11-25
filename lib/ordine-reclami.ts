@@ -515,7 +515,7 @@ export async function aggiornaStatoReclamoVenditore(
 // NOTIFICHE ntfy (venditore + admin, BEST-EFFORT)
 // ═══════════════════════════════════════════════════════════════════════
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://radicicalabria.vercel.app";
 
 /** Opzioni di notifica (fetch e DB per i test). */
 export type OpzioniNotificaReclamo = {

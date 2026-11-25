@@ -15,6 +15,7 @@ import ProductGallery, { type GalleryImage } from "@/components/prodotto/Product
 import ProductVariantSelector from "@/components/prodotto/ProductVariantSelector";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
+import { breadcrumbList, jsonLdSerializzato } from "@/lib/seo/jsonld";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
@@ -101,6 +102,26 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
 
+  const baseUrl = getSiteUrl();
+  const pathProdotto = `/prodotto/${String(prodotto.slug ?? id)}`;
+  const prodottoJsonLd = jsonLdSerializzato({
+    "@graph": [
+      {
+        "@type": "Product",
+        name: String(prodotto.nome ?? "Prodotto"),
+        url: `${baseUrl}${pathProdotto}`,
+        description: String(prodotto.descrizione ?? "").slice(0, 300),
+        ...(prodotto.immagine_principale ? { image: String(prodotto.immagine_principale) } : {}),
+        ...(negozio?.nome ? { brand: { "@type": "Brand", name: String(negozio.nome) } } : {}),
+      },
+      breadcrumbList([
+        { nome: "Home", path: "/" },
+        { nome: "Prodotti", path: "/prodotti-tipici" },
+        { nome: String(prodotto.nome ?? "Prodotto"), path: pathProdotto },
+      ]),
+    ],
+  });
+
   // REGOLA AUTO-ACQUISTO: se l'utente autenticato è un VENDITORE e il
   // prodotto appartiene al SUO negozio (owner_user_id), la CTA "Acquista"
   // viene sostituita dall'etichetta informativa "Il tuo prodotto" (il
@@ -168,6 +189,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   return (
     <main className="rd-pagina min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: prodottoJsonLd }} />
       <Header />
 
       <div className="rd-guscio py-5 pb-12 md:py-8">

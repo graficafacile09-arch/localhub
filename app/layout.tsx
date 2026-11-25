@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
+import { jsonLdSerializzato, NOME_SITO } from "@/lib/seo/jsonld";
 import "./globals.css";
 import AreaTitleSync from "@/components/layout/AreaTitleSync";
 import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
@@ -96,6 +97,40 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdSerializzato({
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  "@id": `${SITE_URL}/#website`,
+                  url: SITE_URL,
+                  name: NOME_SITO,
+                  inLanguage: "it-IT",
+                  description:
+                    "Filiere agroalimentari, prodotti tipici e territori della Calabria.",
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target: {
+                      "@type": "EntryPoint",
+                      urlTemplate: `${SITE_URL}/ricerca?q={search_term_string}`,
+                    },
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+                {
+                  "@type": "Organization",
+                  "@id": `${SITE_URL}/#organization`,
+                  name: NOME_SITO,
+                  url: SITE_URL,
+                  logo: `${SITE_URL}/hero-coppia-castrovillari.webp`,
+                  areaServed: "Calabria",
+                },
+              ],
+            }),
+          }}
+        />
         <LanguageProvider>
         <AreaTitleSync />
         <a

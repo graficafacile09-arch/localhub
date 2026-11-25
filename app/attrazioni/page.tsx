@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   title: "Attrazioni ed eventi a Castrovillari",
   description: "Scopri monumenti, musei, cultura, eventi, sapori e borghi nei dintorni di Castrovillari e del Parco Nazionale del Pollino.",
   alternates: { canonical: `${getSiteUrl()}/attrazioni` },
+  openGraph: {
+    title: "Attrazioni ed eventi a Castrovillari",
+    description: "Scopri monumenti, musei, cultura, eventi, sapori e borghi nei dintorni di Castrovillari e del Parco Nazionale del Pollino.",
+    url: `${getSiteUrl()}/attrazioni`,
+    type: "website",
+    siteName: "Radici Calabria",
+  },
 };
 
 

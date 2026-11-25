@@ -18,7 +18,7 @@
 import { Resend } from "resend";
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Radici Calabria <onboarding@resend.dev>";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://radicicalabria.vercel.app";
 
 export type EsitoEmailAvviso =
   | { stato: "sent" }

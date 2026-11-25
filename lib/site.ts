@@ -1,4 +1,4 @@
-const PRODUCTION_FALLBACK = "https://www.incitta.online";
+const PRODUCTION_FALLBACK = "https://radicicalabria.vercel.app";
 
 function normalizeUrl(value: string): string {
   let u = value.trim().replace(/\/+$/, "");

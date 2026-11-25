@@ -16,7 +16,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { inviaEmailProdottoDisponibile } from "@/lib/cliente/avvisami-email";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://radicicalabria.vercel.app";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

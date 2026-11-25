@@ -14,6 +14,7 @@ import {
 import { getProdottiTerritorio } from "@/lib/territori-prodotti";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
+import { breadcrumbList, jsonLdSerializzato } from "@/lib/seo/jsonld";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,30 @@ export default async function TerritorioDettaglioPage({ params }: Props) {
     (t) => t.gruppo === territorio.gruppo && t.slug !== territorio.slug
   ).sort((a, b) => a.ordine - b.ordine);
 
+  const base = getSiteUrl();
+  const territorioJsonLd = jsonLdSerializzato({
+    "@graph": [
+      {
+        "@type": "TouristDestination",
+        "@id": `${base}/territorio/${territorio.slug}#destinazione`,
+        name: territorio.nome,
+        url: `${base}/territorio/${territorio.slug}`,
+        description: territorio.sommario,
+        image: `${base}${territorio.immagine.src}`,
+        touristType: territorio.gruppo,
+        containedInPlace: { "@type": "Place", name: "Calabria, Italia" },
+      },
+      breadcrumbList([
+        { nome: "Home", path: "/" },
+        { nome: "Territorio", path: "/territorio" },
+        { nome: territorio.nome, path: `/territorio/${territorio.slug}` },
+      ]),
+    ],
+  });
+
   return (
     <main className="min-h-screen bg-slate-100">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: territorioJsonLd }} />
       <Header />
 
       <article className="w-full py-4 md:py-8">

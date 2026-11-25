@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header/Header";
 import { getSiteUrl } from "@/lib/site";
+import { jsonLdSerializzato } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -96,8 +97,20 @@ const categorie = [
 ];
 
 export default function FAQPage() {
+  const faqJsonLd = jsonLdSerializzato({
+    "@type": "FAQPage",
+    mainEntity: categorie.flatMap((categoria) =>
+      categoria.domande.map((voce) => ({
+        "@type": "Question",
+        name: voce.domanda,
+        acceptedAnswer: { "@type": "Answer", text: voce.risposta },
+      }))
+    ),
+  });
+
   return (
     <main className="min-h-screen bg-[#eef3f8] text-slate-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />
       <Header />
 
       <section className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">

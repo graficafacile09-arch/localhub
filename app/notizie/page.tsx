@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${getSiteUrl()}/notizie`,
   },
+  openGraph: {
+    title: "Notizie: agricoltura calabrese",
+    description:
+      "Notizie, eventi, fiere e bandi su agricoltura, filiere agroalimentari, olio, vino, agrumi e prodotti tipici della Calabria, aggiornati automaticamente da fonti ufficiali e testate specializzate.",
+    url: `${getSiteUrl()}/notizie`,
+    type: "website",
+    siteName: "Radici Calabria",
+  },
 };
 
 /** Chip dei filtri: forma e colori da `.rd-filtro`, stato attivo da aria-current. */

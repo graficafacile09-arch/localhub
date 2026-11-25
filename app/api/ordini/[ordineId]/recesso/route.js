@@ -6,7 +6,7 @@ import { getSessionArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/order-access";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://radicicalabria.vercel.app";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "";
 const REPLY_TO_EMAIL = process.env.RESEND_REPLY_TO_EMAIL?.trim() || null;
 
