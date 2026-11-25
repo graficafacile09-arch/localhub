@@ -550,7 +550,7 @@ export const TERRITORI: Territorio[] = [
       "Il Santuario di Santa Maria dell'Isola sorge su uno sperone roccioso sul mare, raggiungibile dal centro storico, ed è uno dei simboli religiosi e paesaggistici della città.",
     ],
     riconoscimenti: [],
-    prodotti: [{ slug: "cipolla-rossa-tropea-igp-treccia", riconoscimento: "IGP" }],
+    prodotti: [],
     immagine: {
       src: "/territorio/costa-degli-dei.jpg",
       alt: "Costa degli Dei a Tropea",
