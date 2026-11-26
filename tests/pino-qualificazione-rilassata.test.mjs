@@ -289,3 +289,15 @@ test("la tabella di routing decide il dominio in un solo posto", () => {
   // Nessun segnale: la richiesta resta generica.
   assert.equal(decidiDominioPino("pasta"), null);
 });
+
+test("le code conversazionali non diventano qualifica: «cosa avete» non è un attributo", () => {
+  for (const domanda of [
+    "Vorrei comprare del miele di castagno, cosa avete?",
+    "miele di castagno cosa avete",
+    "miele di castagno disponibili in catalogo",
+    "miele di castagno cosa c'è",
+  ]) {
+    const frase = fraseQualificazionePino(domanda, "miele");
+    assert.equal(frase, "miele di castagno", domanda);
+  }
+});

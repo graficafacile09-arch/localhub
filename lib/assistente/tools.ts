@@ -2387,6 +2387,46 @@ const PAROLE_NON_QUALIFICANTI = new Set([
 
 const PAROLE_CORTESIA = new Set(["per", "favore", "grazie", "please"]);
 
+// Code conversazionali: domande e formule di disponibilità («cosa avete»,
+// «cosa c'è», «in catalogo») non sono attributi del prodotto.
+const CODE_CONVERSAZIONALI: string[][] = [
+  ["cosa", "avete"],
+  ["cosa", "c", "e"],
+  ["cosa", "ce"],
+  ["cosa", "vendete"],
+  ["cosa", "offrite"],
+  ["che", "avete"],
+  ["avete"],
+  ["vendete"],
+  ["offrite"],
+  ["disponibili"],
+  ["disponibile"],
+  ["in", "catalogo"],
+  ["a", "catalogo"],
+  ["nel", "catalogo"],
+  ["catalogo"],
+  ["esistono"],
+];
+
+/** Toglie le code conversazionali in fondo al segmento, ripetutamente. */
+function togliCodeConversazionali(segmento: string[]): string[] {
+  let risultato = segmento;
+  let trovato = true;
+  while (trovato) {
+    trovato = false;
+    for (const coda of CODE_CONVERSAZIONALI) {
+      if (risultato.length <= coda.length) continue;
+      const inizio = risultato.length - coda.length;
+      if (coda.every((t, i) => risultato[inizio + i] === t)) {
+        risultato = risultato.slice(0, inizio);
+        trovato = true;
+        break;
+      }
+    }
+  }
+  return risultato;
+}
+
 /**
  * Estrae la parte qualificante della query dopo il soggetto, fermandosi prima
  * del budget. Non inventa parole: usa solo i token già presenti nella query.
@@ -2398,6 +2438,7 @@ function segmentoQualificazione(query: string, soggetto: string): string[] {
   const indice = tokenQuery.indexOf(soggettoToken);
   if (indice < 0) return [];
   let segmento = tokenQuery.slice(indice);
+  segmento = togliCodeConversazionali(segmento);
 
   const taglioBudget = segmento.findIndex((token) =>
     PAROLE_BUDGET_QUALIFICAZIONE.has(token)
