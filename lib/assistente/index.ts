@@ -194,7 +194,6 @@ import {
 } from "./budget-ai";
 import {
   componiRispostaConoscenzaPino,
-  componiRispostaSenzaFontiPino,
 } from "./conoscenza-discorsiva";
 import type { PinoUnderstanding } from "./understanding";
 import {
@@ -4621,7 +4620,7 @@ export async function chatConAssistente(
         );
       }
       if (richiestaLuoghi || domandaInformativa) {
-        const rispostaSenzaFonti = await componiRispostaSenzaFontiPino({
+        const rispostaSenzaFonti = await componiRispostaConoscenzaPino({
           domanda,
           lingua: linguaDiscorsiva,
           budgetAI,
