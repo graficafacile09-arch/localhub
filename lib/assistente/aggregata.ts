@@ -167,6 +167,7 @@ const STOP = new Set([
   "queste", "quel", "quella", "quelli", "quelle", "stesso", "stessa",
   "cosi", "come", "ha", "hanno", "offrite", "esistono", "si", "trova",
   "trovano", "presenti", "disponibili", "anche", "per", "favore",
+  "cosa", "cose", "quali", "quanto", "quanta",
 ]);
 
 // Preposizioni: separano il soggetto dagli attributi ("pasta all'uovo").

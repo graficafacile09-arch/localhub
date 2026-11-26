@@ -78,25 +78,25 @@ test.describe("S5.1-A — lingua inglese su richieste brevi", () => {
 
     expect(r.negozi).toEqual([]);
     expect(r.prodotti).toEqual([]);
-    expect(r.risposta).toMatch(/Attractions guide/i);
-    expect(r.risposta).toMatch(/doesn't necessarily mean/i);
-    expect(r.risposta).not.toMatch(/guida Attrazioni/i);
+    expect(r.risposta).toMatch(/no longer has a guide to places/i);
+    expect(r.risposta).not.toMatch(/guida ai luoghi/i);
   });
 
-  test("richiesta inglese con risultati: risposta in inglese", async () => {
-    const r = await rispondi("What museums can I visit?");
+  test("richiesta inglese con una città: risposta in inglese", async () => {
+    const r = await rispondi("Historical monuments in Castrovillari");
 
     expect(r.negozi).toEqual([]);
     expect(r.prodotti).toEqual([]);
-    expect(r.risposta).toMatch(/Attractions guide/i);
-    expect(r.risposta).toMatch(/Museo Archeologico/);
+    expect(r.risposta).toMatch(/Here is what the site's content says/i);
+    expect(r.risposta).toMatch(/Castrovillari/);
+    expect(r.risposta).not.toMatch(/Ecco cosa raccontano/i);
   });
 
   test("richiesta italiana: risposta in italiano", async () => {
     const r = await rispondi("Cerco un museo");
 
-    expect(r.risposta).toMatch(/guida Attrazioni/i);
-    expect(r.risposta).not.toMatch(/Attractions guide/i);
+    expect(r.risposta).toMatch(/Ecco cosa raccontano i contenuti del sito/i);
+    expect(r.risposta).not.toMatch(/Here is what the site's content says/i);
   });
 });
 

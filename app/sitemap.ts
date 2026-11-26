@@ -23,7 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     { url: `${SITE_URL}/territorio`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_URL}/stagionalita`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITE_URL}/attrazioni`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/venditori`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/negozi`, changeFrequency: "daily", priority: 0.9 },

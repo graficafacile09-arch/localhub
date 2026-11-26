@@ -100,10 +100,12 @@ test("un acquisto con toponimo resta catalogo, non guida Attrazioni", () => {
 });
 
 test("le richieste di visita restano nella guida Attrazioni", () => {
+  // I parchi non sono più nella guida Attrazioni: vanno ai dati Territorio.
   assert.equal(
     richiestaGuidaAttrazioniPino("Vorrei visitare il Parco Nazionale del Pollino"),
-    true
+    false
   );
+  assert.equal(richiestaGuidaAttrazioniPino("Vorrei visitare un parco"), false);
   assert.equal(richiestaGuidaAttrazioniPino("La Civita"), true);
   assert.equal(
     richiestaGuidaAttrazioniPino("Cosa posso visitare a Castrovillari?"),

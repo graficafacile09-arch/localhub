@@ -30,6 +30,9 @@ async function esegui(req: Request) {
   const secret = process.env.CRON_SECRET;
   const header = req.headers.get("authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!secret) {
+    console.error("[cron-conoscenza] CRON_SECRET non impostato: scansione annullata. Imposta la variabile su Vercel.");
+  }
   if (!secret || !token) {
     return apiError("UNAUTHORIZED", "CRON_SECRET mancante o header Authorization assente", 401);
   }

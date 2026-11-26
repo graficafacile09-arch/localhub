@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
-import { chiediAPino } from "./pino-fetch";
+import { chiediAPino, sessionIdPino } from "./pino-fetch";
 
 // ─── Suggerimenti iniziali ────────────────────────────────────────────────────
 
@@ -127,15 +127,13 @@ export default function AssistantChat() {
     ];
 
     try {
-      if (!sessionIdRef.current) {
-        sessionIdRef.current = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      }
+      const sessionId = sessionIdPino(sessionIdRef);
 
       // Streaming NDJSON (con fallback JSON) tramite un unico client: così la
       // chat mostra il progresso e non resta muta durante la ricerca.
       const data = await chiediAPino({
         messaggi: storico,
-        sessionId: sessionIdRef.current,
+        sessionId,
       });
 
       let content = data.risposta?.trim() ?? "";

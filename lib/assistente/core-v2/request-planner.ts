@@ -15,6 +15,7 @@ import {
 import {
   isBroadAttractionsRequest,
   isExplicitFoodProductRequest,
+  richiestaParchiPino,
 } from "../routing-policy.ts";
 // Un solo riconoscimento del meteo, condiviso con l'orchestratore: "come sarà
 // il tempo" e "che tempo farà" non devono esistere in due liste divergenti.
@@ -186,7 +187,10 @@ export function planPinoCoreRequest(input: string): PinoCorePlan {
   if (EVENTS.test(intentText) || EVENT_TIME_PHRASE.test(intentText)) {
     return { ...base, route: "events", surface: "none", confidence: "high", reason: "events_intent" };
   }
-  if (ATTRACTIONS.test(intentText) || isBroadAttractionsRequest(original)) {
+  if (
+    ATTRACTIONS.test(intentText) ||
+    (isBroadAttractionsRequest(original) && !richiestaParchiPino(original))
+  ) {
     return { ...base, route: "attractions", surface: "none", confidence: "high", reason: "attractions_intent" };
   }
 

@@ -153,6 +153,19 @@ const RE_CONTESTO_ACQUISTO_PINO =
 const RE_INTENTO_GUIDA_PINO =
   /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
 
+/**
+ * Parchi e aree: le attrazioni non sono più un catalogo del sito, quindi una
+ * domanda sui parchi va ai dati territorio (`searchTerritorio`) e non alla
+ * guida Attrazioni. Un parco nominato dal catalogo resta gestito da
+ * `isAttractionNameQuery`.
+ */
+const RE_PARCHI_PINO = /\b(?:parco|parchi|parks?)\b/i;
+
+/** Richiesta che nomina parchi o aree: va ai dati territorio, non alla guida. */
+export function richiestaParchiPino(query: string): boolean {
+  return RE_PARCHI_PINO.test(String(query ?? ""));
+}
+
 type RegolaRoutingPino = {
   dominio: DominioRoutingPino;
   /** Etichetta stabile della regola, utile nei log e nei test. */
@@ -188,7 +201,9 @@ export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
   {
     dominio: "attrazioni",
     motivo: "intento_guida",
-    quando: (query) => RE_INTENTO_GUIDA_PINO.test(String(query ?? "")),
+    quando: (query) =>
+      RE_INTENTO_GUIDA_PINO.test(String(query ?? "")) &&
+      !RE_PARCHI_PINO.test(String(query ?? "")),
   },
 ];
 
@@ -199,7 +214,7 @@ export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
  */
 const RE_FILIERE_PINO = /\bfilier[ae]\b/;
 const RE_TERRITORIO_PINO =
-  /\b(?:parch[io]|parco|dop|igp|pat|produttori|eccellenz[ae]|territorio)\b/;
+  /\b(?:parch[io]|parco|parks?|dop|igp|pat|produttori|eccellenz[ae]|territorio)\b/;
 
 /**
  * Chip e domande su filiere e territorio: restano sui dati statici di

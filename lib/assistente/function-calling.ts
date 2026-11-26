@@ -217,7 +217,7 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
   },
   {
     name: "searchConoscenza",
-    description: "Cerca nelle informazioni del sito su territorio, località, filiere e produttori, stagionalità, FAQ, attrazioni e pagine informative. Non cerca prodotti, negozi, prezzi, offerte o eventi.",
+    description: "Cerca nelle informazioni del sito su territorio, parchi, località, filiere e produttori, stagionalità, FAQ e pagine informative. Non cerca prodotti, negozi, prezzi, offerte o eventi.",
     parameters: {
       type: "object",
       properties: {

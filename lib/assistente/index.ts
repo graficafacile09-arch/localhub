@@ -11,6 +11,7 @@ import {
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
   richiestaRistorazionePino,
+  richiestaParchiPino,
 } from "./routing-policy";
 import { ATTIVITA_CATALOGO_PINO, soggettoAlimentarePino } from "./lexicon";
 import {
@@ -193,7 +194,6 @@ import {
 } from "./budget-ai";
 import {
   componiRispostaConoscenzaPino,
-  messaggioConoscenzaNonTrovataPino,
 } from "./conoscenza-discorsiva";
 import type { PinoUnderstanding } from "./understanding";
 import {
@@ -2251,6 +2251,7 @@ function aRisultatiRecuperati(
       negozio_nome: p.negozio_nome,
       categoria: p.categoria,
       descrizione: p.descrizione,
+      slug: p.slug ?? null,
       ha_varianti: p.ha_varianti === true,
       varianti: (p as ProdottoConVariantiPino).varianti ?? [],
     })),
@@ -2314,7 +2315,8 @@ function sezioniRisultati(
                   `${variante.nome}${variante.prezzo != null ? ` €${variante.prezzo}` : ""}`
               )
               .join(", ");
-            return `- **${p.nome}** — ${prezzoTesto} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${varianti ? ` — ${inglese ? "variants" : "varianti"}: ${varianti}` : ""}${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
+            const nomeProdotto = p.slug ? `[${p.nome}](/prodotto/${p.slug})` : `**${p.nome}**`;
+            return `- ${nomeProdotto} — ${prezzoTesto} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${varianti ? ` — ${inglese ? "variants" : "varianti"}: ${varianti}` : ""}${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
           })
           .join("\n")
     );
@@ -3192,9 +3194,39 @@ export function queryOfferteEventiPino(
  * Il nome di un luogo del catalogo resta sempre una richiesta valida, ma un
  * toponimo da solo non basta: lo esclude `isAttractionNameQuery`.
  */
+/**
+ * Parole che non identificano un luogo: verbi e formule con cui si chiede
+ * «cosa posso visitare». Servono a distinguere una domanda su un luogo preciso
+ * («Castello Aragonese») da una domanda generica, che senza schede dei luoghi
+ * non ha una risposta nel sito.
+ */
+const PAROLE_NON_LUOGO_PINO = new Set([
+  "visitare", "vedere", "posso", "vorrei", "consigli", "consigliami",
+  "posto", "posti", "luogo", "luoghi", "cose", "cosa", "quali", "quale",
+  "dove", "anche", "qualche", "attrazioni", "attrazione", "storico",
+  "storici", "visit", "visiting", "there", "what", "which", "where",
+  "some", "about", "tell", "show", "please", "could", "would",
+]);
+
+function paroleLuogoPino(domanda: string): string[] {
+  const parole = domanda.toLowerCase().match(/[a-zà-ù]{5,}/g) ?? [];
+  return [...new Set(parole.filter((p) => !PAROLE_NON_LUOGO_PINO.has(p)))].slice(0, 6);
+}
+
+function testoContieneParola(
+  fonte: { titolo: string; estratto: string },
+  parola: string
+): boolean {
+  return `${fonte.titolo} ${fonte.estratto}`.toLowerCase().includes(parola);
+}
+
 export function richiestaGuidaAttrazioniPino(query: string): boolean {
   const testo = String(query ?? "");
   if (richiestaEditorialePino(testo)) return false;
+  // Parchi e aree protette: la guida Attrazioni non è più una sezione del sito,
+  // quindi «vorrei visitare un parco» deve usare i dati Territorio e non il
+  // vecchio catalogo (che riconoscerebbe «parco» come nome di un'attrazione).
+  if (richiestaParchiPino(testo)) return false;
   // Decisione unica e ordinata in `routing-policy.ts`: cinema, acquisto ed
   // eventi vincono sull'intento turistico, esattamente come prima, ma la
   // sequenza non vive più qui.
@@ -3203,13 +3235,6 @@ export function richiestaGuidaAttrazioniPino(query: string): boolean {
   // Il nome di un luogo del catalogo resta sempre una richiesta valida.
   if (isAttractionNameQuery(testo)) return true;
   return decisione?.dominio === "attrazioni";
-}
-
-/** Risposta onesta: assenza nella guida, non inesistenza nella città. */
-export function rispostaGuidaAttrazioniAssentePino(lingua: "it" | "en" = "it"): string {
-  return lingua === "en"
-    ? "I can't currently find information about this place in Radici Calabria's attractions guide. That doesn't necessarily mean it doesn't exist in Castrovillari. I won't suggest shops or products that have nothing to do with it."
-    : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di Radici Calabria. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
 }
 
 /** Risposta condivisa per i risultati della guida Attrazioni. */
@@ -3947,6 +3972,9 @@ export async function chatConAssistente(
     analisi.intent === "service" &&
     analisi.confidence === "alta" &&
     !richiestaGuidaAttrazioniPino(domanda) &&
+    // «parchi» non è una professione da cercare nel catalogo attività: le aree
+    // protette vivono nei dati Territorio (vale anche per «parks» in inglese).
+    !richiestaParchiPino(domanda) &&
     // "farmacia" è anche un servizio: senza questa guardia il ramo professione
     // rispondeva "Non risultano farmacie nel catalogo" PRIMA del tool farmacie,
     // che è l'unica fonte reale dei turni.
@@ -3999,36 +4027,11 @@ export async function chatConAssistente(
   // Castrovillari») perché la richiesta finisca nel ramo Attrazioni.
   const intentoLocale = pianoIntentoLocale(domanda);
   const richiestaTuristica = !intentoLocale && richiestaGuidaAttrazioniPino(domanda);
-  const luoghi = filtraLuoghiPertinentiGuidaPino(
-    domanda,
-    searchAttractions(espandiCategorieGuidaPino(domanda), 6)
-  );
-  if (richiestaTuristica) {
-    if (luoghi.length > 0) {
-      const rispostaAttrazioni = rispostaGuidaAttrazioniTrovatePino(
-        luoghi,
-        linguaConversazione
-      );
-      return esci("attrazioni", {
-        risposta: rispostaAttrazioni,
-        negozi: [],
-        prodotti: [],
-        processingMs: Date.now() - inizio,
-        source: "assistente",
-      }, { limiti: null, origine: "assente" });
-    }
-
-    // La guida non ha un risultato pertinente: Pino si ferma qui e non delega
-    // la richiesta a una ricerca commerciale. Il testo distingue l'assenza
-    // nella guida dall'inesistenza del luogo in città.
-    return esci("attrazioni_assenti", {
-      risposta: rispostaGuidaAttrazioniAssentePino(linguaConversazione),
-      negozi: [],
-      prodotti: [],
-      processingMs: Date.now() - inizio,
-      source: "assistente",
-    }, { limiti: null, origine: "assente" });
-  }
+  // La sezione /attrazioni non esiste più nel sito e il vecchio catalogo statico
+  // non alimenta più la conoscenza: una richiesta di visita resta riconosciuta
+  // come tale (`richiestaTuristica`), ma la risposta arriva dai contenuti
+  // Territorio nel ramo conoscenza qui sotto — nessun dato vecchio e nessun
+  // rimando a una guida che l'utente non trova più.
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
@@ -4538,16 +4541,68 @@ export async function chatConAssistente(
       (t) => t.tool === "searchTerritorio" || t.tool === "searchFiliere"
     );
     const domandaInformativa = richiestaConoscenzaPino(domanda);
-    if (domandaInformativa || strumentiEditoriali) {
+    // I parchi sono luoghi del Territorio: valgono come richiesta di visita in
+    // tutte le lingue, anche quando il piano non attiva searchTerritorio.
+    const richiestaParchi = richiestaParchiPino(domanda);
+    const richiestaLuoghi = richiestaTuristica || richiestaParchi;
+    if (domandaInformativa || strumentiEditoriali || richiestaLuoghi) {
       const linguaDiscorsiva = linguaConversazione === "en" ? "en" : "it";
-      const fonti =
+      let fonti =
         conoscenza.length > 0 ? conoscenza : await cercaConoscenzaSito(domanda, 6);
+      // «Cosa posso visitare?» non nomina un luogo: la domanda grezza pesca FAQ
+      // generiche o, peggio, testi non pertinenti. Le richieste di visita senza
+      // un territorio in testa leggono i parchi e le aree territoriali, che
+      // sono i luoghi del sito.
+      const isFonteParco = (f: { titolo: string }) => /\(parchi\)/i.test(f.titolo);
+      if (richiestaParchi) {
+        // I parchi hanno un gruppo proprio nei dati Territorio: la risposta è
+        // quella, anche se la domanda arriva in inglese e il resto del testo
+        // pesca aree o filiere.
+        fonti = fonti.filter(isFonteParco);
+        if (fonti.length === 0) {
+          fonti = (
+            await cercaConoscenzaSito(
+              "Parco Nazionale del Pollino Sila Aspromonte parchi della Calabria",
+              6
+            )
+          ).filter(isFonteParco);
+        }
+      } else if (
+        richiestaLuoghi &&
+        !fonti.some((f) => f.url.startsWith("/territorio"))
+      ) {
+        fonti = await cercaConoscenzaSito(
+          `${domanda} parchi aree territoriali luoghi da visitare in Calabria`,
+          6
+        );
+      }
+      if (richiestaLuoghi && !richiestaParchi) {
+        // Una domanda generica («Cosa posso visitare?») parte dai parchi: sono
+        // i luoghi più riconoscibili del sito, non la prima area in ordine.
+        const parchi = fonti.filter(isFonteParco);
+        if (parchi.length > 0) {
+          fonti = [...parchi, ...fonti.filter((f) => !isFonteParco(f))];
+        }
+      }
+      // Una richiesta di visita senza un luogo riconoscibile nei testi (per
+      // esempio «Are there any churches?») non deve arrivare al modello: senza
+      // schede dei luoghi, l'unica risposta onesta è dire dove sono raccontati.
+      if (richiestaLuoghi && !richiestaParchi) {
+        const paroleDomanda = paroleLuogoPino(domanda);
+        if (
+          paroleDomanda.length > 0 &&
+          !fonti.some((f) => paroleDomanda.some((p) => testoContieneParola(f, p)))
+        ) {
+          fonti = [];
+        }
+      }
       if (fonti.length > 0) {
         const rispostaConoscenza = await componiRispostaConoscenzaPino({
           domanda,
           fonti,
           lingua: linguaDiscorsiva,
           budgetAI,
+          richiestaLuoghi,
         });
         return esci(
           "conoscenza",
@@ -4567,11 +4622,17 @@ export async function chatConAssistente(
           }
         );
       }
-      if (domandaInformativa) {
+      if (richiestaLuoghi || domandaInformativa) {
+        const rispostaSenzaFonti = await componiRispostaConoscenzaPino({
+          domanda,
+          lingua: linguaDiscorsiva,
+          budgetAI,
+          richiestaLuoghi,
+        });
         return esci(
           "conoscenza_vuota",
           {
-            risposta: messaggioConoscenzaNonTrovataPino(domanda, linguaDiscorsiva),
+            risposta: rispostaSenzaFonti,
             negozi: [],
             prodotti: [],
             processingMs: Date.now() - inizio,
@@ -4585,38 +4646,6 @@ export async function chatConAssistente(
           }
         );
       }
-    }
-  }
-
-  // I festival possono essere nella guida Attrazioni anche quando il catalogo
-  // eventi è vuoto. Questo fallback è volutamente limitato ai festival: una
-  // richiesta generica di "eventi" resta sul catalogo eventi e non viene
-  // dirottata sulla guida.
-  if (
-    !directReply &&
-    eventi.length === 0 &&
-    negozi.length === 0 &&
-    prodotti.length === 0 &&
-    offerte.length === 0 &&
-    RE_FESTIVAL_GUIDA_PINO.test(domanda)
-  ) {
-    const festivalGuida = luoghiFestivalGuidaPino(domanda);
-    if (festivalGuida.length > 0) {
-      return esci("festival_guida", {
-        risposta: rispostaGuidaAttrazioniTrovatePino(
-          festivalGuida,
-          linguaConversazione
-        ),
-        negozi: [],
-        prodotti: [],
-        processingMs: Date.now() - inizio,
-        source: "assistente",
-        intent: analisi.intent,
-      }, {
-        limiti: limitiVincolanti,
-        origine: limitiVincolanti ? "traccia" : "assente",
-        invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
-      });
     }
   }
 

@@ -42,6 +42,12 @@ const nextConfig: NextConfig = {
       "./node_modules/regenerator-runtime/**/*",
     ],
   },
+  // La guida Attrazioni non esiste più: i luoghi e i parchi sono in Territorio.
+  async redirects() {
+    return [
+      { source: "/attrazioni", destination: "/territorio", permanent: true },
+    ];
+  },
   // Permette al dev server di servire risorse a richieste originate da
   // 127.0.0.1 (necessario per i test E2E con browser in sviluppo).
   allowedDevOrigins: ["127.0.0.1", "localhost"],
