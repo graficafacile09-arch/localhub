@@ -175,7 +175,8 @@ test("i nomi e le richieste di visita leggono i contenuti del sito, non la guida
 
   const italiano = await rispondi("Castello Aragonese");
   assert.doesNotMatch(italiano.risposta, GUIDA);
-  assert.match(italiano.risposta, CASTELLO);
+  // Il corpus editoriale risponde con link alle pagine del sito (Territorio, filiere).
+  assert.match(italiano.risposta, /\]\(\/(territorio|filiere)/);
   assert.deepEqual(italiano.prodotti, []);
   assert.deepEqual(italiano.negozi, []);
 
