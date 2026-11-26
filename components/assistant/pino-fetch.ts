@@ -22,6 +22,37 @@ export type RispostaPino = SearchResult;
 
 const TIPO_STREAMING = "application/x-ndjson";
 
+const CHIAVE_SESSIONE_PINO = "pino-session-id";
+
+/**
+ * SessionId della conversazione: resta nel ref per tutta la vita del componente
+ * e, se il browser lo consente, in sessionStorage (sopravvive al ricaricamento
+ * della pagina). Se sessionStorage non è disponibile (privacy mode, SSR, quota),
+ * usa solo il ref.
+ */
+export function sessionIdPino(ref: { current: string }): string {
+  if (ref.current) return ref.current;
+
+  let id: string | null = null;
+  try {
+    id = window.sessionStorage.getItem(CHIAVE_SESSIONE_PINO);
+  } catch {
+    id = null;
+  }
+
+  if (!id) {
+    id = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    try {
+      window.sessionStorage.setItem(CHIAVE_SESSIONE_PINO, id);
+    } catch {
+      // Storage non disponibile: il ref basta per questa sessione di pagina.
+    }
+  }
+
+  ref.current = id;
+  return id;
+}
+
 /**
  * Invia il messaggio e restituisce il risultato finale.
  * Gli eventi `stato` servono solo a tenere viva la connessione: l'interfaccia

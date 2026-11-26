@@ -82,6 +82,11 @@ test("Pino system prompt defines identity and proactive grounded behavior", () =
   assert.match(promptSource, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
 });
 
+test("Final prompt requires catalog names as markdown links using only provided URLs", () => {
+  assert.match(promptSource, /scrivine il nome come link markdown \[nome\]\(url\) usando SOLO l'url fornito nei dati/);
+  assert.match(promptSource, /write its name as a markdown link \[name\]\(url\) using ONLY the url given in the data/);
+});
+
 
 test("Italian question wording normalizes to the pasta catalog subject", () => {
   assert.equal(normalizzaQueryCatalogo("Quanta pasta avete?"), "pasta");

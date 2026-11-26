@@ -11,7 +11,7 @@ import {
   isPinoSezioneNascosta,
   isPinoTransactionalRoute,
 } from "./pino-route";
-import { chiediAPino } from "./pino-fetch";
+import { chiediAPino, sessionIdPino } from "./pino-fetch";
 
 const SUGGESTIONS = [
   "Esplora le filiere calabresi",
@@ -122,15 +122,13 @@ export default function AssistantPanel() {
     ];
 
     try {
-      if (!sessionIdRef.current) {
-        sessionIdRef.current = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      }
+      const sessionId = sessionIdPino(sessionIdRef);
 
       // Streaming NDJSON (con fallback JSON) tramite un unico client: così la
       // chat mostra il progresso e non resta muta durante la ricerca.
       const data = await chiediAPino({
         messaggi: storico,
-        sessionId: sessionIdRef.current,
+        sessionId,
       });
 
       let content = data.risposta?.trim() ?? "";
@@ -246,29 +244,29 @@ export default function AssistantPanel() {
         {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
-              <PinoSprite mood="neutral" className="h-[248px] w-[190px]" />
+            <div className="flex h-full flex-col"><div className="m-auto flex flex-col items-center gap-2 px-4 py-2">
+              <PinoSprite mood="neutral" className="h-[170px] w-[115px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
                   In cosa posso esserti utile?
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Sono il tuo assistente allo shopping su Radici Calabria. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.
+                  Sono Pino, l'assistente di Radici Calabria. Posso aiutarti a orientarti tra le filiere, il territorio e le funzioni del sito.
                 </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-1.5">
+              <div className="flex w-full max-w-[260px] flex-col gap-1">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => handleSuggestion(s)}
-                    className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 transition hover:bg-blue-100"
+                    className="w-full rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-center text-[11px] font-semibold text-blue-700 transition hover:bg-blue-100"
                   >
                     {s}
                   </button>
                 ))}
               </div>
-            </div>
+            </div></div>
           ) : (
             <div className="flex flex-col gap-3 px-3 pt-3 pb-3">
               {messages.map((message, index) => {
@@ -306,7 +304,7 @@ export default function AssistantPanel() {
         </div>
 
         {/* Input */}
-        <div className="shrink-0 border-t border-slate-100 bg-white px-3 pt-2 pb-3">
+        <div className="shrink-0 border-t border-slate-100 bg-white px-3 pt-2 pb-2">
           <AssistantInput
             value={inputValue}
             onChange={setInputValue}
@@ -314,6 +312,12 @@ export default function AssistantPanel() {
             isLoading={isLoading}
             placeholder="Chiedi qualcosa..."
           />
+          <p className="mt-1 text-center text-[10px] leading-3 text-slate-500">
+            Pino è un sistema di IA generativa: le risposte non sostituiscono consulenza professionale e non provengono da un operatore umano.{" "}
+            <a href="/privacy" className="font-semibold text-blue-700 underline">
+              Privacy
+            </a>
+          </p>
         </div>
       </div>
     </>
