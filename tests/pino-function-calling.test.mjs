@@ -1,5 +1,5 @@
 /**
- * P1.1 — Function Calling nativo Gemini, senza chiamate reali.
+ * P1.1 — Function Calling nativo Groq, senza chiamate reali.
  *
  * Il provider è sempre mockato. Questi test verificano contratto,
  * dichiarazioni, parsing, validazione, budget, directReply e fallback.
@@ -33,8 +33,8 @@ const run = (calls, text = "", extra = {}) =>
   );
 
 test("dichiara tutti gli strumenti esposti e lascia il regalo interno", () => {
-  assert.equal(TOOL_DEFINITIONS.length, 13);
-  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 12);
+  assert.equal(TOOL_DEFINITIONS.length, 14);
+  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 13);
 
   const dichiarazioni = buildNativeToolDeclarations();
   const nomi = dichiarazioni.map((d) => d.name).sort();
@@ -42,6 +42,7 @@ test("dichiara tutti gli strumenti esposti e lascia il regalo interno", () => {
     "getCategories",
     "getWeather",
     "searchAll",
+    "searchConoscenza",
     "searchContent",
     "searchEvents",
     "searchFiliere",
@@ -217,7 +218,7 @@ test("un timeout o errore provider produce fallback senza esecuzione", async () 
   const esito = await selezionaStrumentiNativoPino(
     { ...BASE, limiti: null },
     async () => {
-      const errore = new Error("Timeout chiamata Gemini Function Calling");
+      const errore = new Error("Timeout chiamata Groq Function Calling");
       errore.name = "TimeoutError";
       throw errore;
     }

@@ -254,6 +254,7 @@ export type ToolParams = {
 export type RisultatoRicercaCompleta = {
   negozi: NegozioRicerca[];
   prodotti: ProdottoRicerca[];
+  conoscenza?: import("@/lib/conoscenza/cerca").RisultatoConoscenza[];
   offerte: OffertaAssistente[];
   eventi: EventoAssistente[];
   notizie: NotiziaAssistente[];
@@ -286,6 +287,7 @@ export type StrumentoPino =
   | "searchEvents"
   | "searchNews"
   | "searchContent"
+  | "searchConoscenza"
   | "searchTerritorio"
   | "searchFiliere"
   | "searchAll"
@@ -3463,12 +3465,50 @@ function queryEditorialePino(query: unknown): string {
     .trim();
 }
 
-/** Ogni parola della query deve comparire nel testo del risultato. */
+/**
+ * Parole di cornice delle domande su territorio e filiere (chip e frasi tipiche):
+ * dicono cosa vuole l'utente, non cosa cercare. Vengono tolte prima del match.
+ */
+const CORNICE_TERRITORIO_PINO = new Set([
+  "esplora", "esplorare", "scopri", "scoprire", "cerca", "cercare", "mostra", "mostrami",
+  "elenco", "elenca", "dammi", "quali", "quale", "che", "tutti", "tutte", "tutto", "tutta",
+  "calabria", "calabresi", "calabrese", "territorio", "territori", "produttori", "produttore",
+  "eccellenze", "eccellenza", "prodotto", "prodotti", "dop", "igp", "pat", "stg", "riconosciut",
+  "riconosciuti", "riconosciuto", "certificat", "certificati", "tipic", "tipici", "tipico",
+  "sapori", "info", "informazioni", "parla", "parlami", "dimmi", "sono", "ci", "sei", "hai",
+  "i", "il", "la", "le", "gli", "lo", "un", "una", "uno", "e", "o", "di", "da", "con", "per",
+]);
+
+/** Forma canonica di una parola: toglie il plurale italiano più comune. */
+function radiceParolaPino(parola: string): string {
+  if (parola.length > 4 && /(i|e)$/.test(parola)) return parola.slice(0, -1);
+  return parola;
+}
+
+/**
+ * La query di un tool territorio/filiera, senza le parole di cornice: resta
+ * solo ciò che identifica il soggetto ("olio", "pollino", "parco").
+ * Vuota = richiesta ampia: il tool restituisce l'elenco completo.
+ */
+function queryTerritorioPino(query: unknown): string {
+  return queryEditorialePino(query)
+    .split(" ")
+    .filter((parola) => parola && !CORNICE_TERRITORIO_PINO.has(parola))
+    .join(" ");
+}
+
+/**
+ * Ogni parola della query deve comparire nel testo del risultato. Singolare e
+ * plurale coincidono ("parchi" trova "Parco"; "comuni" trova "Comune").
+ */
 function testoContieneParolePino(testo: string, query: string): boolean {
   const parole = query.split(" ").filter(Boolean);
   if (parole.length === 0) return true;
   const normale = normalizza(testo);
-  return parole.every((parola) => normale.includes(parola));
+  return parole.every((parola) => {
+    const radice = radiceParolaPino(parola);
+    return normale.includes(parola) || normale.includes(radice);
+  });
 }
 
 /** Le parole della vetrina non sono un filtro sul nome del singolo prodotto. */
@@ -3542,7 +3582,7 @@ export async function searchContent(
  * prodotti. Legge solo i dati editoriali di `lib/territori.ts`: nessuna query.
  */
 export function searchTerritorio(query?: string, limit = 6): TerritorioAssistente[] {
-  const q = queryEditorialePino(query);
+  const q = queryTerritorioPino(query);
   const corrispondenti = TERRITORI_ORDINATI.filter((t) =>
     !q ||
     testoContieneParolePino(
@@ -3563,29 +3603,13 @@ export function searchTerritorio(query?: string, limit = 6): TerritorioAssistent
   }));
 }
 
-/**
- * Parole di cornice di una domanda sulle filiere («parlami di filiera», «cos'è
- * la filiera», «esplora le filiere calabresi»): non sono il nome di una filiera.
- * Tolte queste, resta solo il tema richiesto (es. «olio»), se c'è.
- */
-function queryFilierePino(query: unknown): string {
-  return String(query ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(
-      /\b(?:filier[ae]|parlami|parla|dimmi|raccontami|spiegami|cos|cose|che|cosa|e|una|un|uno|di|del|della|dei|degli|delle|su|sul|sulla|sui|sugli|sulle|in|nel|nella|a|esplora|esplorare|scopri|scoprire|elenco|elenca|tutte|tutti|le|la|il|lo|calabres[ei]|della calabria|calabria|regione)\b/g,
-      " "
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 /** Le dieci filiere della homepage, nell'ordine della vetrina, filtrabili per nome. */
 export function searchFiliere(query?: string, limit = 10): FiliereAssistente[] {
-  const q = queryFilierePino(query);
+  const grezza = String(query ?? "").replace(/\bche cos['’]?\s*[eè]\b|\bcos['’]?\s*[eè]\b/gi, " ").replace(/\bcos['’´`]?\s*[eèé]+(?![a-zà-ù])/gi, " ");
+  const q = queryTerritorioPino(grezza)
+    .replace(/\b(?:cos|cose|che|cosa|una|un|uno|di|del|della|dei|degli|delle|le|la|il|lo|filier[ae])\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return ORDINE_FILIERE.filter((nome) => !q || testoContieneParolePino(nome, q))
     .slice(0, limita(limit, 10, 10))
     .map((nome) => ({ nome, url: "/filiere" }));

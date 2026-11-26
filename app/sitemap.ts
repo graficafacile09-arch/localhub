@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
+import { TERRITORI_ORDINATI } from "@/lib/territori";
+import { isDemoPubblico } from "@/lib/demo-pubblico";
+import { FILIERE_EDITORIALI, slugFiliera } from "@/lib/filiere-editoriali";
 
 const SITE_URL = getSiteUrl();
 
@@ -11,14 +14,35 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const urls: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/filiere`, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${SITE_URL}/filiere/prodotti`, changeFrequency: "weekly", priority: 0.8 },
+    ...FILIERE_EDITORIALI.map((filiera) => ({
+      url: `${SITE_URL}/filiere/${slugFiliera(filiera)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
+    { url: `${SITE_URL}/territorio`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${SITE_URL}/stagionalita`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/venditori`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/negozi`, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/ricerca`, changeFrequency: "daily", priority: 0.7 },
-    { url: `${SITE_URL}/categorie`, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/offerte`, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/contenuti`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/notizie`, changeFrequency: "hourly", priority: 0.7 },
+    { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/contatti`, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${SITE_URL}/termini`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/cookie`, changeFrequency: "yearly", priority: 0.3 },
   ];
+
+  for (const territorio of TERRITORI_ORDINATI) {
+    urls.push({
+      url: `${SITE_URL}/territorio/${territorio.slug}`,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    });
+  }
 
   // Durante una build su ambienti che non hanno ancora la chiave server,
   // restituiamo le URL statiche senza interrompere il deploy.
@@ -28,28 +52,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const db = createAdminSupabaseClient();
 
-  const { data: categorie } = await db
-    .from("categorie")
-    .select("slug")
-    .eq("attivo", true)
-    .not("slug", "is", null);
-
-  for (const categoria of categorie ?? []) {
-    urls.push({
-      url: `${SITE_URL}/categorie/${categoria.slug}`,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    });
-  }
-
   const { data: negozi } = await db
     .from("negozi")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("attivo", true)
     .is("deleted_at", null)
     .not("slug", "is", null);
 
-  for (const negozio of negozi ?? []) {
+  for (const negozio of (negozi ?? []).filter((n) => !isDemoPubblico(n))) {
     urls.push({
       url: `${SITE_URL}/negozio/${negozio.slug}`,
       ...(negozio.updated_at
@@ -62,11 +72,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: prodotti } = await db
     .from("prodotti")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("attivo", true)
     .not("slug", "is", null);
 
-  for (const prodotto of prodotti ?? []) {
+  for (const prodotto of (prodotti ?? []).filter((p) => !isDemoPubblico(p))) {
     urls.push({
       url: `${SITE_URL}/prodotto/${prodotto.slug}`,
       ...(prodotto.updated_at
@@ -79,7 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: contenuti } = await db
     .from("contenuti")
-    .select("slug, updated_at")
+    .select("slug, nome, updated_at")
     .eq("stato", "pubblicato")
     .not("slug", "is", null);
 

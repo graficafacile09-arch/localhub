@@ -55,7 +55,7 @@ test("degradazione: cita i risultati reali della ricerca classica", async () => 
     }
   );
 
-  assert.match(risposta.risposta, /ricerca classica/);
+  assert.match(risposta.risposta, /ricerca del catalogo/);
   assert.match(risposta.risposta, /Olio EVO del Pollino/);
   assert.match(risposta.risposta, /12\.50/);
   assert.equal(risposta.source, "assistente");
@@ -68,7 +68,7 @@ test("degradazione: zero risultati viene dichiarato, non inventato", async () =>
     { cerca: async () => ({ prodotti: [], negozi: [] }) }
   );
 
-  assert.match(risposta.risposta, /non trova risultati/);
+  assert.match(risposta.risposta, /catalogo attuale/);
   assert.equal(risposta.prodotti.length, 0);
   assert.equal(risposta.negozi.length, 0);
 });
@@ -83,7 +83,7 @@ test("degradazione: senza messaggio utente non interroga il catalogo", async () 
   });
 
   assert.equal(chiamate, 0);
-  assert.match(risposta.risposta, /non riesco a cercare/);
+  assert.match(risposta.risposta, /non riesco a consultare il catalogo/);
 });
 
 // ─── Routing: acquisto con toponimo vs visita ───────────────────────────────
@@ -100,10 +100,12 @@ test("un acquisto con toponimo resta catalogo, non guida Attrazioni", () => {
 });
 
 test("le richieste di visita restano nella guida Attrazioni", () => {
+  // I parchi non sono più nella guida Attrazioni: vanno ai dati Territorio.
   assert.equal(
     richiestaGuidaAttrazioniPino("Vorrei visitare il Parco Nazionale del Pollino"),
-    true
+    false
   );
+  assert.equal(richiestaGuidaAttrazioniPino("Vorrei visitare un parco"), false);
   assert.equal(richiestaGuidaAttrazioniPino("La Civita"), true);
   assert.equal(
     richiestaGuidaAttrazioniPino("Cosa posso visitare a Castrovillari?"),

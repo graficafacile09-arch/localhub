@@ -153,6 +153,19 @@ const RE_CONTESTO_ACQUISTO_PINO =
 const RE_INTENTO_GUIDA_PINO =
   /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
 
+/**
+ * Parchi e aree: le attrazioni non sono più un catalogo del sito, quindi una
+ * domanda sui parchi va ai dati territorio (`searchTerritorio`) e non alla
+ * guida Attrazioni. Un parco nominato dal catalogo resta gestito da
+ * `isAttractionNameQuery`.
+ */
+const RE_PARCHI_PINO = /\b(?:parco|parchi|parks?)\b/i;
+
+/** Richiesta che nomina parchi o aree: va ai dati territorio, non alla guida. */
+export function richiestaParchiPino(query: string): boolean {
+  return RE_PARCHI_PINO.test(String(query ?? ""));
+}
+
 type RegolaRoutingPino = {
   dominio: DominioRoutingPino;
   /** Etichetta stabile della regola, utile nei log e nei test. */
@@ -188,7 +201,9 @@ export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
   {
     dominio: "attrazioni",
     motivo: "intento_guida",
-    quando: (query) => RE_INTENTO_GUIDA_PINO.test(String(query ?? "")),
+    quando: (query) =>
+      RE_INTENTO_GUIDA_PINO.test(String(query ?? "")) &&
+      !RE_PARCHI_PINO.test(String(query ?? "")),
   },
 ];
 
@@ -197,6 +212,68 @@ export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
  * `null` quando nessuna regola corrisponde: la richiesta resta generica e la
  * gestisce il resto dell'orchestratore.
  */
+const RE_FILIERE_PINO = /\bfilier[ae]\b/;
+const RE_TERRITORIO_PINO =
+  /\b(?:parch[io]|parco|parks?|dop|igp|pat|produttori|eccellenz[ae]|territorio)\b/;
+
+/**
+ * Chip e domande su filiere e territorio: restano sui dati statici di
+ * `searchFiliere` / `searchTerritorio` e non passano dal piano prodotti.
+ * Le notizie sulle filiere hanno già la precedenza in `index.ts` (`searchNews`).
+ */
+export function strumentoTerritorioFilierePino(
+  query: string
+): "searchFiliere" | "searchTerritorio" | null {
+  const testo = normalizza(String(query ?? ""));
+  if (RE_FILIERE_PINO.test(testo)) return "searchFiliere";
+  if (RE_TERRITORIO_PINO.test(testo)) return "searchTerritorio";
+  return null;
+}
+
+/**
+ * Domanda informativa/discorsiva su un contenuto del sito: «Cos'è la Sila?»,
+ * «Parlami di filiera», «Spiegami i prodotti DOP», «Come funziona il sito?».
+ *
+ * Queste richieste NON vogliono schede di attività commerciali: il testo
+ * arriva dai contenuti editoriali (territori, filiere, FAQ, pagine).
+ *
+ * L'apostrofo è già rimosso da `normalizza`, quindi «cos'è» diventa «cose» e
+ * «che cos'è» diventa «che cose»: entrambe le forme sono riconosciute.
+ */
+export function richiestaConoscenzaPino(query: string): boolean {
+  const q = normalizza(String(query ?? ""));
+  if (!q) return false;
+
+  // «Dove comprare», «mostrami i negozi», «quali produttori» restano nel
+  // dominio commerciale: lì le schede sono la risposta giusta.
+  if (
+    /\b(?:dove|negozi[oi]|attivita|attivita commerciali|aziende|produttori|vendono|vendita|comprare|acquistare|acquisto|prezzi?|offerte?|sconti?|ristoranti?|pizzerie|farmacie|orari|contatti|telefono|indirizzo|cerco|trovami|mostrami)\b/.test(
+      q
+    )
+  ) {
+    return false;
+  }
+
+  if (/^(?:cose|che cose|cosa e|cosa sono|che cosa e|che cosa sono)\b/.test(q)) return true;
+  if (
+    /^(?:mi )?(?:puoi )?(?:parlami|parla di|spiegami|spiega|descrivimi|descrivi|dimmi|raccontami|approfondisci)\b/.test(
+      q
+    )
+  ) {
+    return true;
+  }
+  if (/^(?:come funziona|a cosa serve|a che cosa serve)\b/.test(q)) return true;
+  if (/^(?:la )?storia (?:di|del|della|dei|degli|delle|de)\b/.test(q)) return true;
+  if (/^(?:vorrei|voglio) (?:sapere|capire)\b/.test(q)) return true;
+  if (
+    /^quali sono\b/.test(q) &&
+    /\b(?:dop|igp|pat|prodotti tipici|filiere|territori|parchi|riconoscimenti)\b/.test(q)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function decidiDominioPino(
   query: string
 ): { dominio: DominioRoutingPino; motivo: string } | null {

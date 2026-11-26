@@ -5,7 +5,6 @@ import {
   espandiCategorieGuidaPino,
   filtraLuoghiPertinentiGuidaPino,
   richiestaGuidaAttrazioniPino,
-  rispostaGuidaAttrazioniAssentePino,
 } from "../lib/assistente/index";
 import { searchAttractions } from "../lib/assistente/attrazioni";
 
@@ -145,168 +144,78 @@ test.describe("S4.8 — pertinenza dei risultati della guida", () => {
   });
 });
 
-test.describe("S4.8 — percorso Attrazioni con risultati", () => {
-  test("museo presente: usa la guida e non cerca prodotti", async () => {
+test.describe("S4.8 — luoghi raccontati dai contenuti del sito", () => {
+  test("museo: nessun risultato commerciale e nessuna guida Attrazioni", async () => {
     const r = await rispondi("Cerco un museo");
 
     nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).toMatch(/Museo Archeologico/);
+    expect(r.risposta).not.toMatch(/guida Attrazioni|Attractions guide/i);
+    expect(r.risposta.length).toBeGreaterThan(0);
   });
 
-  test("attrazione presente: risultati pertinenti conservati", async () => {
-    const r = await rispondi("Vorrei visitare il Teatro Sybaris");
+  test("Castello Aragonese: la risposta viene dalla scheda Castrovillari", async () => {
+    const r = await rispondi("Castello Aragonese");
 
     nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).toMatch(/Teatro Sybaris/);
-  });
-
-  test("richiesta turistica in inglese con risultati", async () => {
-    const r = await rispondi("What museums can I visit?");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/Museo Archeologico/);
-    expect(r.risposta).toMatch(/Open in Google Maps/);
-  });
-
-  test("monumenti inglesi: recupera i monumenti presenti", async () => {
-    const r = await rispondi("Are there any historical monuments?");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
+    expect(r.risposta).not.toMatch(/guida Attrazioni|Attractions guide/i);
     expect(r.risposta).toMatch(/Castello Aragonese/);
-    expect(r.risposta).not.toMatch(/doesn't necessarily mean/i);
+    expect(r.risposta).toMatch(/Castrovillari/);
   });
 
-  test("monumenti inglesi senza punto interrogativo", async () => {
+  test("richiesta inglese con città: usa la scheda del comune", async () => {
     const r = await rispondi("Historical monuments in Castrovillari");
 
     nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(/guida Attrazioni|Attractions guide/i);
-    expect(r.risposta).toMatch(/Castello Aragonese/);
+    expect(r.risposta).not.toMatch(/guida Attrazioni|Attractions guide/i);
+    expect(r.risposta).toMatch(/Castrovillari/);
   });
 
-  test("chiese inglesi: recupera le chiese presenti", async () => {
-    const r = await rispondi("Are there any churches?");
+  test("luogo senza riscontro nei testi: nessuna invenzione", async () => {
+    for (const query of [
+      "Egyptian Museum",
+      "Roman amphitheatre",
+      "Can I visit the Roman amphitheatre?",
+      "Are there any churches?",
+      "Are there any archaeological sites?",
+    ]) {
+      const r = await rispondi(query);
 
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/Chiesa di San Giuseppe|Santa Maria delle Grazie/);
+      nessunRisultatoCommerciale(r);
+      expect(r.risposta, query).not.toMatch(/guida Attrazioni|Attractions guide/i);
+      expect(r.risposta, query).toMatch(
+        /non ha più una guida ai luoghi|no longer has a guide to places/i
+      );
+      nessunaAffermazioneDiInesistenza(r.risposta);
+    }
   });
 
-  test("castelli inglesi: recupera i castelli presenti", async () => {
-    const r = await rispondi("Can I visit a castle?");
+  test("parchi: la risposta arriva dai dati Territorio", async () => {
+    for (const query of [
+      "Vorrei visitare un parco",
+      "quali parchi posso visitare?",
+      "What parks can I visit?",
+    ]) {
+      const r = await rispondi(query);
 
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/Castello Aragonese/);
+      nessunRisultatoCommerciale(r);
+      expect(r.motivoUscita, query).toBe("conoscenza");
+      expect(r.risposta, query).not.toMatch(/guida Attrazioni|Attractions guide/i);
+      expect(r.risposta, query).toMatch(/Pollino|Sila|Aspromonte/);
+    }
   });
 
-  test("siti archeologici inglesi: recupera i risultati pertinenti", async () => {
-    const r = await rispondi("Are there any archaeological sites?");
+  test("richiesta generica: parla di luoghi, non di attrazioni", async () => {
+    for (const query of [
+      "Cosa posso visitare?",
+      "consigliami un posto da visitare",
+      "cosa posso visitare a Castrovillari?",
+    ]) {
+      const r = await rispondi(query);
 
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/Museo Archeologico/);
-  });
-
-  test("parchi inglesi: recupera i risultati pertinenti", async () => {
-    const r = await rispondi("What parks can I visit?");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/Parco Nazionale del Pollino/);
-  });
-});
-
-test.describe("S4.8 — guida senza risultati pertinenti", () => {
-  test("museo non presente: risposta circoscritta alla guida", async () => {
-    const r = await rispondi("Vorrei visitare il Museo Egizio");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).toMatch(/non significa necessariamente/i);
-    // Nessuna attrazione della guida viene mostrata come se fosse il museo.
-    expect(r.risposta).not.toMatch(/Museo Archeologico|Castello Aragonese/);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("luogo non presente: nessun prodotto casuale", async () => {
-    const r = await rispondi("Vorrei visitare un planetario");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).not.toMatch(/Castello Aragonese|Museo Archeologico/);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("castello non presente: nessun ripiego commerciale", async () => {
-    const r = await rispondi("Dove si trova il Castello Svevo?");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).not.toMatch(/Castello Aragonese/);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("teatro non presente: nessun negozio pertinente per caso", async () => {
-    const r = await rispondi("Vorrei visitare un teatro dell'opera");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).not.toMatch(/Teatro Sybaris/);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("sito archeologico specifico non presente", async () => {
-    const r = await rispondi("Vorrei visitare un sito archeologico preistorico");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_IT);
-    expect(r.risposta).not.toMatch(/Museo Archeologico/);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("museo qualificato in inglese: nessuna invenzione", async () => {
-    const r = await rispondi("Egyptian Museum");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(/guida Attrazioni|Attractions guide/i);
-    expect(r.risposta).toMatch(/doesn't necessarily mean|non significa necessariamente/i);
-    expect(r.risposta).not.toMatch(/Museo Archeologico|Castello Aragonese/);
-  });
-
-  test("anfiteatro romano: continua a mancare nella guida", async () => {
-    const r = await rispondi("Roman amphitheatre");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(/guida Attrazioni|Attractions guide/i);
-    expect(r.risposta).toMatch(/doesn't necessarily mean|non significa necessariamente/i);
-    expect(r.risposta).not.toMatch(/Castello Aragonese|Teatro Sybaris/);
-  });
-
-  test("richiesta turistica in inglese senza risultati", async () => {
-    const r = await rispondi("Can I visit the Roman amphitheatre?");
-
-    nessunRisultatoCommerciale(r);
-    expect(r.risposta).toMatch(GUADAGNI_EN);
-    expect(r.risposta).toMatch(/doesn't necessarily mean/i);
-    nessunaAffermazioneDiInesistenza(r.risposta);
-  });
-
-  test("la risposta localizzata distingue guida e città", () => {
-    const it = rispostaGuidaAttrazioniAssentePino("it");
-    const en = rispostaGuidaAttrazioniAssentePino("en");
-
-    expect(it).toMatch(GUADAGNI_IT);
-    expect(it).toMatch(/non significa necessariamente/i);
-    nessunaAffermazioneDiInesistenza(it);
-
-    expect(en).toMatch(GUADAGNI_EN);
-    expect(en).toMatch(/doesn't necessarily mean/i);
-    nessunaAffermazioneDiInesistenza(en);
+      nessunRisultatoCommerciale(r);
+      expect(r.motivoUscita, query).toBe("conoscenza");
+      expect(r.risposta, query).not.toMatch(/guida Attrazioni|Attractions guide/i);
+    }
   });
 });
 

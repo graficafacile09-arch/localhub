@@ -13,6 +13,7 @@ import {
   restrizioneAlimentareRigidaPino,
 } from "../lib/assistente/tools";
 import { messaggioCondizioneAlimentarePino } from "../lib/assistente/messaggi-pino";
+import { hostDi, misura } from "./support/timing-probe";
 
 test.describe("Pino — sicurezza alimentare", () => {
   test("una condizione dichiarata attiva la restrizione canonica", () => {
@@ -112,15 +113,33 @@ test.describe("Pino — capacità dichiarate", () => {
   });
 
   test("la rotta risponde senza catalogo alle azioni non eseguibili", async () => {
+    const fetchOriginale = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const inizio = Date.now();
+      try {
+        return await fetchOriginale(input, init);
+      } finally {
+        console.info("[probe-net]", hostDi(url), "ms=" + (Date.now() - inizio));
+      }
+    }) as typeof fetch;
+    try {
+    let indice = 0;
     for (const [messaggio, atteso] of [
       ["Puoi ordinare tu per me?", /Non posso completare ordini/],
       ["Posso annullare un ordine?", /Non posso annullare/],
       ["Vorrei prenotare un tavolo per stasera", /Non posso prenotare/],
     ] as const) {
-      const r = await chatConAssistente([{ role: "user", content: messaggio }]);
+      indice += 1;
+      const r = await misura(`chat#${indice}`, () =>
+        chatConAssistente([{ role: "user", content: messaggio }])
+      );
       expect(r.negozi, messaggio).toEqual([]);
       expect(r.prodotti, messaggio).toEqual([]);
       expect(r.risposta, messaggio).toMatch(atteso);
+    }
+    } finally {
+      globalThis.fetch = fetchOriginale;
     }
   });
 });

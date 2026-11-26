@@ -1,19 +1,18 @@
 /**
- * LocalHub — Pino: contratto centrale dei tool e Function Calling Gemini.
+ * LocalHub — Pino: contratto centrale dei tool e Function Calling provider-neutral.
  *
  * Questo modulo è la sola fonte per:
  * - nome, descrizione e JSON Schema dei parametri;
  * - chiavi ammesse dal validatore;
  * - elenco degli strumenti esposti al modello e strumenti interni;
- * - dichiarazioni native Gemini (`tools.functionDeclarations`);
+ * - dichiarazioni native compatibili con il provider;
  * - menu testuale usato dal percorso JSON legacy.
  *
  * Il percorso nativo è sperimentale e non viene attivato di default. Il
- * contratto non esegue tool, non accede a Supabase e non chiama Gemini.
+ * contratto non esegue tool, non accede a Supabase e non chiama provider AI.
  *
  * @module lib/assistente/function-calling
  */
-import type { FunctionDeclaration } from "@google/genai";
 import type { StrumentoPino, ToolParams } from "./tools";
 
 export type TipoParametroFunctionCalling =
@@ -46,7 +45,7 @@ export type DefinizioneStrumentoPino = {
   parameters: SchemaParametriFunctionCalling;
   /** Chiavi ammesse dal validatore, incluse quelle interne non esposte. */
   allowedParams: readonly (keyof ToolParams)[];
-  /** true = dichiarato a Gemini; false = solo uso interno/deterministico. */
+  /** true = dichiarato al provider AI; false = solo uso interno/deterministico. */
   exposed: boolean;
 };
 
@@ -217,6 +216,21 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
     exposed: true,
   },
   {
+    name: "searchConoscenza",
+    description: "Cerca nelle informazioni del sito su territorio, parchi, località, filiere e produttori, stagionalità, FAQ e pagine informative. Non cerca prodotti, negozi, prezzi, offerte o eventi.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o parola chiave da cercare nelle informazioni del sito."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
     name: "searchTerritorio",
     description: "Cerca parchi, aree e comuni della Calabria, con i riconoscimenti DOP, IGP e PAT dei loro prodotti.",
     parameters: {
@@ -346,6 +360,13 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
   },
 ] as const;
 
+/** Dichiarazione provider-neutral degli strumenti esposti a Pino. */
+export type PinoToolDeclaration = {
+  name: string;
+  description: string;
+  parametersJsonSchema: SchemaParametriFunctionCalling;
+};
+
 /** Chiavi ammesse dal validatore, derivate dallo stesso contratto. */
 export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolParams)[]> =
   TOOL_DEFINITIONS.reduce(
@@ -356,8 +377,8 @@ export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolPara
     {} as Record<StrumentoPino, readonly (keyof ToolParams)[]>
   );
 
-/** Strumenti dichiarati a Gemini: il fan-out regalo resta interno. */
-export function buildNativeToolDeclarations(): FunctionDeclaration[] {
+/** Strumenti dichiarati al provider AI: il fan-out regalo resta interno. */
+export function buildNativeToolDeclarations(): PinoToolDeclaration[] {
   return TOOL_DEFINITIONS.filter((definizione) => definizione.exposed).map((definizione) => ({
     name: definizione.name,
     description: definizione.description,

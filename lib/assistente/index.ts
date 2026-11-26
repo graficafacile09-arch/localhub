@@ -6,9 +6,12 @@ import {
 } from "./understanding";
 import {
   decidiDominioPino,
+  strumentoTerritorioFilierePino,
+  richiestaConoscenzaPino,
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
   richiestaRistorazionePino,
+  richiestaParchiPino,
 } from "./routing-policy";
 import { ATTIVITA_CATALOGO_PINO, soggettoAlimentarePino } from "./lexicon";
 import {
@@ -51,9 +54,8 @@ import {
  *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
  *   3. contesto strutturato dei risultati → risposta finale dell'AI.
  *
- * Usa GEMINI_API_KEY (già presente nel progetto, usata anche dalla Vision),
- * modello GEMINI_MODEL (con fallback gemini-2.0-flash), timeout su ogni
- * chiamata, max_tokens e temperature. Fallback: se la selezione tool fallisce
+ * Usa GROQ_API_KEY e GROQ_MODEL (default openai/gpt-oss-120b), timeout su ogni
+ * chiamata e budget condiviso per richiesta. Fallback: se la selezione tool fallisce
  * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
  * dei risultati recuperati. Nessuna scrittura su DB.
  *
@@ -116,14 +118,11 @@ import {
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import {
-  callGeminiText,
-  type CallGeminiTextParams,
-  type GeminiMessage,
-} from "@/lib/ai/gemini-text";
-import {
-  chiamaGeminiFunctionCalling,
-  type GeminiFunctionCallingParams,
-} from "@/lib/ai/gemini-function-calling";
+  callGroqText,
+  callGroqFunctionCalling,
+  type GroqFunctionCallingParams,
+  type GroqHistoryMessage,
+} from "@/lib/ai/groq";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { trovaRispostaFaqPino } from "./faq";
 import {
@@ -189,9 +188,14 @@ import {
   type PinoSemanticPlan,
 } from "./semantica";
 import {
-  chiamataGeminiConBudgetPino,
-  creaBudgetGeminiPino,
-} from "./budget-gemini";
+  chiamataAIConBudgetPino,
+  creaBudgetAIPino,
+  tempoRestanteAIPino,
+} from "./budget-ai";
+import {
+  componiRispostaConoscenzaPino,
+  componiRispostaSenzaFontiPino,
+} from "./conoscenza-discorsiva";
 import type { PinoUnderstanding } from "./understanding";
 import {
   correggiTokenCatalogo,
@@ -266,7 +270,7 @@ export type ToolInvocation = {
 };
 
 export type NativeFunctionCallingProvider = (
-  input: GeminiFunctionCallingParams
+  input: GroqFunctionCallingParams
 ) => Promise<{ calls?: unknown; text?: string }>;
 
 export type EsitoSelezioneNativaPino =
@@ -291,13 +295,13 @@ export async function selezionaStrumentiNativoPino(
   input: {
     systemPrompt: string;
     userPrompt: string;
-    history?: GeminiMessage[];
+    history?: GroqHistoryMessage[];
     limiti: { minPrice: number | null; maxPrice: number | null } | null;
     surface?: string | null;
     intent?: string | null;
     followUp?: boolean;
   },
-  provider: NativeFunctionCallingProvider = chiamaGeminiFunctionCalling
+  provider: NativeFunctionCallingProvider = callGroqFunctionCalling
 ): Promise<EsitoSelezioneNativaPino> {
   let risposta: { calls?: unknown; text?: string };
   try {
@@ -366,6 +370,8 @@ export async function selezionaStrumentiNativoPino(
 // non consuma il budget delle 3 invocazioni e non resta un'esecuzione vuota
 // silenziosa. Nessuna firma pubblica cambia.
 
+import { cercaConoscenzaSito, type RisultatoConoscenza } from "@/lib/conoscenza/cerca";
+
 /** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
 export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchStores",
@@ -374,6 +380,7 @@ export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
   "searchEvents",
   "searchNews",
   "searchContent",
+  "searchConoscenza",
   "searchTerritorio",
   "searchFiliere",
   "searchAll",
@@ -533,179 +540,27 @@ export function selezioneUtilizzabilePino(
   );
 }
 
-// ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
-// Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
-// GEMINI_API_KEY + GEMINI_MODEL, endpoint generateContent di Gemini, retry con
-// backoff su 429/402 (quota) e timeout su ogni chiamata. L'assistente esegue
-// fino a 2 chiamate LLM per messaggio, quindi i picchi brevi di quota sono
-// gestiti dal retry interno.
-
-// ─── Fallback a costo zero: Gemini 429/402 → Groq (OpenAI-compatibile) ──────
-//
-// Quando la quota Gemini è esaurita, o la chiamata resta appesa oltre la
-// soglia, la selezione dei tool non deve fermarsi: la stessa richiesta viene
-// ripetuta su Groq Cloud, che espone l'endpoint OpenAI-compatibile. Se anche
-// Groq non risponde, viene rilanciato l'errore ORIGINALE di Gemini, così il
-// percorso deterministico già esistente (piano locale, `searchAll`, messaggio
-// di indisponibilità) resta l'ultimo livello e la chat non si interrompe mai.
-//
-// La chiave NON sta nel codice: arriva da GROQ_API_KEY. Un segreto scritto in
-// un file versionato finisce nella storia di git, dove resta leggibile anche
-// dopo la rimozione.
-
-const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-/**
- * `llama-3.3-70b-specdec` e `llama3-8b-8192` non sono più erogati da Groq: il
- * loro sostituto indicato da Groq è `openai/gpt-oss-120b`. Resta sostituibile
- * con GROQ_MODEL senza toccare il codice.
- */
-const MODELLO_GROQ_FALLBACK = "openai/gpt-oss-120b";
-/**
- * 4,5s su Gemini + 6s su Groq = 10,5s nel caso peggiore: la somma con il
- * planner semantico resta sotto la scadenza della rotta (25s).
- */
-const TIMEOUT_GROQ_MS = 6_000;
-/** 0.3: determinismo sui dati di catalogo, come richiesto per il fallback. */
-const TEMPERATURA_GROQ = 0.3;
-/**
- * `openai/gpt-oss-120b` è un modello reasoning: spende ~150 token in
- * `reasoning_tokens` prima di scrivere `content`. Con un tetto più basso la
- * risposta torna vuota e il fallback degraderebbe senza motivo, quindi 700 è
- * anche il minimo garantito (vedi `Math.max` nel body della richiesta).
- */
-const MAX_TOKENS_GROQ = 700;
-
-/** Messaggio in formato OpenAI: Groq accetta system/user/assistant. */
-export type MessaggioGroq = {
-  role: "system" | "user" | "assistant";
-  content: string;
-};
-
-/**
- * Riconosce gli errori in cui vale la pena passare a Groq: quota/rate limit
- * (status 429/402 o `Quota Gemini superata (HTTP 429).`) e attese scadute
- * (`Timeout chiamata Gemini (4s).`, `deadline`, `ETIMEDOUT`).
- * Gli altri errori (5xx, risposta vuota) NON attivano il provider di backup:
- * restano al chiamante con il comportamento che già aveva.
- */
-export function erroreGeminiRecuperabilePino(errore: unknown): boolean {
-  if (!errore) return false;
-  if (typeof errore === "object") {
-    const stato =
-      (errore as { status?: unknown }).status ??
-      (errore as { statusCode?: unknown }).statusCode;
-    if (stato === 429 || stato === 402 || stato === "429" || stato === "402") return true;
-    const codice = (errore as { code?: unknown }).code;
-    if (typeof codice === "string" && /ETIMEDOUT|TIMEOUT|DEADLINE/i.test(codice)) return true;
-  }
-  const testo = errore instanceof Error ? errore.message : String(errore);
-  return /429|402|quota|rate.?limit|timeout|deadline|etimedout/i.test(testo);
-}
-
-/**
- * Chiamata di backup su Groq Cloud: fetch nativa, nessuna dipendenza nuova.
- * Restituisce il testo della prima scelta; lancia su chiave assente, risposta
- * HTTP non valida, timeout o risposta vuota — il chiamante decide come
- * degradare.
- */
-export async function chiamaBackupSuGroq(
-  systemPrompt: string,
-  messages: MessaggioGroq[],
-  opzioni: { maxTokens?: number; timeoutMs?: number } = {}
-): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error(
-      "Chiave API Groq mancante. Aggiungi GROQ_API_KEY alle variabili d'ambiente."
-    );
-  }
-  const model = process.env.GROQ_MODEL?.trim() || MODELLO_GROQ_FALLBACK;
-  const controller = new AbortController();
-  const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_GROQ_MS;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const corpo: MessaggioGroq[] = systemPrompt.trim()
-      ? [{ role: "system", content: systemPrompt.trim() }, ...messages]
-      : messages;
-    const response = await fetch(GROQ_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: corpo,
-        temperature: TEMPERATURA_GROQ,
-        // Tetto minimo: il reasoning del modello consuma token prima del testo.
-        max_tokens: Math.max(opzioni.maxTokens ?? 0, MAX_TOKENS_GROQ),
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      // Nessun body in chiaro: contiene il token o dettagli interni.
-      throw new Error(`Errore Groq (HTTP ${response.status}).`);
-    }
-    const dati = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const testo = (dati.choices?.[0]?.message?.content ?? "").trim();
-    if (!testo) throw new Error("Risposta Groq vuota.");
-    return testo;
-  } catch (caught: unknown) {
-    if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error(`Timeout chiamata Groq (${Math.round(timeoutMs / 1000)}s).`);
-    }
-    throw caught;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
- * Unico punto di chiamata LLM del percorso Pino: prova Gemini e, solo quando
- * l'errore è recuperabile (quota o timeout), ripete la stessa richiesta su
- * Groq. Il budget delle 2 chiamate Gemini per richiesta resta valido perché la
- * chiamata di backup non consuma budget Gemini.
- */
-export async function chiamaGeminiConBackup(
-  parametri: CallGeminiTextParams
-): Promise<string> {
-  try {
-    return await callGeminiText(parametri);
-  } catch (erroreGemini) {
-    if (!erroreGeminiRecuperabilePino(erroreGemini)) throw erroreGemini;
-    console.warn("[pino-fallback] Gemini lento o in quota. Switch su Groq...");
-    const messaggi: MessaggioGroq[] = [
-      ...(parametri.history ?? []).map((messaggio) => ({
-        role: messaggio.role === "model" ? ("assistant" as const) : ("user" as const),
-        content: messaggio.content,
-      })),
-      { role: "user" as const, content: parametri.userPrompt },
-    ];
-    try {
-      const testo = await chiamaBackupSuGroq(parametri.systemPrompt, messaggi, {
-        maxTokens: parametri.maxTokens,
-        timeoutMs: TIMEOUT_GROQ_MS,
-      });
-      console.info("[pino-fallback] Risposta Groq utilizzata.");
-      return testo;
-    } catch (erroreGroq) {
-      // Graceful degradation: si rilancia l'errore di Gemini, che il percorso
-      // deterministico del chiamante già sa gestire (piano locale, searchAll,
-      // messaggio di indisponibilità). Nessun crash della rotta.
-      console.warn(
-        "[pino-fallback] Groq non disponibile, degrado sul percorso deterministico:",
-        erroreGroq instanceof Error ? erroreGroq.message : "errore sconosciuto"
-      );
-      throw erroreGemini;
-    }
-  }
-}
+// ─── Provider AI unico: Groq ────────────────────────────────────────────────
+// Le chiamate testuali/JSON e il Function Calling usano lo stesso provider.
+// Gli errori vengono gestiti dai fallback deterministici già presenti in Pino.
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
+
+/**
+ * Attesa limitata per letture accessorie (memoria, correzioni): se scade,
+ * la richiesta prosegue con il valore di ripiego senza bloccare la risposta.
+ */
+async function conTimeoutPino<T>(promessa: Promise<T>, ms: number, ripiego: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const scadenza = new Promise<T>((risolvi) => {
+    timer = setTimeout(() => risolvi(ripiego), ms);
+  });
+  try {
+    return await Promise.race([promessa.catch(() => ripiego), scadenza]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function normalizzaMessaggi(messages: MessaggioAssistente[]): MessaggioAssistente[] {
   return (messages ?? [])
@@ -733,6 +588,7 @@ async function eseguiTool(
   eventi: Awaited<ReturnType<typeof searchEvents>>;
   notizie: Awaited<ReturnType<typeof searchNews>>;
   contenuti: Awaited<ReturnType<typeof searchContent>>;
+  conoscenza?: RisultatoConoscenza[];
   territori?: ReturnType<typeof searchTerritorio>;
   filiere?: ReturnType<typeof searchFiliere>;
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
@@ -746,6 +602,7 @@ async function eseguiTool(
     eventi: [],
     notizie: [],
     contenuti: [],
+    conoscenza: [],
     categorie: [],
     meteo: null,
     farmacie: [],
@@ -823,6 +680,11 @@ async function eseguiTool(
     }
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
+    case "searchConoscenza":
+      return {
+        ...vuoto,
+        conoscenza: await cercaConoscenzaSito(params?.query?.trim() || fallbackQuery, limit),
+      };
     case "searchGiftCategories": {
       // S5.1 — Un'unica invocazione tool per gruppo di categorie regalo. Le
       // ricerche per singola categoria sono query INTERNE al contratto dello
@@ -879,6 +741,8 @@ export type RisultatoToolPino = {
   /** Opzionali per compatibilità con gli esiti storici e i test M6. */
   notizie?: Awaited<ReturnType<typeof searchNews>>;
   contenuti?: Awaited<ReturnType<typeof searchContent>>;
+  /** Fonti editoriali indicizzate (searchConoscenza), opzionali. */
+  conoscenza?: RisultatoConoscenza[];
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
@@ -993,7 +857,9 @@ export function conScadenzaPino<T>(
   const attesa = Number.isFinite(ms) && ms > 0 ? ms : SCADENZA_INVOCAZIONE_PINO_MS;
   let timer: ReturnType<typeof setTimeout> | null = null;
   const scadenza = new Promise<never>((_, rifiuta) => {
-    timer = setTimeout(() => rifiuta(new ErroreTimeoutPino(attesa)), attesa);
+    timer = setTimeout(() => {
+      rifiuta(new ErroreTimeoutPino(attesa));
+    }, attesa);
   });
   return Promise.race([promessa, scadenza]).finally(() => {
     if (timer) clearTimeout(timer);
@@ -1206,6 +1072,7 @@ export function mergeEsitiInvocazioniPino(
   let categorie: RisultatoToolPino["categorie"] = [];
   let meteo: RisultatoToolPino["meteo"] = null;
   let farmacie: RisultatoToolPino["farmacie"] = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   for (const esito of Array.isArray(esiti) ? esiti : []) {
     if (esito.stato !== "ok" && esito.stato !== "vuoto") continue;
     const r = esito.risultati;
@@ -1227,8 +1094,9 @@ export function mergeEsitiInvocazioniPino(
     for (const c of r.categorie ?? []) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
     if (r.meteo && !meteo) meteo = r.meteo;
     for (const f of r.farmacie ?? []) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
+    for (const k of r.conoscenza ?? []) if (!conoscenza.some((x) => x.chiave === k.chiave)) conoscenza = [...conoscenza, k];
   }
-  return { negozi, prodotti, offerte, eventi, notizie, contenuti, categorie, meteo, farmacie };
+  return { negozi, prodotti, offerte, eventi, notizie, contenuti, categorie, meteo, farmacie, conoscenza };
 }
 
 /**
@@ -1580,7 +1448,7 @@ export function messaggioServizioNonTrovatoPino(
 ): string {
   return lingua === "en"
     ? `I couldn't find any business in the Radici Calabria catalogue that lists "${servizio}". I can try a different area or a similar service.`
-    : `Nel catalogo Radici Calabria non ho trovato attività che dichiarino "${servizio}". Posso provare con un'altra zona o un servizio simile.`;
+    : `Nel catalogo Radici Calabria non ho trovato attività che dichiarino "${servizio}". Posso cercare un servizio simile, provare un'altra zona del territorio oppure mostrarti le categorie attive e i negozi più vicini.`;
 }
 
 /**
@@ -1745,7 +1613,7 @@ export function pianoProdottoEsclusionePino(
     return null;
   }
   // Piano con esclusioni già riconosciute oppure piano locale deterministico
-  // (stesso fallback usato dal planner quando Gemini non è disponibile).
+  // (stesso fallback usato dal planner quando Groq non è disponibile).
   const piano =
     semantica && semantica.exclusions.length > 0
       ? semantica
@@ -1943,6 +1811,23 @@ function pianoPredefinito(
     return {
       directReply: null,
       tools: [{ tool: "searchNews", params: { query: ultimo, limit: 6 } }],
+    };
+  }
+  // Domanda informativa («Cos'è la Sila?», «Parlami di filiera»): i testi
+  // editoriali del sito sono la fonte. Va prima dei chip territorio/filiere,
+  // che altrimenti risponderebbero con un elenco invece che con una
+  // spiegazione.
+  if (richiestaConoscenzaPino(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchConoscenza", params: { query: ultimo, limit: 6 } }],
+    };
+  }
+  const strumentoTerritorio = strumentoTerritorioFilierePino(ultimo);
+  if (strumentoTerritorio) {
+    return {
+      directReply: null,
+      tools: [{ tool: strumentoTerritorio, params: { query: ultimo, limit: 6 } }],
     };
   }
   if (richiestaContenutiEditorialiPino(ultimo)) {
@@ -2374,6 +2259,7 @@ function aRisultatiRecuperati(
     eventi: [],
     notizie: [],
     contenuti: [],
+    conoscenza: extra.conoscenza ?? [],
     categorie: [],
     meteo: null,
     farmacie: [],
@@ -2561,10 +2447,10 @@ export function fallbackSelezioneVuotaPino(esito: {
  * Indisponibilità temporanea della selezione AI: distinta da un catalogo
  * senza risultati. Usa la lingua già rilevata da Pino, senza forzare l'italiano.
  */
-export function messaggioIndisponibilitaGemini(lingua: "it" | "en" = "it"): string {
+export function messaggioIndisponibilitaAI(lingua: "it" | "en" = "it"): string {
   return lingua === "en"
-    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, or tell me a category or a shop."
-    : "Il servizio di ricerca intelligente è momentaneamente in difficoltà. Non ho trovato risultati con la ricerca alternativa, ma questo non significa che il prodotto o servizio non esista nel catalogo. Puoi riprovare tra poco oppure indicarmi una categoria o un negozio.";
+    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, browse the Shops section, or tell me a category or a shop."
+    : "Il servizio di ricerca è momentaneamente in difficoltà: non ho potuto consultare il catalogo. Non è un catalogo vuoto, e questo non significa che il prodotto o servizio non esista. Puoi riprovare tra poco, esplorare la sezione Negozi oppure indicarmi una categoria o un negozio della zona.";
 }
 
 export function fallbackTestuale(
@@ -2948,7 +2834,7 @@ async function recuperaAlternativeSemantiche(
 }
 
 // ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
-// Meteo e stato farmacie non devono mai essere "interpretati" da Gemini:
+// Meteo e stato farmacie non devono mai essere "interpretati" da Groq:
 // una volta recuperati i dati, la risposta viene composta qui usando soltanto
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
 // anche quando il modello finale sarebbe tentato di completare i buchi.
@@ -3245,20 +3131,18 @@ const RE_NOTIZIE_PINO =
 const RE_CONTENUTI_PINO =
   /\b(?:contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b|\barticol[oi]\s+(?:su|sul|sulla|sui|sugli|sulle|di|del|della|dei|degli|delle|riguardo|about)\b|^articol[oi]$/;
 
+export function richiestaNotiziePino(query: string): boolean {
+  return RE_NOTIZIE_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
+}
+
 /**
- * Domande sulle dieci filiere calabresi («parlami di filiera», «esplora le
- * filiere calabresi»). Hanno la precedenza sulle notizie: la parola «filiera»
- * da sola non chiede notizie, e la regola notizie scatta solo se la richiesta
- * le nomina esplicitamente.
+ * Domande sulle filiere ("Parlami di filiera", "Esplora le filiere calabresi")
+ * vanno al catalogo delle 10 filiere, mai alle notizie, salvo che chiedano
+ * esplicitamente notizie/novità/articoli.
  */
 export function richiestaFilierePino(query: string): boolean {
   const q = String(query ?? "").toLocaleLowerCase("it-IT");
-  if (!/\bfilier[ae]\b/.test(q)) return false;
-  return !/\b(?:notizi[ae]|notizie|novit[aà]|news|ultim[oi]|ultim['’]?ora|articol[oi]|aggiornament[oi]|rassegna|contenut[oi]|approfondiment[oi]|editorial[ei]|blog)\b/.test(q);
-}
-
-export function richiestaNotiziePino(query: string): boolean {
-  return RE_NOTIZIE_PINO.test(String(query ?? "").toLocaleLowerCase("it-IT"));
+  return /\bfilier[ae]\b/.test(q) && !RE_NOTIZIE_PINO.test(q);
 }
 
 export function richiestaContenutiEditorialiPino(query: string): boolean {
@@ -3309,9 +3193,39 @@ export function queryOfferteEventiPino(
  * Il nome di un luogo del catalogo resta sempre una richiesta valida, ma un
  * toponimo da solo non basta: lo esclude `isAttractionNameQuery`.
  */
+/**
+ * Parole che non identificano un luogo: verbi e formule con cui si chiede
+ * «cosa posso visitare». Servono a distinguere una domanda su un luogo preciso
+ * («Castello Aragonese») da una domanda generica, che senza schede dei luoghi
+ * non ha una risposta nel sito.
+ */
+const PAROLE_NON_LUOGO_PINO = new Set([
+  "visitare", "vedere", "posso", "vorrei", "consigli", "consigliami",
+  "posto", "posti", "luogo", "luoghi", "cose", "cosa", "quali", "quale",
+  "dove", "anche", "qualche", "attrazioni", "attrazione", "storico",
+  "storici", "visit", "visiting", "there", "what", "which", "where",
+  "some", "about", "tell", "show", "please", "could", "would",
+]);
+
+function paroleLuogoPino(domanda: string): string[] {
+  const parole = domanda.toLowerCase().match(/[a-zà-ù]{5,}/g) ?? [];
+  return [...new Set(parole.filter((p) => !PAROLE_NON_LUOGO_PINO.has(p)))].slice(0, 6);
+}
+
+function testoContieneParola(
+  fonte: { titolo: string; estratto: string },
+  parola: string
+): boolean {
+  return `${fonte.titolo} ${fonte.estratto}`.toLowerCase().includes(parola);
+}
+
 export function richiestaGuidaAttrazioniPino(query: string): boolean {
   const testo = String(query ?? "");
   if (richiestaEditorialePino(testo)) return false;
+  // Parchi e aree protette: la guida Attrazioni non è più una sezione del sito,
+  // quindi «vorrei visitare un parco» deve usare i dati Territorio e non il
+  // vecchio catalogo (che riconoscerebbe «parco» come nome di un'attrazione).
+  if (richiestaParchiPino(testo)) return false;
   // Decisione unica e ordinata in `routing-policy.ts`: cinema, acquisto ed
   // eventi vincono sull'intento turistico, esattamente come prima, ma la
   // sequenza non vive più qui.
@@ -3320,13 +3234,6 @@ export function richiestaGuidaAttrazioniPino(query: string): boolean {
   // Il nome di un luogo del catalogo resta sempre una richiesta valida.
   if (isAttractionNameQuery(testo)) return true;
   return decisione?.dominio === "attrazioni";
-}
-
-/** Risposta onesta: assenza nella guida, non inesistenza nella città. */
-export function rispostaGuidaAttrazioniAssentePino(lingua: "it" | "en" = "it"): string {
-  return lingua === "en"
-    ? "I can't currently find information about this place in Radici Calabria's attractions guide. That doesn't necessarily mean it doesn't exist in Castrovillari. I won't suggest shops or products that have nothing to do with it."
-    : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di Radici Calabria. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
 }
 
 /** Risposta condivisa per i risultati della guida Attrazioni. */
@@ -3624,19 +3531,17 @@ export function invocazioniRegaloPino(
  */
 async function risolviCorrezioneTurnoPino(
   storico: MessaggioAssistente[]
-): Promise<CorrezioneRilevataPino | null> {
+): Promise<(CorrezioneRilevataPino & { domandaCorretta: string }) | null> {
   const correzione = rilevaCorrezionePino(storico);
   if (correzione) {
     void registraCorrezionePino(correzione);
-    const indiceUltimo = storico.length - 1;
-    storico[indiceUltimo] = {
-      ...storico[indiceUltimo],
-      content:
-        correzione.tipo === "altro"
-          ? `${correzione.domandaPrecedente} ${correzione.correzione}`
-          : correzione.correzione,
-    };
-    return correzione;
+    const domandaCorretta =
+      correzione.tipo === "altro"
+        ? `${correzione.domandaPrecedente} ${correzione.correzione}`
+        : correzione.correzione;
+    // La domanda dell'utente resta intatta nello storico: la correzione viaggia
+    // come contesto di sistema (vedi `chatConAssistente`).
+    return { ...correzione, domandaCorretta };
   }
 
   const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
@@ -3648,12 +3553,17 @@ async function risolviCorrezioneTurnoPino(
     !rispostaIdentitaPino(ultimaUtente.content) &&
     !rispostaSalutoPino(ultimaUtente.content)
   ) {
-    const apprese = await correzioniAppresePino(ultimaUtente.content);
+    const apprese = await conTimeoutPino(correzioniAppresePino(ultimaUtente.content), 300, []);
     const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
     if (corretta !== ultimaUtente.content) {
-      const indice = storico.lastIndexOf(ultimaUtente);
-      storico[indice] = { ...ultimaUtente, content: corretta };
+      // Non sovrascrive la domanda: la correzione appresa diventa contesto di sistema.
       console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
+      return {
+        tipo: "altro",
+        domandaPrecedente: ultimaUtente.content,
+        correzione: corretta,
+        domandaCorretta: corretta,
+      };
     }
   }
   return null;
@@ -3729,8 +3639,11 @@ export async function chatConAssistente(
     ? `${SYSTEM_PROMPT}\n\n${opzioni.contestoDatabase.trim()}`
     : SYSTEM_PROMPT;
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
-  // (la storia è già troncata a 300 caratteri per messaggio).
-  const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  // (la storia è già troncata a 1200 caratteri per gli ultimi messaggi).
+  // Se l'utente ha corretto Pino, la domanda di lavoro è quella corretta:
+  // lo storico resta com'è.
+  const domandaGrezza = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  const domanda = (correzioneUtente?.domandaCorretta ?? domandaGrezza).slice(0, 500);
   const restrizioneAlimentareRigida = restrizioneAlimentareRigidaPino(domanda);
 
   type DatiShadowTier0 = {
@@ -3760,6 +3673,7 @@ export async function chatConAssistente(
       intent?: PinoIntent;
     };
     conMetadati.motivoUscita = dati.motivoTelemetria ?? motivo;
+    console.info("[probe-uscita]", "motivo=" + motivo, "ms=" + (Date.now() - inizio));
     if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
       creaOsservazioneTier0(
@@ -3808,7 +3722,7 @@ export async function chatConAssistente(
     }, { limiti: null, origine: "assente" });
   }
 
-  // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
+  // Fast path conversazionale: non attendere memoria, planner semantico o Groq
   // per saluti, domande personali e inviti a chiacchierare.
   const identitaDiretta = rispostaIdentitaPino(domanda);
   const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda, linguaConversazione) ?? rispostaSalutoPino(domanda);
@@ -4057,6 +3971,9 @@ export async function chatConAssistente(
     analisi.intent === "service" &&
     analisi.confidence === "alta" &&
     !richiestaGuidaAttrazioniPino(domanda) &&
+    // «parchi» non è una professione da cercare nel catalogo attività: le aree
+    // protette vivono nei dati Territorio (vale anche per «parks» in inglese).
+    !richiestaParchiPino(domanda) &&
     // "farmacia" è anche un servizio: senza questa guardia il ramo professione
     // rispondeva "Non risultano farmacie nel catalogo" PRIMA del tool farmacie,
     // che è l'unica fonte reale dei turni.
@@ -4109,36 +4026,11 @@ export async function chatConAssistente(
   // Castrovillari») perché la richiesta finisca nel ramo Attrazioni.
   const intentoLocale = pianoIntentoLocale(domanda);
   const richiestaTuristica = !intentoLocale && richiestaGuidaAttrazioniPino(domanda);
-  const luoghi = filtraLuoghiPertinentiGuidaPino(
-    domanda,
-    searchAttractions(espandiCategorieGuidaPino(domanda), 6)
-  );
-  if (richiestaTuristica) {
-    if (luoghi.length > 0) {
-      const rispostaAttrazioni = rispostaGuidaAttrazioniTrovatePino(
-        luoghi,
-        linguaConversazione
-      );
-      return esci("attrazioni", {
-        risposta: rispostaAttrazioni,
-        negozi: [],
-        prodotti: [],
-        processingMs: Date.now() - inizio,
-        source: "assistente",
-      }, { limiti: null, origine: "assente" });
-    }
-
-    // La guida non ha un risultato pertinente: Pino si ferma qui e non delega
-    // la richiesta a una ricerca commerciale. Il testo distingue l'assenza
-    // nella guida dall'inesistenza del luogo in città.
-    return esci("attrazioni_assenti", {
-      risposta: rispostaGuidaAttrazioniAssentePino(linguaConversazione),
-      negozi: [],
-      prodotti: [],
-      processingMs: Date.now() - inizio,
-      source: "assistente",
-    }, { limiti: null, origine: "assente" });
-  }
+  // La sezione /attrazioni non esiste più nel sito e il vecchio catalogo statico
+  // non alimenta più la conoscenza: una richiesta di visita resta riconosciuta
+  // come tale (`richiestaTuristica`), ma la risposta arriva dai contenuti
+  // Territorio nel ramo conoscenza qui sotto — nessun dato vecchio e nessun
+  // rimando a una guida che l'utente non trova più.
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
@@ -4248,7 +4140,7 @@ export async function chatConAssistente(
   const memoriaPromise =
     pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
       ? Promise.resolve([])
-      : recuperaMemoria(domandaSemantica);
+      : conTimeoutPino(recuperaMemoria(domandaSemantica), 300, []);
   const memoria = await memoriaPromise;
   // Un'attività già riconosciuta dal lessico è una decisione deterministica:
   // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
@@ -4268,9 +4160,9 @@ export async function chatConAssistente(
       domandaSemantica.length >= 22 ||
       /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
     );
-  // M6-B1 — Budget condiviso: massimo due chiamate Gemini per richiesta,
+  // M6-B1 — Budget condiviso: massimo due chiamate Groq per richiesta,
   // prenotate PRIMA di partire (anche quando falliscono o vanno in timeout).
-  const budgetGemini = creaBudgetGeminiPino();
+  const budgetAI = creaBudgetAIPino();
   const semanticaGrezza = attivaPlannerSemantico
     ? await interpretaRichiestaPino(
         domandaSemantica,
@@ -4278,7 +4170,7 @@ export async function chatConAssistente(
         analisiSemantica,
         memoria,
         statoConversazionale,
-        budgetGemini
+        budgetAI
       )
     : undefined;
 
@@ -4321,6 +4213,7 @@ export async function chatConAssistente(
   let categorie: Awaited<ReturnType<typeof getCategoriesList>> = [];
   let meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>> = null;
   let farmacie: Awaited<ReturnType<typeof searchPharmacies>> = [];
+  let conoscenza: RisultatoConoscenza[] = [];
   let directReply: string | null = null;
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
@@ -4343,7 +4236,7 @@ export async function chatConAssistente(
     // esplicitamente in un ambiente controllato.
     if (process.env.PINO_NATIVE_FUNCTION_CALLING === "on") {
       try {
-        const esitoNativo = await chiamataGeminiConBudgetPino(budgetGemini, () =>
+        const esitoNativo = await chiamataAIConBudgetPino(budgetAI, () =>
           selezionaStrumentiNativoPino({
             systemPrompt: systemPromptPino,
             userPrompt: buildNativeFunctionCallingPrompt(
@@ -4386,15 +4279,14 @@ export async function chatConAssistente(
 
     if (!selezioneNativaOk) {
       try {
-        const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
-          chiamaGeminiConBackup({
+        const raw = await chiamataAIConBudgetPino(budgetAI, () =>
+          callGroqText({
             systemPrompt: systemPromptPino,
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
             temperature: 0.1,
-            // 4,5s: oltre questa soglia Gemini è inutile per questo turno e
-            // il budget residuo va a Groq (6s), restando sotto i 25s.
-            timeoutMs: 4_500,
+            // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
+            timeoutMs: Math.max(1_000, Math.min(4_500, tempoRestanteAIPino(budgetAI))),
           })
         );
         const parsed = JSON.parse(extractJsonFromText(raw)) as {
@@ -4582,7 +4474,7 @@ export async function chatConAssistente(
   invocazioni = applicaQueryRiservaPino(invocazioni, comprensione);
 
   // Budget esplicito → vincolante su TUTTE le invocazioni di catalogo, comprese
-  // quelle scelte da Gemini, che non può attivare né disattivare il filtro.
+  // quelle scelte da Groq, che non può attivare né disattivare il filtro.
   invocazioni = applicaBudgetVincolantePino(invocazioni, limitiVincolanti);
 
   // S1-A — Contratto al confine: nomi fuori allowlist e parametri non ammessi
@@ -4624,7 +4516,7 @@ export async function chatConAssistente(
   if (invocazioni.length > 0) {
     esitiInvocazioni = await eseguiInvocazioniPino(invocazioni, (invocazione) =>
       eseguiTool(invocazione.tool as string, invocazione.params ?? {}, queryDefault)
-    );
+    , { scadenzaMs: Math.max(1_000, tempoRestanteAIPino(budgetAI)) });
     const merge = mergeEsitiInvocazioniPino(esitiInvocazioni, { regaloGenerico });
     negozi = merge.negozi;
     prodotti = merge.prodotti;
@@ -4635,37 +4527,123 @@ export async function chatConAssistente(
     categorie = merge.categorie;
     if (merge.meteo) meteo = merge.meteo;
     farmacie = merge.farmacie;
+    conoscenza = merge.conoscenza ?? [];
   }
 
-  // I festival possono essere nella guida Attrazioni anche quando il catalogo
-  // eventi è vuoto. Questo fallback è volutamente limitato ai festival: una
-  // richiesta generica di "eventi" resta sul catalogo eventi e non viene
-  // dirottata sulla guida.
-  if (
-    !directReply &&
-    eventi.length === 0 &&
-    negozi.length === 0 &&
-    prodotti.length === 0 &&
-    offerte.length === 0 &&
-    RE_FESTIVAL_GUIDA_PINO.test(domanda)
-  ) {
-    const festivalGuida = luoghiFestivalGuidaPino(domanda);
-    if (festivalGuida.length > 0) {
-      return esci("festival_guida", {
-        risposta: rispostaGuidaAttrazioniTrovatePino(
-          festivalGuida,
-          linguaConversazione
-        ),
-        negozi: [],
-        prodotti: [],
-        processingMs: Date.now() - inizio,
-        source: "assistente",
-        intent: analisi.intent,
-      }, {
-        limiti: limitiVincolanti,
-        origine: limitiVincolanti ? "traccia" : "assente",
-        invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
-      });
+  // ── Modalità INFORMATIVA: i testi del sito, non le schede ────────────────
+  // «Cos'è la Sila?» e «Parlami di filiera» chiedono una spiegazione, non un
+  // elenco di attività. Anche i chip territorio/filiere restituivano risultati
+  // che il renderer a schede non sapeva mostrare: qui la risposta è prosa
+  // costruita sui contenuti editoriali, con i link alle pagine.
+  if (!directReply) {
+    const strumentiEditoriali = invocazioni.some(
+      (t) => t.tool === "searchTerritorio" || t.tool === "searchFiliere"
+    );
+    const domandaInformativa = richiestaConoscenzaPino(domanda);
+    // I parchi sono luoghi del Territorio: valgono come richiesta di visita in
+    // tutte le lingue, anche quando il piano non attiva searchTerritorio.
+    const richiestaParchi = richiestaParchiPino(domanda);
+    const richiestaLuoghi = richiestaTuristica || richiestaParchi;
+    if (domandaInformativa || strumentiEditoriali || richiestaLuoghi) {
+      const linguaDiscorsiva = linguaConversazione === "en" ? "en" : "it";
+      let fonti =
+        conoscenza.length > 0 ? conoscenza : await cercaConoscenzaSito(domanda, 6);
+      // «Cosa posso visitare?» non nomina un luogo: la domanda grezza pesca FAQ
+      // generiche o, peggio, testi non pertinenti. Le richieste di visita senza
+      // un territorio in testa leggono i parchi e le aree territoriali, che
+      // sono i luoghi del sito.
+      const isFonteParco = (f: { titolo: string }) => /\(parchi\)/i.test(f.titolo);
+      if (richiestaParchi) {
+        // I parchi hanno un gruppo proprio nei dati Territorio: la risposta è
+        // quella, anche se la domanda arriva in inglese e il resto del testo
+        // pesca aree o filiere.
+        fonti = fonti.filter(isFonteParco);
+        if (fonti.length === 0) {
+          fonti = (
+            await cercaConoscenzaSito(
+              "Parco Nazionale del Pollino Sila Aspromonte parchi della Calabria",
+              6
+            )
+          ).filter(isFonteParco);
+        }
+      } else if (
+        richiestaLuoghi &&
+        !fonti.some((f) => f.url.startsWith("/territorio"))
+      ) {
+        fonti = await cercaConoscenzaSito(
+          `${domanda} parchi aree territoriali luoghi da visitare in Calabria`,
+          6
+        );
+      }
+      if (richiestaLuoghi && !richiestaParchi) {
+        // Una domanda generica («Cosa posso visitare?») parte dai parchi: sono
+        // i luoghi più riconoscibili del sito, non la prima area in ordine.
+        const parchi = fonti.filter(isFonteParco);
+        if (parchi.length > 0) {
+          fonti = [...parchi, ...fonti.filter((f) => !isFonteParco(f))];
+        }
+      }
+      // Una richiesta di visita senza un luogo riconoscibile nei testi (per
+      // esempio «Are there any churches?») non deve arrivare al modello: senza
+      // schede dei luoghi, l'unica risposta onesta è dire dove sono raccontati.
+      if (richiestaLuoghi && !richiestaParchi) {
+        const paroleDomanda = paroleLuogoPino(domanda);
+        if (
+          paroleDomanda.length > 0 &&
+          !fonti.some((f) => paroleDomanda.some((p) => testoContieneParola(f, p)))
+        ) {
+          fonti = [];
+        }
+      }
+      if (fonti.length > 0) {
+        const rispostaConoscenza = await componiRispostaConoscenzaPino({
+          domanda,
+          fonti,
+          lingua: linguaDiscorsiva,
+          budgetAI,
+        });
+        return esci(
+          "conoscenza",
+          {
+            risposta: rispostaConoscenza,
+            // Nessuna scheda: in modalità informativa non ci sono attività.
+            negozi: [],
+            prodotti: [],
+            processingMs: Date.now() - inizio,
+            source: "assistente",
+            intent: analisi.intent,
+          },
+          {
+            limiti: limitiVincolanti,
+            origine: limitiVincolanti ? "traccia" : "assente",
+            invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+          }
+        );
+      }
+      if (richiestaLuoghi || domandaInformativa) {
+        const rispostaSenzaFonti = await componiRispostaSenzaFontiPino({
+          domanda,
+          lingua: linguaDiscorsiva,
+          budgetAI,
+          richiestaLuoghi,
+        });
+        return esci(
+          "conoscenza_vuota",
+          {
+            risposta: rispostaSenzaFonti,
+            negozi: [],
+            prodotti: [],
+            processingMs: Date.now() - inizio,
+            source: "assistente",
+            intent: analisi.intent,
+          },
+          {
+            limiti: limitiVincolanti,
+            origine: limitiVincolanti ? "traccia" : "assente",
+            invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+          }
+        );
+      }
     }
   }
 
@@ -5159,6 +5137,7 @@ export async function chatConAssistente(
     categorie,
     meteo,
     farmacie,
+    conoscenza,
   });
   const contesto = buildContextoRisultati(risultati);
 
@@ -5187,7 +5166,7 @@ export async function chatConAssistente(
     : contesto;
 
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
-  // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
+  // Evitiamo una seconda chiamata Groq solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
   // S5.1-A — Un'unica fonte per la lingua: il contratto di comprensione
   // (preferenza esplicita inclusa), lo stesso usato dai rami anticipati.
@@ -5399,7 +5378,7 @@ export async function chatConAssistente(
   // Correzione B (S19): il messaggio di indisponibilità sostituisce solo la
   // risposta di base del ramo di fallback; filtri, note e risultati restano.
   const rispostaIndisponibilitaAI = ricercaFallbackVuota
-    ? messaggioIndisponibilitaGemini(linguaRisposta)
+    ? messaggioIndisponibilitaAI(linguaRisposta)
     : null;
   // M6-A — Una fonte fallita senza alcun risultato rende il catalogo vuoto
   // non dimostrabile: la risposta dichiara l'indisponibilità, non "non ho

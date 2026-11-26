@@ -5,13 +5,13 @@ import { trovaRispostaFaqPino } from "../lib/assistente/faq.ts";
 test("FAQ: trova informazioni su Radici Calabria", () => {
   const faq = trovaRispostaFaqPino("Che cos'è Radici Calabria?");
   assert.ok(faq);
-  assert.match(faq.risposta, /piattaforma digitale/i);
+  assert.match(faq.risposta, /piattaforma informativa/i);
 });
 
 test("FAQ: riconosce domande naturali sul funzionamento", () => {
   const faq = trovaRispostaFaqPino("Come funziona Radici Calabria?");
   assert.ok(faq);
-  assert.match(faq.risposta, /piattaforma digitale/i);
+  assert.match(faq.risposta, /piattaforma informativa/i);
 });
 
 test("FAQ: trova le informazioni sui pagamenti", () => {

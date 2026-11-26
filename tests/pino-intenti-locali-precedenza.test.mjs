@@ -105,7 +105,7 @@ test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => 
 });
 
 test("Pino recupera le risposte pubblicate nelle FAQ", () => {
-  assert.match(trovaRispostaFaqPino("Come funziona Radici Calabria?")?.risposta ?? "", /piattaforma digitale/i);
+  assert.match(trovaRispostaFaqPino("Come funziona Radici Calabria?")?.risposta ?? "", /piattaforma informativa/i);
   assert.match(trovaRispostaFaqPino("Quali metodi di pagamento posso utilizzare?")?.risposta ?? "", /checkout/i);
   assert.equal(trovaRispostaFaqPino("Che tempo farà domani?"), null);
 });
@@ -136,15 +136,13 @@ test("le richieste di eventi non entrano nel ramo Attrazioni", async () => {
   assert.doesNotMatch(r.risposta, GUIDA);
 });
 
-test("i festival ripiegano sulla guida quando il catalogo eventi è vuoto", async () => {
+test("i festival senza eventi nel catalogo non tornano più la vecchia guida", async () => {
   for (const frase of ["Voglio andare al festival", "un festival"]) {
     const r = await rispondi(frase);
 
-    assert.match(r.risposta, GUIDA, frase);
-    assert.match(r.risposta, /festival/i, frase);
+    assert.doesNotMatch(r.risposta, GUIDA, frase);
     assert.deepEqual(r.prodotti, [], frase);
     assert.deepEqual(r.negozi, [], frase);
-    assert.doesNotMatch(r.risposta, /non risultano eventi pubblicati/i, frase);
   }
 });
 
@@ -159,9 +157,13 @@ test("«Cerco scarpe a Castrovillari» resta una ricerca di catalogo", async () 
   assert.doesNotMatch(r.risposta, CASTELLO);
 });
 
-// ─── 3. Le richieste di visita restano nella guida ──────────────────────────
+// ─── 3. Le richieste di visita leggono i contenuti Territorio ───────────────
+//
+// La sezione /attrazioni non esiste più nel sito: una richiesta di visita resta
+// riconosciuta come tale, ma la risposta arriva dai testi del sito e non da una
+// guida che l'utente non trova più.
 
-test("i nomi e le richieste di visita restano nella guida Attrazioni", async () => {
+test("i nomi e le richieste di visita leggono i contenuti del sito, non la guida", async () => {
   for (const frase of [
     "Castello Aragonese",
     "Cosa vedere a Castrovillari",
@@ -172,14 +174,14 @@ test("i nomi e le richieste di visita restano nella guida Attrazioni", async () 
   }
 
   const italiano = await rispondi("Castello Aragonese");
-  assert.match(italiano.risposta, GUIDA);
+  assert.doesNotMatch(italiano.risposta, GUIDA);
   assert.match(italiano.risposta, CASTELLO);
   assert.deepEqual(italiano.prodotti, []);
   assert.deepEqual(italiano.negozi, []);
 
   const inglese = await rispondi("Museums in Castrovillari");
-  assert.match(inglese.risposta, GUIDA);
-  assert.match(inglese.risposta, /Museo Archeologico/);
+  assert.doesNotMatch(inglese.risposta, GUIDA);
+  assert.match(inglese.risposta, /Castrovillari/);
 });
 
 // ─── 4. Toponimi e parole generiche non identificano un luogo ───────────────
@@ -200,6 +202,11 @@ test("i toponimi da soli non identificano un'attrazione", () => {
 test("i nomi del catalogo restano riconosciuti anche con il toponimo nella frase", () => {
   for (const luogo of [...ATTRAZIONI_LUOGHI, ...ATTRAZIONI_DINTORNI]) {
     const frase = `${luogo.nome} a Castrovillari`;
+    if (/\bparco\b/i.test(luogo.nome)) {
+      // I parchi non passano più dalla guida: li gestiscono i dati Territorio.
+      assert.equal(richiestaGuidaAttrazioniPino(frase), false, frase);
+      continue;
+    }
     assert.equal(isAttractionNameQuery(frase), true, frase);
     assert.equal(richiestaGuidaAttrazioniPino(frase), true, frase);
   }

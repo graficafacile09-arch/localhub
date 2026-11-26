@@ -57,18 +57,18 @@ export function conScadenzaPino<T>(
 }
 
 const INTRO = {
-  it: "Al momento il mio sistema avanzato è in manutenzione, ma ho trovato questi risultati per te tramite la ricerca classica:",
-  en: "My advanced system is under maintenance right now, but the classic search already found these results for you:",
+  it: "La ricerca intelligente non è momentaneamente disponibile. Intanto, la ricerca del catalogo ha trovato questi risultati:",
+  en: "Smart search is temporarily unavailable. In the meantime, the catalogue search found these results:",
 } as const;
 
 const VUOTO = {
-  it: "Al momento il mio sistema avanzato è in manutenzione e la ricerca classica non trova risultati per questa richiesta. Prova con il nome del prodotto, della categoria o del negozio.",
-  en: "My advanced system is under maintenance and the classic search has no results for this request. Try the product, category or shop name.",
+  it: "Non ho trovato prodotti o negozi corrispondenti nel catalogo attuale. È possibile che questi articoli o questa categoria non siano più pubblicati. Prova con un altro prodotto, una categoria o il nome di un negozio.",
+  en: "I couldn't find matching products or shops in the current catalogue. These items or this category may no longer be listed. Try another product, category or shop name.",
 } as const;
 
 const NESSUN_DATO = {
-  it: "In questo momento non riesco a cercare nel catalogo: riprova tra poco.",
-  en: "I can't search the catalog right now: please try again in a moment.",
+  it: "In questo momento non riesco a consultare il catalogo. Riprova tra poco.",
+  en: "I can't access the catalogue right now. Please try again in a moment.",
 } as const;
 
 /** Dipendenze iniettabili: i test usano un motore finto, la route quello vero. */
