@@ -64,6 +64,17 @@ export interface RiconoscimentoAi {
   codiceBarre?: string | null;
   ingredienti?: string[];
   certificazioni?: string[];
+  /**
+   * Codice dell'organismo di controllo biologico letto in etichetta
+   * (es. `IT-BIO-006`). Valorizzato solo con un formato riconosciuto.
+   */
+  codiceOrganismo?: string | null;
+  /**
+   * Origine delle materie prime dichiarata per il biologico:
+   * `Agricoltura UE`, `Agricoltura non UE`, `Agricoltura UE / non UE`,
+   * `Agricoltura Italia` oppure la dicitura letta.
+   */
+  origineMateriePrime?: string | null;
 }
 
 /**
@@ -271,6 +282,8 @@ export type EsitoVerifica =
   | "territorio_incoerente"
   | "schema_incoerente"
   | "riscontro_parziale"
+  /** Biologico letto in etichetta: non è una denominazione geografica. */
+  | "certificazione_biologica_da_etichetta"
   | "ricerca_non_disponibile";
 
 export interface VerificaDocumentale {
@@ -365,6 +378,10 @@ export interface EtichettaEstratta {
   ingredienti: string[];
   certificazioni: string[];
   territorioDichiarato: string[];
+  /** Codice dell'organismo di controllo biologico, se leggibile. */
+  codiceOrganismoBio?: CampoEtichetta;
+  /** Origine delle materie prime biologiche dichiarata in etichetta. */
+  origineMateriePrimeBio?: CampoEtichetta;
   /** Livello di leggibilità dichiarato dal motore OCR. */
   leggibilita: "buona" | "parziale" | "scarsa" | "sconosciuta";
 }

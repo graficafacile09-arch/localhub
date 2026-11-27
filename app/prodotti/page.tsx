@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import IntestazionePagina from "@/components/editoriale/IntestazionePagina";
 import RadiciScanStudio from "@/components/radiscan/RadiciScanStudio";
+import ComeFunzionaRadiciScan from "@/components/radiscan/ComeFunzionaRadiciScan";
 import { getSiteUrl } from "@/lib/site";
 import { ScanLine } from "lucide-react";
 
@@ -24,10 +25,12 @@ export default function RadiciScanPage() {
       <Header />
 
       <IntestazionePagina
-        occhiello="Riconoscimento e verifica documentale"
+        compatto
+        occhiello="Verifica AI · DOP · IGP · IGT · PAT · BIO"
         titolo="RadiciScan"
+        titoloExtra={<ComeFunzionaRadiciScan />}
         icona={ScanLine}
-        sommario="Carica o scatta una foto dell'etichetta per avviare la verifica."
+        sommario="Fotografa l'etichetta: l'AI verifica origine calabrese, marchio e filiera."
       />
 
       <div className="rd-guscio py-4 md:py-6">

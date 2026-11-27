@@ -21,7 +21,15 @@
  * elenchi divergono.
  */
 
-/** Schemi di qualità riconosciuti dal servizio. */
+/**
+ * Schemi di qualità riconosciuti dal servizio.
+ *
+ * `BIO` è l'unica voce che non è una denominazione geografica: non compare
+ * nel registro eAmbrosia né in `radiscan_fonti`, e non può mai sostenere il
+ * livello `verificato`. È riconosciuta dall'etichetta (Eurofoglia, diciture
+ * "biologico", codice dell'organismo di controllo) e non va confrontata con
+ * DOP/IGP/STG.
+ */
 export const SCHEMI_QUALITA = [
   "DOP",
   "IGP",
@@ -31,6 +39,7 @@ export const SCHEMI_QUALITA = [
   "IGT",
   "PAT",
   "DECO",
+  "BIO",
 ] as const;
 
 export type SchemaQualita = (typeof SCHEMI_QUALITA)[number];

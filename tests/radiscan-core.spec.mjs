@@ -36,6 +36,8 @@ const {
   selezionaEsitoInCache,
   territoriCoerenti,
   variantiParola,
+  creaRicercaEAmbrosia,
+  estraiEtichetta,
   TTL_CACHE_GIORNI,
   TTL_CACHE_MS,
   validaChiaveQuota,
@@ -192,9 +194,115 @@ test("schema: ignora le fonti proposte e limita dimensioni e voci", () => {
   assert.equal(esito.valore.riconoscimento.indicatoriEtichetta.length, 8);
   assert.ok(esito.valore.riconoscimento.note.length <= 200);
 
-  const schemaIgnoto = analizzaOutputModello('{"prodotto":"X","schema_proposto":"BIO"}');
+  const schemaIgnoto = analizzaOutputModello('{"prodotto":"X","schema_proposto":"XYZ"}');
   assert.equal(schemaIgnoto.ok, true);
   assert.equal(schemaIgnoto.valore.riconoscimento.schemaProposto, null);
+});
+
+test("schema: accetta BIO e i campi dell'organismo di controllo", () => {
+  const esito = analizzaOutputModello(
+    JSON.stringify({
+      prodotto: "Ricotta",
+      schema_proposto: "bio",
+      codice_organismo: "it bio 006",
+      origine_materie_prime: "Agricoltura UE / non UE",
+    })
+  );
+
+  assert.equal(esito.ok, true);
+  assert.equal(esito.valore.riconoscimento.schemaProposto, "BIO");
+  assert.equal(esito.valore.riconoscimento.codiceOrganismo, "IT-BIO-006");
+  assert.equal(
+    esito.valore.riconoscimento.origineMateriePrime,
+    "Agricoltura UE / non UE"
+  );
+});
+
+test("schema: un codice organismo incompleto non viene completato", () => {
+  const esito = analizzaOutputModello(
+    '{"prodotto":"Ricotta","codice_organismo":"IT-BIO"}'
+  );
+
+  assert.equal(esito.ok, true);
+  assert.equal(esito.valore.riconoscimento.codiceOrganismo, null);
+  assert.ok(esito.valore.avvisi.some((avviso) => avviso.includes("codice_organismo")));
+});
+
+test("verifica: BIO resta non verificato e non interroga il registro", async () => {
+  const riconoscimentoBio = {
+    prodotto: "Ricotta",
+    categoria: "Latticini",
+    denominazioneProposta: "Ricotta",
+    territorioProposto: null,
+    schemaProposto: "BIO",
+    indicatoriEtichetta: ["BIO"],
+    confidenza: 80,
+    note: null,
+    incongruenzeRilevate: [],
+    codiceOrganismo: "IT-BIO-006",
+  };
+
+  const esito = verificaDenominazione(riconoscimentoBio, []);
+  assert.equal(esito.esito, "certificazione_biologica_da_etichetta");
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.equal(esito.fonte, null);
+  assert.equal(esito.prove.length, 0);
+  assert.match(esito.motivazione, /eAmbrosia/);
+  assert.match(esito.motivazione, /IT-BIO-006/);
+
+  let chiamate = 0;
+  const provider = creaRicercaEAmbrosia({
+    fetchImpl: async () => {
+      chiamate += 1;
+      return { ok: true, json: async () => ({ data: [] }) };
+    },
+  });
+  const ricerca = await provider.cerca({ riconoscimento: riconoscimentoBio });
+  assert.equal(chiamate, 0, "BIO non deve produrre richieste a eAmbrosia");
+  assert.equal(ricerca.stato, "non_eseguita");
+  assert.equal(ricerca.fonte, null);
+});
+
+test("etichetta: legge Eurofoglia, codice IT-BIO e origine delle materie prime", () => {
+  const testo = [
+    "RICOTTA DI BUFALA",
+    "Da agricoltura biologica",
+    "IT-BIO-006",
+    "Materie prime: Agricoltura UE / non UE",
+    "Prodotto da: Caseificio San Lorenzo S.r.l.",
+  ].join("\n");
+
+  const { etichetta, discrepanze } = estraiEtichetta(
+    {
+      stato: "ok",
+      testo,
+      confidenza: 88,
+      paroleLette: 12,
+      caratteri: testo.length,
+      lingue: ["ita"],
+      durataMs: 400,
+      motivo: null,
+      avvisi: [],
+    },
+    {
+      prodotto: "Ricotta di bufala",
+      categoria: "Latticini",
+      denominazioneProposta: "Ricotta di bufala",
+      territorioProposto: null,
+      schemaProposto: "BIO",
+      indicatoriEtichetta: ["Eurofoglia"],
+      confidenza: 80,
+      note: null,
+      incongruenzeRilevate: [],
+      codiceOrganismo: "IT-BIO-006",
+    }
+  );
+
+  assert.ok(etichetta.certificazioni.includes("BIO"));
+  assert.equal(etichetta.codiceOrganismoBio.valore, "IT-BIO-006");
+  assert.equal(etichetta.origineMateriePrimeBio.valore, "Agricoltura UE / non UE");
+  assert.ok(!discrepanze.some((voce) => voce.campo === "codice_organismo"));
+  assert.ok(!discrepanze.some((voce) => voce.campo === "schema_qualita"));
 });
 
 test("schema: rimuove i caratteri di controllo", () => {

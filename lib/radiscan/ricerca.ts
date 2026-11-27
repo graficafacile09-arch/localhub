@@ -469,6 +469,17 @@ export function creaRicercaEAmbrosia(
   return {
     nome: "eAmbrosia",
     async cerca({ riconoscimento, signal }) {
+      // BIO non è una denominazione di origine e non è iscritto in eAmbrosia:
+      // interrogare il registro restituirebbe solo schede estranee e un falso
+      // "schema non compatibile". La dicitura biologica resta quella letta in
+      // etichetta, con il codice dell'organismo di controllo.
+      if (riconoscimento.schemaProposto === "BIO") {
+        return ricercaNonEseguita(
+          "Il biologico non è una denominazione iscritta in eAmbrosia: nessuna ricerca nel registro. " +
+            "La dicitura BIO resta quella letta in etichetta e non è una certificazione verificata dal servizio."
+        );
+      }
+
       const query = variantiRicerca(riconoscimento);
       const consultataIl = adesso().toISOString().slice(0, 10);
 

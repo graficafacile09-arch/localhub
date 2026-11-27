@@ -38,7 +38,27 @@ const TERRITORI = [
   "silana",
 ] as const;
 
+/**
+ * Solo sigle geografiche: BIO è volutamente esclusa, perché non è una
+ * denominazione e non deve generare una falsa discrepanza con uno schema
+ * DOP/IGP proposto dal modello.
+ */
 const QUALITA = ["DOP", "IGP", "STG", "DOC", "DOCG", "IGT", "PAT"] as const;
+
+/** Codice dell'organismo di controllo biologico: `IT-BIO-006`. */
+const RE_CODICE_BIO = /\b([A-Z]{2})\s*[-–—.\/]?\s*BIO\s*[-–—.\/]?\s*(\d{2,3})\b/gi;
+
+/** Eurofoglia e diciture del biologico, anche in altre lingue UE. */
+const RE_BIO =
+  /eurofoglia|foglia\s+europea|\bbiologic[oaeih]\b|\bbiologich[ei]\b|\borganic[oa]?\b|\bbio\b|\bekologisch\b/i;
+
+/** Diciture ammesse per l'origine delle materie prime biologiche. */
+const ORIGINI_BIO = [
+  "Agricoltura UE / non UE",
+  "Agricoltura non UE",
+  "Agricoltura UE",
+  "Agricoltura Italia",
+] as const;
 
 function normalizza(valore: string): string {
   return valore
@@ -92,8 +112,40 @@ function certificazioniDa(testo: string): string[] {
     const canonica = QUALITA.find((voce) => voce === sigla);
     if (canonica) trovate.push(canonica);
   }
-  if (/\bbiologic[oa]\b|\borganic\b/i.test(testo)) trovate.push("BIO");
+  if (RE_BIO.test(testo)) trovate.push("BIO");
   return valoriUnici(trovate, 6);
+}
+
+/** Restituisce il primo codice leggibile, senza completarne le parti. */
+function codiceOrganismoDa(testo: string): string | null {
+  for (const trovato of testo.matchAll(RE_CODICE_BIO)) {
+    if (trovato[1] && trovato[2]) {
+      return `${trovato[1].toUpperCase()}-BIO-${trovato[2]}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Origine delle materie prime biologiche: solo se la frase la dichiara
+ * davvero, altrimenti il campo resta null.
+ */
+function origineMateriePrimeDa(testo: string): string | null {
+  const normale = normalizza(testo);
+  if (!normale) return null;
+
+  const contesto = /materie prime|ingredienti|agricoltura/.test(normale);
+  const nonUe = /non\s*(?:ue|eu|comunitar\w*)/.test(normale);
+  if (!contesto && !nonUe) return null;
+
+  const ue = /(?:^|\s)(?:ue|eu)(?:\s|$)|unione europea/.test(normale);
+  const italia = /(?:^|\s)italia(?:\s|$)|italian[oa]/.test(normale);
+
+  if (nonUe && ue) return ORIGINI_BIO[0];
+  if (nonUe) return ORIGINI_BIO[1];
+  if (italia) return ORIGINI_BIO[3];
+  if (ue) return ORIGINI_BIO[2];
+  return null;
 }
 
 function territorioDa(testo: string): string[] {
@@ -231,6 +283,8 @@ export function estraiEtichetta(
   const barcodeOcr = barcodeDa(testo);
   const certificazioni = certificazioniDa(testo);
   const territorio = territorioDa(testoCompatto);
+  const codiceOrganismoBio = codiceOrganismoDa(testo);
+  const origineMateriePrimeBio = origineMateriePrimeDa(testo);
 
   const aiBarcode = riconoscimento.codiceBarre ? validaBarcode(riconoscimento.codiceBarre) : null;
 
@@ -253,6 +307,38 @@ export function estraiEtichetta(
       gravita: "media",
       messaggio:
         "OCR e modello visivo indicano sigle di qualità diverse: serve un controllo umano, nessuna delle due viene scelta d'ufficio.",
+    });
+  }
+
+  if (schemaAi === "BIO") {
+    discrepanze.push({
+      campo: "natura_bio",
+      ocr: certificazioni.includes("BIO") ? "BIO" : null,
+      ai: "BIO",
+      gravita: "bassa",
+      messaggio:
+        "BIO indica una certificazione biologica, non una denominazione di origine: " +
+        "non va cercato su eAmbrosia e non autentica la singola confezione." +
+        (certificazioni.includes("BIO")
+          ? ""
+          : " La dicitura non è confermata dal testo OCR: il riconoscimento può dipendere dal logo grafico."),
+    });
+  }
+
+  const codiceOrganismoAi = riconoscimento.codiceOrganismo ?? null;
+  if (
+    codiceOrganismoBio &&
+    codiceOrganismoAi &&
+    codiceOrganismoBio !== codiceOrganismoAi.toUpperCase()
+  ) {
+    discrepanze.push({
+      campo: "codice_organismo",
+      ocr: codiceOrganismoBio,
+      ai: codiceOrganismoAi,
+      gravita: "media",
+      messaggio:
+        "Codice dell'organismo di controllo diverso tra OCR e modello: " +
+        "entrambi restano visibili, nessuno viene scelto automaticamente.",
     });
   }
 
@@ -367,6 +453,8 @@ export function estraiEtichetta(
       ingredienti: ingredientiDa(righeTesto),
       certificazioni,
       territorioDichiarato: territorio,
+      codiceOrganismoBio: campo(codiceOrganismoBio, "ocr"),
+      origineMateriePrimeBio: campo(origineMateriePrimeBio, "ocr"),
       leggibilita,
     },
     discrepanze,

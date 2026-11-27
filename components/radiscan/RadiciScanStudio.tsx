@@ -772,7 +772,7 @@ export default function RadiciScanStudio() {
             <ImagePlus className="h-5 w-5" aria-hidden />
           </div>
           <p className="mt-3 text-sm font-bold text-[#1b3624]">
-            Trascina qui una foto, oppure
+            Inquadra fronte o retro dell&apos;etichetta
           </p>
 
           <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">

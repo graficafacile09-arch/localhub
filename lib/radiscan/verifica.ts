@@ -636,6 +636,33 @@ function verificaBase(
   const proposta = riconoscimento.denominazioneProposta?.trim() ?? "";
   const prove = ricerca.prove.filter((prova) => prova.tipo === "ufficiale");
 
+  // Il biologico è una certificazione di processo, non una denominazione di
+  // origine: non esiste in eAmbrosia né nel registro curato. Confrontarlo con
+  // le schede DOP/IGP produrrebbe un falso "schema non compatibile".
+  if (riconoscimento.schemaProposto === "BIO") {
+    const codice = riconoscimento.codiceOrganismo?.trim() || null;
+    const origine = riconoscimento.origineMateriePrime?.trim() || null;
+    const dettagli = [
+      codice ? `codice organismo di controllo ${codice}` : null,
+      origine ? `materie prime: ${origine}` : null,
+    ].filter((voce): voce is string => voce !== null);
+
+    return nonVerificato(
+      "coerente_non_verificato",
+      "certificazione_biologica_da_etichetta",
+      "Il prodotto è dichiarato biologico in etichetta" +
+        (dettagli.length > 0 ? ` (${dettagli.join("; ")})` : "") +
+        ". BIO non è una denominazione di origine: non viene cercato nel registro " +
+        "eAmbrosia e non va confrontato con DOP/IGP/STG. La dicitura resta quella " +
+        "letta in etichetta e non è una certificazione verificata da questo servizio: " +
+        "il codice dell'organismo va controllato sul documento del produttore e non " +
+        "autentica la singola confezione.",
+      null,
+      [],
+      ricerca
+    );
+  }
+
   if (!proposta) {
     const chiaveSenzaDenominazione =
       chiaveDenominazionePerVerifica(riconoscimento);

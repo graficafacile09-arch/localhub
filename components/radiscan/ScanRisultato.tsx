@@ -9,6 +9,7 @@ import {
   Globe,
   Info,
   Landmark,
+  Leaf,
   Loader2,
   RotateCcw,
   Search,
@@ -653,7 +654,12 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
         ["Indirizzo", etichetta.indirizzo],
         ["Lotto", etichetta.lotto],
         ["Codice a barre", etichetta.codiceBarre],
-      ].filter(([, campo]) => (campo as { valore: string | null }).valore)
+        // Campi facoltativi: gli esiti in cache precedenti al biologico non li hanno.
+        ["Organismo di controllo BIO", etichetta.codiceOrganismoBio ?? null],
+        ["Origine materie prime BIO", etichetta.origineMateriePrimeBio ?? null],
+      ].filter(
+        ([, campo]) => (campo as { valore: string | null } | null)?.valore
+      )
     : [];
 
   if (!ocr && !etichetta && discrepanze.length === 0 && !web && !barcode && !produttore) {
@@ -973,6 +979,32 @@ export default function ScanRisultato({
     esito.livello === "non_verificato" &&
     typeof riconoscimento.prodotto === "string" &&
     riconoscimento.prodotto.trim().length > 0;
+
+  // Biologico: la certificazione è dichiarata in etichetta (Eurofoglia,
+  // "biologico", codice dell'organismo di controllo), non è una denominazione
+  // di origine e non è verificata da un registro ufficiale.
+  const certificazioneBiologica =
+    esito.verifica?.esito === "certificazione_biologica_da_etichetta" ||
+    riconoscimento.schemaProposto === "BIO";
+  const codiceBio =
+    esito.etichetta?.codiceOrganismoBio?.valore ??
+    riconoscimento.codiceOrganismo?.trim() ??
+    null;
+  const origineBio =
+    esito.etichetta?.origineMateriePrimeBio?.valore ??
+    riconoscimento.origineMateriePrime?.trim() ??
+    null;
+  const bioLetto = (esito.etichetta?.certificazioni ?? []).some(
+    (voce) => voce.trim().toUpperCase() === "BIO"
+  );
+  const dichiaratoBio =
+    certificazioneBiologica ||
+    bioLetto ||
+    Boolean(codiceBio) ||
+    (Array.isArray(riconoscimento.certificazioni) &&
+      riconoscimento.certificazioni.some((voce) =>
+        /\bbio(logic[oa])?\b/i.test(voce)
+      ));
   const gruppo = denominazioneUeRegistrata
     ? "verificato"
     : riscontroOnlineDop || riscontroDeCo
@@ -998,8 +1030,16 @@ export default function ScanRisultato({
             ? "Sono state trovate fonti online pertinenti che riportano questa denominazione come DOP/IGP. È un riscontro positivo sulla presenza della denominazione nelle fonti; la conferma del registro ufficiale e l'autenticità della singola confezione restano controlli separati."
             : `Le fonti online pertinenti associano il nome prodotto specifico "${riconoscimento.prodotto}" a una denominazione DOP/IGP. La denominazione non è stata letta in etichetta: il riscontro riguarda il nome del prodotto, non una certificazione ufficiale. La conferma del registro e l'autenticità della singola confezione restano controlli separati.`,
         }
-      : identificazioneCompletata
+      : certificazioneBiologica
         ? {
+            titolo: `${riconoscimento.prodotto} — biologico dichiarato in etichetta`,
+            descrizione:
+              "L'etichetta riporta la certificazione biologica" +
+              (codiceBio ? ` con il codice dell'organismo di controllo ${codiceBio}` : "") +
+              ". BIO non è una denominazione di origine: non viene cercato nel registro eAmbrosia e non è verificato da una fonte ufficiale. Il codice dell'organismo va controllato sul documento del produttore e non autentica la singola confezione.",
+          }
+        : identificazioneCompletata
+          ? {
             titolo: "Prodotto identificato",
             descrizione:
               "Il motore visivo ha letto il prodotto dalla fotografia. La verifica documentale DOP/IGP è un controllo separato: l'assenza di una corrispondenza nel registro non significa che il prodotto sia falso o non autentico.",
@@ -1063,9 +1103,20 @@ export default function ScanRisultato({
           <h3 className="text-lg font-black leading-tight text-[#1b3624] md:text-xl">
             {riconoscimento.prodotto?.trim() || "Prodotto non identificato"}
           </h3>
-          {riconoscimento.categoria ? (
-            <span className="rd-et">{riconoscimento.categoria}</span>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {dichiaratoBio ? (
+              <span
+                title="Biologico dichiarato in etichetta: non è una denominazione di origine"
+                className="inline-flex items-center gap-1 rounded-full border border-[#24462f] bg-[#eef5ec] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#1b3624]"
+              >
+                <Leaf className="h-3 w-3" aria-hidden />
+                BIO{codiceBio ? ` · ${codiceBio}` : ""}
+              </span>
+            ) : null}
+            {riconoscimento.categoria ? (
+              <span className="rd-et">{riconoscimento.categoria}</span>
+            ) : null}
+          </div>
         </div>
 
         <dl className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -1082,6 +1133,12 @@ export default function ScanRisultato({
             valore={riconoscimento.schemaProposto}
           />
           <Campo etichetta="Categoria" valore={riconoscimento.categoria} />
+          {codiceBio ? (
+            <Campo etichetta="Organismo di controllo BIO" valore={codiceBio} />
+          ) : null}
+          {origineBio ? (
+            <Campo etichetta="Origine materie prime BIO" valore={origineBio} />
+          ) : null}
         </dl>
 
         <p className="mt-2 text-[11px] leading-5 text-[#8a8378]">

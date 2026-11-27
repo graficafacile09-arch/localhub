@@ -11,6 +11,10 @@ type VoceNav = {
   href: string;
   icona: ComponentType<{ className?: string; "aria-hidden"?: boolean; strokeWidth?: number }>;
   badge: string | null;
+  /** Testo alternativo mostrato da md in su (badge compatte su mobile). */
+  badgeLungo?: string | null;
+  /** Colore di sfondo/spaziature del badge (il resto è comune). */
+  badgeClass?: string | null;
   micro: string | null;
   attiva: boolean;
 };
@@ -23,7 +27,10 @@ type VoceNav = {
  * - fondo crema con bordo oro sottile per le voci inattive;
  * - pillola verde bosco piena, con testo bianco, per la voce attiva;
  * - pillole alte e generose, icona a sinistra e testo a destra;
- * - badge rosso "FOCUS" appoggiato sopra la pillola di Filiere;
+ * - badge centrata SOPRA la pillola, staccata dal bordo (\"-top-3.5\" su
+ *   mobile, \"-top-5\" da md in su) così da non toccare mai la linea del tasto:
+ *   "FOCUS" verde bosco su Filiere e "AI SCAN · DOP · IGP · IGT · BIO" rosso
+ *   su RadiciScan (su mobile resta la sola scritta "AI SCAN");
  * - la voce Radiscan porta il marchio allegato (riquadro con i prodotti) e il
  *   logotipo al posto dell'icona lucide e della vecchia etichetta TerraQ, con
  *   la stessa pillola, la stessa luce e gli stessi ingombri delle altre voci;
@@ -45,6 +52,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
       href: "/filiere",
       icona: Sprout,
       badge: "FOCUS",
+      badgeClass: "bg-[#1E3F2B] md:px-2",
       micro: null,
       attiva: pathname === "/filiere" || pathname.startsWith("/filiere/"),
     },
@@ -52,7 +60,9 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
       label: "RadiciScan",
       href: "/prodotti",
       icona: MarchioRadiscan,
-      badge: null,
+      badge: "AI SCAN",
+      badgeLungo: "AI SCAN · DOP · IGP · IGT · BIO",
+      badgeClass: "bg-[#C83E3B] md:px-2.5",
       micro: null,
       attiva: pathname === "/prodotti" || pathname.startsWith("/prodotti/"),
     },
@@ -123,9 +133,12 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
             {voce.badge && (
               <span
                 aria-hidden
-                className="absolute -top-[13px] left-1/2 z-10 inline-flex -translate-x-1/2 items-center rounded-full bg-red-600 px-1.5 py-[1px] text-[8px] font-black uppercase leading-[9px] tracking-[0.1em] text-white shadow-sm ring-1 ring-white"
+                className={`absolute -top-3.5 left-1/2 z-10 inline-flex -translate-x-1/2 items-center justify-center whitespace-nowrap rounded-full px-1.5 py-[2px] text-[8px] font-black uppercase leading-none tracking-[0.1em] text-white shadow-sm md:-top-5 md:text-[10px] ${
+                  voce.badgeClass ?? "bg-[#C83E3B]"
+                }`}
               >
-                {voce.badge}
+                <span className={voce.badgeLungo ? "md:hidden" : undefined}>{voce.badge}</span>
+                {voce.badgeLungo && <span className="hidden md:inline">{voce.badgeLungo}</span>}
               </span>
             )}
           </Link>

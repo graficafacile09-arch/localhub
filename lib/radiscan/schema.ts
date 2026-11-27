@@ -195,6 +195,46 @@ function schemaQualita(
   return normalizzato as RiconoscimentoAi["schemaProposto"];
 }
 
+/**
+ * Codice dell'organismo di controllo biologico: due lettere, `BIO`, tre cifre
+ * (es. `IT-BIO-006`). Separatori spuri vengono normalizzati; un codice con
+ * parti mancanti non viene mai completato e finisce negli avvisi.
+ */
+function codiceOrganismo(valore: unknown, avvisi: string[]): string | null {
+  const testo = testoNormalizzato(valore, 40);
+  if (!testo) return null;
+  const trovato = /\b([A-Z]{2})\s*[-–—.\/]?\s*BIO\s*[-–—.\/]?\s*(\d{3})\b/i.exec(testo);
+  if (!trovato) {
+    avvisi.push("codice_organismo: formato non riconosciuto, valore ignorato");
+    return null;
+  }
+  return `${trovato[1].toUpperCase()}-BIO-${trovato[2]}`;
+}
+
+/**
+ * Origine delle materie prime biologiche: le diciture ammesse dal regolamento
+ * UE vengono ricondotte alla forma canonica, un'altra dicitura resta com'è.
+ */
+function origineMateriePrime(valore: unknown, avvisi: string[]): string | null {
+  const testo = testoNormalizzato(valore, 60);
+  if (!testo) return null;
+
+  const minuscola = testo.toLowerCase().replace(/\s+/g, " ");
+  const nonUe = /non\s*(?:ue|eu|comunit\w*)/.test(minuscola);
+  const ue = /(?:^|[^a-z])(?:ue|eu)(?:[^a-z]|$)|union\w*\s+europea/.test(minuscola);
+  const italia = /\bitalia\b|\bitalian[oa]\b/.test(minuscola);
+
+  if (nonUe && ue) return "Agricoltura UE / non UE";
+  if (nonUe) return "Agricoltura non UE";
+  if (italia) return "Agricoltura Italia";
+  if (ue) return "Agricoltura UE";
+
+  // Dicitura diversa (per esempio in un'altra lingua): si conserva il testo
+  // letto invece di forzarlo in una categoria non dichiarata.
+  avvisi.push("origine_materie_prime: dicitura mantenuta come letta");
+  return testo;
+}
+
 /** Confidenza: accetta 85, "85", "85%". Fuori scala viene riportata a 0-100. */
 function confidenza(valore: unknown, avvisi: string[]): number {
   let numero: number;
@@ -324,6 +364,14 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
         })(),
         ingredienti: elencoTesti(leggi("ingredienti"), avvisi, "ingredienti"),
         certificazioni: elencoTesti(leggi("certificazioni"), avvisi, "certificazioni"),
+        codiceOrganismo: codiceOrganismo(
+          leggi("codice_organismo", "codice_organismo_controllo", "codice_ente"),
+          avvisi
+        ),
+        origineMateriePrime: origineMateriePrime(
+          leggi("origine_materie_prime", "origine_materie", "origine_biologica"),
+          avvisi
+        ),
       },
       avvisi,
     },

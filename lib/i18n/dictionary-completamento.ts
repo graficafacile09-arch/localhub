@@ -1459,7 +1459,7 @@ export const DIZIONARIO_COMPLETAMENTO: Record<string, string> = {
   "Cerca prodotti nelle categorie regalo; strumento interno al fan-out.": "Search products in gift categories; internal fan-out tool.",
   "Posso aiutarti a trovare negozi, servizi e attività locali. Dimmi cosa cerchi!": "I can help you find shops, services and local businesses. Tell me what you're looking for!",
   "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.": "Search across shops, products, deals, events, news, content and categories.",
-  "Sono il tuo assistente allo shopping su Radici Calabria. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.": "I'm your shopping assistant on Radici Calabria. I can help you find shops, products and services in your city.",
+  "Sono Pino, l'assistente di Radici Calabria. Posso aiutarti a orientarti tra le filiere, il territorio e le funzioni del sito.": "I'm Pino, the assistant of Radici Calabria. I can help you find your way around the supply chains, the territory and the site's features.",
   "La guida di Radici Calabria invita a scoprire le tradizioni gastronomiche di Castrovillari e del Pollino, compresa la Cipolla Bianca. La vetrina Eccellenze Calabresi mostra i prodotti effettivamente pubblicati dai negozi.": "The Radici Calabria guide invites you to discover the food traditions of Castrovillari and the Pollino, including the White Onion. The Calabrian Excellence showcase displays the products actually published by shops.",
 
   // ── Amministrazione: etichette e azioni ───────────────────────────────

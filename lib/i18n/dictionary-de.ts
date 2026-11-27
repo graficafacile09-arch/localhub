@@ -2016,7 +2016,7 @@ export const DIZIONARIO_DE: Record<string, string> = {
   "Cerca prodotti nelle categorie regalo; strumento interno al fan-out.": "Suchen Sie nach Produkten in den Geschenkkategorien. Instrument innerhalb des Fan-Outs.",
   "Posso aiutarti a trovare negozi, servizi e attività locali. Dimmi cosa cerchi!": "Ich kann Ihnen helfen, lokale Geschäfte, Dienstleistungen und Unternehmen zu finden. Sagen Sie mir, wonach Sie suchen!",
   "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.": "Durchsuchen Sie Shops, Produkte, Angebote, Veranstaltungen, Neuigkeiten, Inhalte und Kategorien.",
-  "Sono il tuo assistente allo shopping su Radici Calabria. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.": "Ich bin Ihr Einkaufsassistent auf Radici Calabria. Ich kann Ihnen helfen, Geschäfte, Produkte und Dienstleistungen in Ihrer Stadt zu finden.",
+  "Sono Pino, l'assistente di Radici Calabria. Posso aiutarti a orientarti tra le filiere, il territorio e le funzioni del sito.": "Ich bin Pino, der Assistent von Radici Calabria. Ich helfe Ihnen, mich auf der Seite zurechtzufinden: Lieferketten, Gebiet und Funktionen.",
   "La guida di Radici Calabria invita a scoprire le tradizioni gastronomiche di Castrovillari e del Pollino, compresa la Cipolla Bianca. La vetrina Eccellenze Calabresi mostra i prodotti effettivamente pubblicati dai negozi.": "Der Reiseführer Radici Calabria lädt Sie ein, die gastronomischen Traditionen von Castrovillari und Pollino zu entdecken, einschließlich der weißen Zwiebel. Die Vitrine von Eccellenze Calabresi zeigt die von den Geschäften tatsächlich veröffentlichten Produkte.",
   "Al": "Al",
   "Dal": "Von",
