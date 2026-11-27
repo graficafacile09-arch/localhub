@@ -15,6 +15,12 @@ import {
 } from "./routing-policy";
 import { ATTIVITA_CATALOGO_PINO, soggettoAlimentarePino } from "./lexicon";
 import {
+  richiestaAbbinamentoVinoPino,
+  rispostaAbbinamentoVinoPino,
+  terminiRicercaViniPino,
+  vinoCalabreseCatalogoPino,
+} from "./abbinamenti-vino";
+import {
   messaggioBisognoSenzaLocaliPino,
   messaggioBisognoVuotoPino,
   messaggioCondizioneAlimentarePino,
@@ -3873,6 +3879,52 @@ export async function chatConAssistente(
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente" });
+  }
+
+  // Sommelier della filiera calabrese: l'abbinamento cibo-vino ha una risposta
+  // dedicata e deterministica. Senza questo ramo la domanda finiva nel percorso
+  // conoscenza dei prodotti tipici, che cita la scheda ma non propone mai un
+  // vino, oppure in un vuoto di catalogo.
+  if (richiestaAbbinamentoVinoPino(domanda)) {
+    // Un vitigno alla volta: la ricerca con più termini in AND non trova le
+    // etichette (es. «magliocco gaglioppo cirò»). I risultati si uniscono.
+    let etichetteCatalogo: Awaited<ReturnType<typeof searchProducts>> = [];
+    for (const termine of terminiRicercaViniPino(domanda).slice(0, 4)) {
+      try {
+        const trovate = await searchProducts(termine, { limit: 3 });
+        for (const prodotto of trovate) {
+          const giaPresente = etichetteCatalogo.some(
+            (altro) =>
+              altro.id === prodotto.id ||
+              (prodotto.slug != null && altro.slug === prodotto.slug)
+          );
+          if (!giaPresente && vinoCalabreseCatalogoPino(prodotto.nome)) {
+            etichetteCatalogo.push(prodotto);
+          }
+        }
+      } catch (errore) {
+        // Il catalogo non è indispensabile: piatto e vitigni restano validi.
+        console.warn("[pino-sommelier] etichette non disponibili:", errore);
+      }
+    }
+    const rispostaVino = rispostaAbbinamentoVinoPino(
+      domanda,
+      etichetteCatalogo.map((prodotto) => ({
+        nome: prodotto.nome,
+        slug: prodotto.slug ?? null,
+        prezzo: prodotto.prezzo,
+        negozio: prodotto.negozio_nome,
+      })),
+      linguaConversazione === "en" ? "en" : "it"
+    );
+    return esci("abbinamento_vino", {
+      risposta: rispostaVino ?? "",
+      negozi: [],
+      prodotti: etichetteCatalogo,
+      risultatiTrovati: etichetteCatalogo.length,
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { invocazioni: ["searchProducts"], limiti: null, origine: "assente" });
   }
 
   // Risposta diretta e cordiale ai saluti semplici, senza passare dal planner.
