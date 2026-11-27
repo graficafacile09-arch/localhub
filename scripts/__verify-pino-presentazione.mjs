@@ -108,6 +108,35 @@ async function metricheBarra(page) {
         return [d2[0], d2[1], d2[2]];
       };
 
+      // La sagoma visibile (alpha >= 40) deve stare tutta dentro il cerchio
+      // bianco: misuriamo il raggio massimo dei pixel opachi rispetto al centro
+      // del bottone, in px resi, non il semplice riquadro dell'immagine (i cui
+      // angoli sono trasparenti e possono uscire dal cerchio senza tagliare
+      // nulla).
+      let sagoma = null;
+      if (img && rImg && rSprite && img.complete && img.naturalWidth > 0) {
+        const off = document.createElement("canvas");
+        off.width = img.naturalWidth;
+        off.height = img.naturalHeight;
+        const octx = off.getContext("2d", { willReadFrequently: true });
+        octx.drawImage(img, 0, 0);
+        const dati = octx.getImageData(0, 0, off.width, off.height).data;
+        const scala = rImg.height / img.naturalHeight;
+        const cX = rSprite.left + rSprite.width / 2;
+        const cY = rSprite.top + rSprite.height / 2;
+        let raggioMax = 0;
+        for (let y = 0; y < off.height; y++) {
+          for (let x = 0; x < off.width; x++) {
+            if (dati[(y * off.width + x) * 4 + 3] < 40) continue;
+            const dx = rImg.left + x * scala - cX;
+            const dy = rImg.top + y * scala - cY;
+            const r2 = Math.hypot(dx, dy);
+            if (r2 > raggioMax) raggioMax = r2;
+          }
+        }
+        sagoma = { raggioMax, raggioCerchio: rSprite.width / 2 };
+      }
+
       let contrasto = null;
       if (p) {
         const colore = rgb(getComputedStyle(p).color);
@@ -139,7 +168,16 @@ async function metricheBarra(page) {
           ? {
               width: rSprite.width,
               height: rSprite.height,
+              top: rSprite.top,
+              bottom: rSprite.bottom,
               label: sprite.getAttribute("aria-label"),
+              cerchio: {
+                raggio: getComputedStyle(sprite).borderRadius,
+                sfondo: getComputedStyle(sprite).backgroundColor,
+                bordo: getComputedStyle(sprite).borderTopWidth,
+                ombra: getComputedStyle(sprite).boxShadow,
+              },
+              sagoma,
               img: img
                 ? {
                     src: new URL(img.currentSrc || img.src, location.href).pathname,
@@ -410,9 +448,30 @@ try {
   check("bottone del personaggio presente", !!m.sprite, m.sprite?.label ?? "n/d");
   if (m.sprite) {
     check(
-      "personaggio in un riquadro 64x95",
-      Math.abs(m.sprite.width - 64) <= 1 && Math.abs(m.sprite.height - 95) <= 1,
+      "personaggio in un riquadro 80x80",
+      Math.abs(m.sprite.width - 80) <= 1 && Math.abs(m.sprite.height - 80) <= 1,
       `${Math.round(m.sprite.width)}x${Math.round(m.sprite.height)}`
+    );
+    check(
+      "sfondo circolare bianco con bordo sottile e ombra morbida",
+      m.sprite.cerchio.sfondo === "rgb(255, 255, 255)" &&
+        parseFloat(m.sprite.cerchio.bordo) > 0 &&
+        parseFloat(m.sprite.cerchio.bordo) <= 1.5 &&
+        m.sprite.cerchio.ombra !== "none" &&
+        (m.sprite.cerchio.raggio.includes("50%") || parseFloat(m.sprite.cerchio.raggio) >= 39),
+      `${m.sprite.cerchio.sfondo} / bordo ${m.sprite.cerchio.bordo} / radius ${m.sprite.cerchio.raggio} / ombra ${m.sprite.cerchio.ombra !== "none"}`
+    );
+    check(
+      "tutto Pino dentro il cerchio, chioma e piedi compresi",
+      !!m.sprite.sagoma && m.sprite.sagoma.raggioMax <= m.sprite.sagoma.raggioCerchio - 1,
+      m.sprite.sagoma
+        ? `sagoma ${m.sprite.sagoma.raggioMax.toFixed(1)}px su raggio ${m.sprite.sagoma.raggioCerchio}px`
+        : "n/d"
+    );
+    check(
+      "il cerchio sporge sopra la fascia senza esserne tagliato",
+      m.sprite.top < m.rect.top - 10 && m.sprite.bottom <= m.rect.bottom + 1,
+      `dal bordo fascia ${Math.round(m.rect.top - m.sprite.top)}px sopra, ${Math.round(m.rect.bottom - m.sprite.bottom)}px dal fondo`
     );
   }
   check("CTA presente", !!m.cta);
@@ -465,9 +524,9 @@ try {
     asset?.src ?? "n/d"
   );
   if (asset) {
-    // Nella fascia l'immagine è ritagliata (object-cover) sulla testa: la resa
-    // del riquadro non è più la proporzione del personaggio. Il controllo sulla
-    // deformazione va quindi fatto sul file naturale, che non deve cambiare.
+    // Nella fascia l'immagine è resa dentro il cerchio bianco con object-contain:
+    // la resa del riquadro non è la proporzione del personaggio. Il controllo
+    // sulla deformazione va quindi fatto sul file naturale, che non deve cambiare.
     const proporzioni = asset.natural[0] / asset.natural[1];
     check(
       "proporzioni corrette: nessuna deformazione del file",
@@ -671,7 +730,18 @@ try {
       mm.contrasto !== null && mm.contrasto >= 7,
       `${mm.contrasto ? mm.contrasto.toFixed(2) : "n/d"}:1`
     );
-    check("mobile: personaggio presente (64x95)", !!mm.sprite, mm.sprite ? `${Math.round(mm.sprite.width)}x${Math.round(mm.sprite.height)}` : "n/d");
+    check(
+      "mobile: personaggio presente (cerchio 80x80)",
+      !!mm.sprite && Math.abs(mm.sprite.width - 80) <= 1 && Math.abs(mm.sprite.height - 80) <= 1,
+      mm.sprite ? `${Math.round(mm.sprite.width)}x${Math.round(mm.sprite.height)}` : "n/d"
+    );
+    check(
+      "mobile: tutto Pino dentro il cerchio, chioma e piedi compresi",
+      !!mm.sprite?.sagoma && mm.sprite.sagoma.raggioMax <= mm.sprite.sagoma.raggioCerchio - 1,
+      mm.sprite?.sagoma
+        ? `sagoma ${mm.sprite.sagoma.raggioMax.toFixed(1)}px su raggio ${mm.sprite.sagoma.raggioCerchio}px`
+        : "n/d"
+    );
     check(
       "mobile: CTA presente, dentro la fascia e cliccabile",
       !!mm.cta && mm.cta.dentroLaBarra && mm.cta.height >= 28,
