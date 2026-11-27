@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Sparkles, X } from "lucide-react";
 import PinoSprite from "@/components/assistant/PinoSprite";
 
 /** Vino o bevanda (liquore, amaro): in questi casi si chiede il piatto da abbinare. */
@@ -118,8 +119,19 @@ export default function PinoProductFloat({
       aria-label="Chiedi a Pino"
     >
       <PinoSprite mood="happy" className="h-[94px] w-auto max-w-none shrink-0 drop-shadow-md" />
-      <div className="relative max-w-[200px] rounded-2xl border border-[#24462f]/20 bg-white px-3 py-2 text-sm font-medium leading-snug text-[#24462f] shadow-lg before:absolute before:-left-[7px] before:bottom-3 before:h-3 before:w-3 before:rotate-45 before:border-b before:border-l before:border-[#24462f]/20 before:bg-white">
-        Chiedi a Pino: ricette e abbinamenti
+      <div className="group relative max-w-[200px] rounded-2xl border border-stone-200/70 bg-white/92 px-3.5 py-2.5 pr-7 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-md transition-all duration-200 hover:border-emerald-300/80 hover:shadow-[0_10px_34px_rgb(16,185,129,0.12)]">
+        <div className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800/80">
+            Chiedi a Pino
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          <span className="text-[13px] font-medium leading-snug text-stone-800">
+            Ricette e abbinamenti
+          </span>
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
+        </div>
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
@@ -128,9 +140,9 @@ export default function PinoProductFloat({
             setChiuso(true);
           }}
           aria-label="Chiudi Pino"
-          className="absolute -right-2 -top-2 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#24462f] text-xs leading-none text-white shadow"
+          className="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-stone-400 transition hover:bg-stone-100/80 hover:text-stone-700"
         >
-          ×
+          <X className="h-3 w-3" aria-hidden />
         </button>
       </div>
     </div>
