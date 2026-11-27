@@ -21,6 +21,13 @@ import {
   vinoCalabreseCatalogoPino,
 } from "./abbinamenti-vino";
 import {
+  consiglioChefRapidoPino,
+  richiestaCucinaPino,
+  rispostaChefSommelierPino,
+  terminiRicercaProdottoCucinaPino,
+  terminiRicercaVinoCucinaPino,
+} from "./chef-sommelier";
+import {
   messaggioBisognoSenzaLocaliPino,
   messaggioBisognoVuotoPino,
   messaggioCondizioneAlimentarePino,
@@ -3644,6 +3651,36 @@ export type OpzioniChatPino = {
   contestoDatabase?: string | null;
 };
 
+/**
+ * Etichette di vino calabrese trovate nel catalogo: un vitigno alla volta,
+ * perché la ricerca con più termini in AND non trova le etichette (es.
+ * «magliocco gaglioppo cirò»). I risultati si uniscono e si deduplicano.
+ */
+async function cercaEtichetteVinoPino(
+  termini: readonly string[]
+): Promise<Awaited<ReturnType<typeof searchProducts>>> {
+  const etichette: Awaited<ReturnType<typeof searchProducts>> = [];
+  for (const termine of termini.slice(0, 4)) {
+    try {
+      const trovate = await searchProducts(termine, { limit: 3 });
+      for (const prodotto of trovate) {
+        const giaPresente = etichette.some(
+          (altro) =>
+            altro.id === prodotto.id ||
+            (prodotto.slug != null && altro.slug === prodotto.slug)
+        );
+        if (!giaPresente && vinoCalabreseCatalogoPino(prodotto.nome)) {
+          etichette.push(prodotto);
+        }
+      }
+    } catch (errore) {
+      // Il catalogo non è indispensabile: ricette e vitigni restano validi.
+      console.warn("[pino-sommelier] etichette non disponibili:", errore);
+    }
+  }
+  return etichette;
+}
+
 export async function chatConAssistente(
   messages: MessaggioAssistente[],
   opzioni?: OpzioniChatPino
@@ -3881,33 +3918,70 @@ export async function chatConAssistente(
     }, { limiti: null, origine: "assente" });
   }
 
+  // Chef e sommelier della cucina calabrese: le domande su ricette e cottura
+  // dei prodotti tipici non sono ricerche di catalogo. Prima di questo ramo
+  // finivano in un vuoto di catalogo («non ho trovato») e Pino diventava
+  // TRISTE. La risposta è deterministica: ricette, consiglio di cottura, vino
+  // calabrese e schede reali del catalogo.
+  if (richiestaCucinaPino(domanda)) {
+    let prodottiCucina: Awaited<ReturnType<typeof searchProducts>> = [];
+    for (const termine of terminiRicercaProdottoCucinaPino(domanda).slice(0, 2)) {
+      try {
+        const trovate = await searchProducts(termine, { limit: 4 });
+        for (const prodotto of trovate) {
+          const giaPresente = prodottiCucina.some(
+            (altro) =>
+              altro.id === prodotto.id ||
+              (prodotto.slug != null && altro.slug === prodotto.slug)
+          );
+          if (!giaPresente) prodottiCucina.push(prodotto);
+        }
+      } catch (errore) {
+        // Il catalogo non è indispensabile: ricette e vino restano validi.
+        console.warn("[pino-chef] schede prodotto non disponibili:", errore);
+      }
+    }
+
+    const etichetteCucina = await cercaEtichetteVinoPino(
+      terminiRicercaVinoCucinaPino(domanda)
+    );
+    const rispostaChef = rispostaChefSommelierPino(
+      domanda,
+      prodottiCucina.map((prodotto) => ({
+        nome: prodotto.nome,
+        slug: prodotto.slug ?? null,
+        prezzo: prodotto.prezzo,
+        negozio: prodotto.negozio_nome,
+      })),
+      etichetteCucina.map((prodotto) => ({
+        nome: prodotto.nome,
+        slug: prodotto.slug ?? null,
+        prezzo: prodotto.prezzo,
+        negozio: prodotto.negozio_nome,
+      })),
+      linguaConversazione === "en" ? "en" : "it"
+    );
+    return esci("chef_sommelier", {
+      risposta: rispostaChef ?? "",
+      negozi: [],
+      prodotti: prodottiCucina,
+      risultatiTrovati: Math.max(prodottiCucina.length, etichetteCucina.length),
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { invocazioni: ["searchProducts"], limiti: null, origine: "assente" });
+  }
+
   // Sommelier della filiera calabrese: l'abbinamento cibo-vino ha una risposta
   // dedicata e deterministica. Senza questo ramo la domanda finiva nel percorso
   // conoscenza dei prodotti tipici, che cita la scheda ma non propone mai un
   // vino, oppure in un vuoto di catalogo.
   if (richiestaAbbinamentoVinoPino(domanda)) {
-    // Un vitigno alla volta: la ricerca con più termini in AND non trova le
-    // etichette (es. «magliocco gaglioppo cirò»). I risultati si uniscono.
-    let etichetteCatalogo: Awaited<ReturnType<typeof searchProducts>> = [];
-    for (const termine of terminiRicercaViniPino(domanda).slice(0, 4)) {
-      try {
-        const trovate = await searchProducts(termine, { limit: 3 });
-        for (const prodotto of trovate) {
-          const giaPresente = etichetteCatalogo.some(
-            (altro) =>
-              altro.id === prodotto.id ||
-              (prodotto.slug != null && altro.slug === prodotto.slug)
-          );
-          if (!giaPresente && vinoCalabreseCatalogoPino(prodotto.nome)) {
-            etichetteCatalogo.push(prodotto);
-          }
-        }
-      } catch (errore) {
-        // Il catalogo non è indispensabile: piatto e vitigni restano validi.
-        console.warn("[pino-sommelier] etichette non disponibili:", errore);
-      }
-    }
-    const rispostaVino = rispostaAbbinamentoVinoPino(
+    const etichetteCatalogo = await cercaEtichetteVinoPino(
+      terminiRicercaViniPino(domanda)
+    );
+    // Anche a chi chiede solo il vino Pino lascia un consiglio rapido da chef su
+    // come valorizzare il piatto.
+    const rispostaVinoBase = rispostaAbbinamentoVinoPino(
       domanda,
       etichetteCatalogo.map((prodotto) => ({
         nome: prodotto.nome,
@@ -3917,6 +3991,12 @@ export async function chatConAssistente(
       })),
       linguaConversazione === "en" ? "en" : "it"
     );
+    const consiglioChef = rispostaVinoBase
+      ? consiglioChefRapidoPino(domanda)
+      : null;
+    const rispostaVino = consiglioChef
+      ? `${rispostaVinoBase}\n\n${consiglioChef}`
+      : rispostaVinoBase;
     return esci("abbinamento_vino", {
       risposta: rispostaVino ?? "",
       negozi: [],
