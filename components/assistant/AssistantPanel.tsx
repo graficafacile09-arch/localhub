@@ -11,7 +11,12 @@ import {
   isPinoSezioneNascosta,
   isPinoTransactionalRoute,
 } from "./pino-route";
-import { chiediAPino, sessionIdPino } from "./pino-fetch";
+import {
+  chiediAPino,
+  contaRisultatiPino,
+  moodDaRispostaPino,
+  sessionIdPino,
+} from "./pino-fetch";
 
 const SUGGESTIONS = [
   "Esplora le filiere calabresi",
@@ -133,18 +138,20 @@ export default function AssistantPanel() {
 
       let content = data.risposta?.trim() ?? "";
 
+      // Risultati su tutti gli elenchi del payload (negozi, prodotti, offerte,
+      // eventi, notizie, contenuti, ...) più il conteggio dichiarato dal server:
+      // un solo array vuoto non basta per dire «non ho trovato niente».
+      const trovati = contaRisultatiPino(data);
+
       if (!content && data.negozi.length > 0) {
         content = `Ho trovato **${data.negozi.length} ${data.negozi.length === 1 ? "negozio" : "negozi"}** pertinenti alla tua ricerca.`;
       }
 
-      if (!content && data.negozi.length === 0 && data.prodotti.length === 0) {
+      if (!content && trovati === 0) {
         content =
           "Non ho trovato risultati corrispondenti alla tua ricerca. Prova con termini diversi.";
       }
 
-      // Ricerca = intento diverso da "generic" (saluti e domande generiche restano neutri).
-      const trovati = data.negozi.length + data.prodotti.length;
-      const eraRicerca = data.intent !== undefined && data.intent !== "generic";
       const assistantMsg: ChatMessage = {
         id: nextId(),
         role: "assistant",
@@ -154,8 +161,8 @@ export default function AssistantPanel() {
         processingMs: data.processingMs,
         source: (data.source as ChatMessage["source"]) ?? "assistente",
         lingua: data.lingua,
-        // Ricerca con risultati → allegro; ricerca senza risultati → triste.
-        mood: !eraRicerca ? "neutral" : trovati > 0 ? "happy" : "sad",
+        // Allegro con almeno un risultato, triste solo per una ricerca a vuoto.
+        mood: moodDaRispostaPino(data),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

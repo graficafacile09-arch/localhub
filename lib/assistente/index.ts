@@ -240,6 +240,21 @@ export interface RispostaAssistente {
   filiere?: ReturnType<typeof searchFiliere>;
   processingMs: number;
   source: "assistente";
+  /**
+   * Quanti risultati ha trovato il turno su *tutte* le fonti (negozi,
+   * prodotti, offerte, eventi, notizie, contenuti...). Serve alla chat quando i
+   * risultati non stanno in un elenco del payload ma solo nel testo: senza
+   * questo numero lo stato d'animo di Pino non saprebbe distinguere una
+   * risposta piena da una ricerca a vuoto.
+   */
+  risultatiTrovati?: number;
+  /**
+   * Il turno ha invocato almeno uno strumento, cioè ha cercato davvero. Serve
+   * alla chat per distinguere una ricerca a vuoto (triste) da un saluto, una
+   * cortesia o una risposta diretta (neutro): l'intento da solo non basta,
+   * perché il classificatore ripiega su "product" anche su «ciao».
+   */
+  ricercaEseguita?: boolean;
   /** Intento riconosciuto da Pino Intent Layer v1 (osservabilità/test). */
   intent?: PinoIntent;
   /** Follow-up conversazionale applicato (Pino Conversazionale v1). */
@@ -3672,8 +3687,13 @@ export async function chatConAssistente(
     const conMetadati = risposta as T & {
       motivoUscita?: string;
       intent?: PinoIntent;
+      ricercaEseguita?: boolean;
     };
     conMetadati.motivoUscita = dati.motivoTelemetria ?? motivo;
+    // Un turno che ha invocato strumenti ha cercato; uno che non ne ha
+    // invocati (saluto, preferenza di lingua, risposta diretta) no. Il dato
+    // nasce dalle invocazioni reali, non dalla frase del modello.
+    conMetadati.ricercaEseguita = (dati.invocazioni?.length ?? 0) > 0;
     console.info("[probe-uscita]", "motivo=" + motivo, "ms=" + (Date.now() - inizio));
     if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
@@ -4129,6 +4149,8 @@ export async function chatConAssistente(
       }),
       negozi: [],
       prodotti: [],
+      // Il conteggio reale: la risposta è un numero, non un elenco.
+      risultatiTrovati: conteggio.totale,
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente", invocazioni: ["searchStores"] });
@@ -4954,6 +4976,9 @@ export async function chatConAssistente(
       ),
       negozi: [],
       prodotti: [],
+      // Le farmacie trovate restano nel testo: il conteggio dice alla chat che
+      // la risposta non è una ricerca a vuoto.
+      risultatiTrovati: farmacie.length,
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
@@ -5509,6 +5534,8 @@ export async function chatConAssistente(
     prodotti,
     notizie: notizie.slice(0, 6),
     contenuti: contenuti.slice(0, 6),
+    // Conteggio su tutte le fonti: offerte ed eventi li cita solo il testo.
+    risultatiTrovati: totaleRisultati,
     processingMs: Date.now() - inizio,
     source: "assistente",
     intent: analisi.intent,

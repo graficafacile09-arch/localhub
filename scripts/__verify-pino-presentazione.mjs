@@ -654,9 +654,12 @@ try {
     `${statoChat?.src ?? "n/d"} — "${statoChat?.testo ?? "n/d"}" (input ${await statoInput()})`
   );
 
-  // Ricerca senza alcun risultato (termine inesistente): lo stato deve essere
-  // TRISTE, deciso dal conteggio reale e non dalla frase del modello.
-  await invia("zxqvwkjhpt catalogo inesistente");
+  // Ricerca senza alcun risultato: lo stato deve essere TRISTE, deciso dal
+  // conteggio reale e non dalla frase del modello. La query deve far partire
+  // una ricerca vera: una frase incomprensibile senza sostantivo ("zxqvwkjhpt
+  // catalogo inesistente") finisce nella risposta diretta, che ora è NEUTRA.
+  // Il token senza senso resta, quindi il risultato è vuoto su ogni catalogo.
+  await invia("prodotti zxqvwkjhpt");
   const statoTriste = await leggiStatoChat();
   check(
     "chat senza risultati: Pino TRISTE",
