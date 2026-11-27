@@ -211,12 +211,10 @@ export default function AssistantPanel() {
   // sessionId e cronologia sopravvivono e sono ancora lì al ritorno sulla homepage.
   // Pino non si apre nelle aree personali; sulle pagine pubbliche resta
   // disponibile anche per gli utenti loggati.
-  if (
-    isAdminArea ||
-    isPinoAreaRiservata(pathname) ||
-    isPinoTransactionalRoute(pathname) ||
-    isPinoSezioneNascosta(pathname)
-  )
+  // Il pulsante flottante è nascosto su queste rotte da PinoHomepageHelper; il
+  // pannello resta disponibile quando l'utente lo apre esplicitamente (es. dal
+  // link "Chiedi a Pino" della scheda prodotto). Restano esclusi admin e aree personali.
+  if (isAdminArea || isPinoAreaRiservata(pathname))
     return null;
 
   return (
