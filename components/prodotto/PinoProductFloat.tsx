@@ -112,12 +112,13 @@ export default function PinoProductFloat({
           ? { left: posizione.x, top: posizione.y, right: "auto", bottom: "auto" }
           : {}),
       }}
-      className={`fixed z-40 flex cursor-grab select-none items-end gap-2 active:cursor-grabbing ${
-        posizione ? "" : "bottom-24 right-4 sm:bottom-8 sm:right-6"
+      className={`fixed z-40 flex cursor-grab select-none flex-row items-end gap-2 active:cursor-grabbing ${
+        posizione ? "" : "bottom-24 left-4 sm:bottom-8 sm:left-6"
       }`}
       aria-label="Chiedi a Pino"
     >
-      <div className="relative max-w-[200px] rounded-2xl border border-[#24462f]/20 bg-white px-3 py-2 text-sm font-medium leading-snug text-[#24462f] shadow-lg">
+      <PinoSprite mood="happy" className="h-[94px] w-auto max-w-none shrink-0 drop-shadow-md" />
+      <div className="relative max-w-[200px] rounded-2xl border border-[#24462f]/20 bg-white px-3 py-2 text-sm font-medium leading-snug text-[#24462f] shadow-lg before:absolute before:-left-[7px] before:bottom-3 before:h-3 before:w-3 before:rotate-45 before:border-b before:border-l before:border-[#24462f]/20 before:bg-white">
         Chiedi a Pino: ricette e abbinamenti
         <button
           type="button"
@@ -132,7 +133,6 @@ export default function PinoProductFloat({
           ×
         </button>
       </div>
-      <PinoSprite mood="happy" className="h-[72px] w-auto max-w-none shrink-0 drop-shadow-md" />
     </div>
   );
 }
