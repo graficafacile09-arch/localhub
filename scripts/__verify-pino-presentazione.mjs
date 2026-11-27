@@ -410,8 +410,8 @@ try {
   check("bottone del personaggio presente", !!m.sprite, m.sprite?.label ?? "n/d");
   if (m.sprite) {
     check(
-      "personaggio in un riquadro 48x48",
-      Math.abs(m.sprite.width - 48) <= 1 && Math.abs(m.sprite.height - 48) <= 1,
+      "personaggio in un riquadro 64x95",
+      Math.abs(m.sprite.width - 64) <= 1 && Math.abs(m.sprite.height - 95) <= 1,
       `${Math.round(m.sprite.width)}x${Math.round(m.sprite.height)}`
     );
   }
@@ -671,7 +671,7 @@ try {
       mm.contrasto !== null && mm.contrasto >= 7,
       `${mm.contrasto ? mm.contrasto.toFixed(2) : "n/d"}:1`
     );
-    check("mobile: personaggio presente (48x48)", !!mm.sprite, mm.sprite ? `${Math.round(mm.sprite.width)}x${Math.round(mm.sprite.height)}` : "n/d");
+    check("mobile: personaggio presente (64x95)", !!mm.sprite, mm.sprite ? `${Math.round(mm.sprite.width)}x${Math.round(mm.sprite.height)}` : "n/d");
     check(
       "mobile: CTA presente, dentro la fascia e cliccabile",
       !!mm.cta && mm.cta.dentroLaBarra && mm.cta.height >= 28,

@@ -8,10 +8,11 @@ import {
   isPinoTransactionalRoute,
 } from "./pino-route";
 
-const PINO_HOME_SRC = "/pino-avatar.webp";
-const PINO_HOME_W = 768;
-const PINO_HOME_H = 768;
-const PINO_CLOSED_SIZE = 48;
+const PINO_HOME_SRC = "/pino-neutro.webp";
+const PINO_HOME_W = 378;
+const PINO_HOME_H = 560;
+const PINO_CLOSED_W = 64;
+const PINO_CLOSED_H = 95;
 const PINO_BAR_HEIGHT = 58;
 const PINO_TRIGGER_SCROLL = 560;
 const PINO_SCROLL_SETTLE_MS = 180;
@@ -118,23 +119,23 @@ export default function PinoHomepageHelper() {
     <div
       aria-label="Pino, assistente di Radici Calabria"
       data-pino-helper="true"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit lg:rounded-l-2xl"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit lg:rounded-l-2xl"
       aria-hidden="false"
     >
       <div
         className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)] lg:w-auto"
       >
-        <div className="grid w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5 lg:w-auto lg:grid-cols-[48px_auto_auto] lg:gap-3">
+        <div className="grid w-full grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5 lg:w-auto lg:grid-cols-[64px_auto_auto] lg:gap-3">
           <button
             type="button"
             onClick={openAssistant}
             data-testid="pino-richiama"
             aria-label="Apri Pino, assistente di Radici Calabria"
             title="Apri Pino"
-            className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-            style={{ width: PINO_CLOSED_SIZE, height: PINO_CLOSED_SIZE }}
+            className="pointer-events-auto -mt-[37px] flex shrink-0 cursor-pointer items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            style={{ width: PINO_CLOSED_W, height: PINO_CLOSED_H }}
           >
-            <span className="flex h-full w-full items-start justify-center overflow-hidden rounded-full">
+            <span className="flex h-full w-full items-end justify-center">
               <img
                 src={PINO_HOME_SRC}
                 alt=""
@@ -143,7 +144,7 @@ export default function PinoHomepageHelper() {
                 decoding="async"
                 width={PINO_HOME_W}
                 height={PINO_HOME_H}
-                className="block h-full w-full object-cover object-center"
+                className="block h-full w-full object-contain object-bottom"
               />
             </span>
           </button>
