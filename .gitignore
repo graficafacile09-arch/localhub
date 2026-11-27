@@ -63,3 +63,6 @@ _test_*
 # Backup locali (P6 promotion)
 backups/
 _chat_backup_originale/
+
+# Artefatti generati dagli script di verifica browser
+screenshots/
