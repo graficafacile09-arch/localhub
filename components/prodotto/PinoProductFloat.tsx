@@ -1,0 +1,138 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import PinoSprite from "@/components/assistant/PinoSprite";
+
+/** Vino o bevanda (liquore, amaro): in questi casi si chiede il piatto da abbinare. */
+const RE_BEVANDA = /\b(vin[oi]|vitigno|cirò|ciro|gaglioppo|mantonico|greco|aglianico|rosso|bianco|rosato|liquor[ei]|amaro|amari|grappa|distillat|birra|spumante|passito)\b/i;
+
+/** Distanza minima (px) oltre la quale un movimento è trascinamento, non tap. */
+const SOGLIA_TRASCINAMENTO = 6;
+
+/**
+ * Pino a figura intera, fluttuante sulla scheda prodotto. Trascinabile con
+ * mouse o dito; un tap apre Pino con una domanda precompilata (vino o alimento).
+ * Si nasconde con la × e mentre il pannello di Pino è aperto.
+ */
+export default function PinoProductFloat({
+  productName,
+  categoria = "",
+}: {
+  productName: string;
+  categoria?: string;
+}) {
+  const bevanda = RE_BEVANDA.test(`${productName} ${categoria}`);
+  const domanda = bevanda
+    ? `Consigliami un piatto tradizionale calabrese da cucinare e quali prodotti tipici abbinare a «${productName}»`
+    : `Dammi una ricetta tradizionale calabrese con «${productName}» e consigliami il vino calabrese ideale da abbinare`;
+
+  const [chiuso, setChiuso] = useState(false);
+  const [pannelloAperto, setPannelloAperto] = useState(false);
+  const [posizione, setPosizione] = useState<{ x: number; y: number } | null>(null);
+
+  const areaRef = useRef<HTMLDivElement>(null);
+  const trascinamento = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    mosso: boolean;
+  } | null>(null);
+
+  // Il float si nasconde mentre il pannello di Pino è aperto: il pannello ha
+  // data-pino-panel="true" e lo osserviamo nel DOM senza toccare AssistantPanel.
+  useEffect(() => {
+    const aggiorna = () =>
+      setPannelloAperto(!!document.querySelector('[data-pino-panel="true"]'));
+    aggiorna();
+    const osservatore = new MutationObserver(aggiorna);
+    osservatore.observe(document.body, { childList: true, subtree: true });
+    return () => osservatore.disconnect();
+  }, []);
+
+  const limita = useCallback((x: number, y: number) => {
+    const el = areaRef.current;
+    const w = el?.offsetWidth ?? 80;
+    const h = el?.offsetHeight ?? 80;
+    return {
+      x: Math.min(Math.max(0, x), window.innerWidth - w),
+      y: Math.min(Math.max(0, y), window.innerHeight - h),
+    };
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = areaRef.current?.getBoundingClientRect();
+    if (!r) return;
+    trascinamento.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: r.left,
+      origY: r.top,
+      mosso: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const t = trascinamento.current;
+    if (!t || t.id !== e.pointerId) return;
+    const dx = e.clientX - t.startX;
+    const dy = e.clientY - t.startY;
+    if (!t.mosso && Math.hypot(dx, dy) < SOGLIA_TRASCINAMENTO) return;
+    t.mosso = true;
+    setPosizione(limita(t.origX + dx, t.origY + dy));
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const t = trascinamento.current;
+    trascinamento.current = null;
+    if (!t || t.id !== e.pointerId) return;
+    // Solo un tap (senza trascinamento) apre Pino.
+    if (!t.mosso) {
+      window.dispatchEvent(
+        new CustomEvent("assistant:open", { detail: { initialQuery: domanda } })
+      );
+    }
+  };
+
+  if (chiuso || pannelloAperto) return null;
+
+  return (
+    <div
+      ref={areaRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => (trascinamento.current = null)}
+      style={{
+        touchAction: "none",
+        ...(posizione
+          ? { left: posizione.x, top: posizione.y, right: "auto", bottom: "auto" }
+          : {}),
+      }}
+      className={`fixed z-40 flex cursor-grab select-none items-end gap-2 active:cursor-grabbing ${
+        posizione ? "" : "bottom-24 right-4 sm:bottom-8 sm:right-6"
+      }`}
+      aria-label="Chiedi a Pino"
+    >
+      <div className="relative max-w-[200px] rounded-2xl border border-[#24462f]/20 bg-white px-3 py-2 text-sm font-medium leading-snug text-[#24462f] shadow-lg">
+        Chiedi a Pino: ricette e abbinamenti
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setChiuso(true);
+          }}
+          aria-label="Chiudi Pino"
+          className="absolute -right-2 -top-2 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[#24462f] text-xs leading-none text-white shadow"
+        >
+          ×
+        </button>
+      </div>
+      <PinoSprite mood="happy" className="h-[72px] w-auto max-w-none shrink-0 drop-shadow-md" />
+    </div>
+  );
+}

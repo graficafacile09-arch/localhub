@@ -24,7 +24,7 @@ import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloBu
 import AvvisamiDisponibilitaButton from "@/components/prodotto/AvvisamiDisponibilitaButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag, Store } from "lucide-react";
 import ProductAgeGate from "@/components/prodotto/ProductAgeGate";
-import PinoChiediButton from "@/components/prodotto/PinoChiediButton";
+import PinoProductFloat from "@/components/prodotto/PinoProductFloat";
 
 type Params = { slug: string };
 
@@ -312,8 +312,6 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             </p>
           )}
 
-          <PinoChiediButton productName={String(prodotto.nome ?? "questo prodotto")} />
-
           {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (
             <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#e5ded0] pt-3">
@@ -486,6 +484,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           </div>
         )}
       </div>
+
+      <PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />
     </main>
   );
 }
