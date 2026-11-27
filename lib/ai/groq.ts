@@ -21,6 +21,8 @@ export type CallGroqTextParams = {
   timeoutMs?: number;
   /** Istante assoluto (Date.now()) oltre il quale la chiamata non può più partire. */
   deadlineMs?: number;
+  /** Segnale esterno (es. scadenza della route): interrompe la fetch in corso. */
+  signal?: AbortSignal;
 };
 
 export type GroqToolDeclaration = {
@@ -37,6 +39,8 @@ export type GroqFunctionCallingParams = {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  deadlineMs?: number;
+  signal?: AbortSignal;
 };
 
 type GroqMessage = {
@@ -84,6 +88,7 @@ async function completaGroq(
     temperature?: number;
     timeoutMs?: number;
     deadlineMs?: number;
+    signal?: AbortSignal;
     json?: boolean;
     tools?: Array<{
       type: "function";
@@ -104,6 +109,10 @@ async function completaGroq(
   const timeoutMs = Math.min(options.timeoutMs ?? TIMEOUT_DEFAULT_MS, restanteMs);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  // Il segnale esterno (scadenza della route) interrompe la fetch in corso.
+  const abortaSeSegnale = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  options.signal?.addEventListener("abort", abortaSeSegnale, { once: true });
 
   try {
     const body: Record<string, unknown> = {
@@ -149,6 +158,7 @@ async function completaGroq(
     throw caught;
   } finally {
     clearTimeout(timeoutId);
+    options.signal?.removeEventListener("abort", abortaSeSegnale);
   }
 }
 
@@ -191,6 +201,8 @@ export async function callGroqFunctionCalling(
     maxTokens: params.maxTokens,
     temperature: params.temperature,
     timeoutMs: params.timeoutMs,
+    deadlineMs: params.deadlineMs,
+    signal: params.signal,
     tools,
   });
   const message = result.choices?.[0]?.message;

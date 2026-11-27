@@ -186,10 +186,33 @@ export function sessionIdPino(ref: { current: string }): string {
  * Gli eventi `stato` servono solo a tenere viva la connessione: l'interfaccia
  * mostra già il typing indicator, quindi non producono messaggi.
  */
+/** Finestra anti-doppio invio: lo stesso testo entro questo intervallo è un doppio clic. */
+export const FINESTRA_DOPPIO_INVIO_PINO_MS = 3_000;
+
+let ultimoInvio: { testo: string; istante: number } | null = null;
+
+/** `true` se lo stesso messaggio è già partito entro la finestra anti-doppio. */
+export function isDuplicatoRecentePino(testo: string, ora: number = Date.now()): boolean {
+  const pulito = testo.trim();
+  const duplicato =
+    ultimoInvio !== null &&
+    ultimoInvio.testo === pulito &&
+    ora - ultimoInvio.istante < FINESTRA_DOPPIO_INVIO_PINO_MS;
+  if (!duplicato) ultimoInvio = { testo: pulito, istante: ora };
+  return duplicato;
+}
+
 export async function chiediAPino(input: {
   messaggi: MessaggioStoricoPino[];
   sessionId: string;
+  /** Percorso relativo della pagina corrente (es. /prodotto/slug), se noto. */
+  currentPath?: string | null;
 }): Promise<RispostaPino> {
+  const ultimo = input.messaggi[input.messaggi.length - 1];
+  if (ultimo?.role === "user" && isDuplicatoRecentePino(ultimo.content)) {
+    throw new Error("Messaggio già inviato: attendi la risposta.");
+  }
+
   const response = await fetch("/api/assistente", {
     method: "POST",
     headers: {
@@ -200,6 +223,7 @@ export async function chiediAPino(input: {
     body: JSON.stringify({
       messages: input.messaggi,
       sessionId: input.sessionId,
+      currentPath: input.currentPath ?? null,
     }),
   });
 

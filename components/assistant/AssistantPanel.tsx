@@ -19,11 +19,10 @@ import {
 } from "./pino-fetch";
 
 const SUGGESTIONS = [
-  "Esplora le filiere calabresi",
-  "Cerca un prodotto DOP o IGP",
-  "Scopri i parchi della Calabria",
-  "Ultime notizie sulle filiere",
-  "Produttori e eccellenze del territorio",
+  "Qual è una ricetta tipica calabrese?",
+  "Quale vino calabrese abbinare a un piatto?",
+  "Trova prodotti DOP o IGP e le loro filiere",
+  "Dove trovo negozi e prodotti locali?",
 ];
 
 let _idCounter = 0;
@@ -134,6 +133,7 @@ export default function AssistantPanel() {
       const data = await chiediAPino({
         messaggi: storico,
         sessionId,
+        currentPath: pathname,
       });
 
       let content = data.risposta?.trim() ?? "";
