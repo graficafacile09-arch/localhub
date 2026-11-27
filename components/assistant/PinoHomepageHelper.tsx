@@ -11,18 +11,16 @@ import {
 const PINO_HOME_SRC = "/pino-neutro.webp";
 const PINO_HOME_W = 378;
 const PINO_HOME_H = 560;
-// Il cerchio bianco (80px) contiene il personaggio per intero: la sagoma di
-// pino-neutro.webp è larga quasi quanto il canvas, quindi l'immagine va resa a
-// 66px di altezza (≈60px di figura) perché chioma, rami e piedi restino dentro
-// il cerchio senza tagli. Il cerchio non ha bordo né ombra: si vede solo come
-// alone bianco dove sporge dallo sfondo della pagina, senza fare da badge.
-// Alzato di 15px rispetto al centro della barra (58px)
-// sporge di 26px sopra la fascia e resta 4px sopra il bordo inferiore della
-// viewport. Lo spostamento è un transform, non un margine: così l'altezza della
-// riga non lo riassorbe e la sporgenza resta esatta.
-const PINO_CLOSED_SIZE = 80;
-const PINO_CLOSED_IMG_H = 66;
-const PINO_CLOSED_RAISE = 15;
+// Nella fascia chiusa Pino è a mezzo busto: chioma, rami e braccia, senza gambe
+// né piedi. Il riquadro (49x52) sta tutto dentro l'altezza della fascia (58px),
+// senza sporgenze e senza cerchio attorno. L'immagine intera è resa a 72px e
+// spostata di 5px in alto, così il ritaglio cade appena sotto le braccia
+// (y≈440 dell'asset), dove la sagoma si restringe al tronco: il taglio non
+// attraversa nessun arto e ai lati resta un filo di margine.
+const PINO_BUST_W = 49;
+const PINO_BUST_H = 52;
+const PINO_BUST_IMG_H = 72;
+const PINO_BUST_TOP = -5;
 const PINO_BAR_HEIGHT = 58;
 const PINO_TRIGGER_SCROLL = 560;
 const PINO_SCROLL_SETTLE_MS = 180;
@@ -135,19 +133,15 @@ export default function PinoHomepageHelper() {
       <div
         className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)] lg:w-auto"
       >
-        <div className="grid w-full grid-cols-[80px_minmax(0,1fr)_auto] items-center gap-2 sm:gap-4 lg:w-auto lg:grid-cols-[80px_auto_auto] lg:gap-3">
+        <div className="grid w-full grid-cols-[49px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5 lg:w-auto lg:grid-cols-[49px_auto_auto] lg:gap-3">
           <button
             type="button"
             onClick={openAssistant}
             data-testid="pino-richiama"
             aria-label="Apri Pino, assistente di Radici Calabria"
             title="Apri Pino"
-            className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-white p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-            style={{
-              width: PINO_CLOSED_SIZE,
-              height: PINO_CLOSED_SIZE,
-              transform: `translateY(-${PINO_CLOSED_RAISE}px)`,
-            }}
+            className="pointer-events-auto relative shrink-0 cursor-pointer overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            style={{ width: PINO_BUST_W, height: PINO_BUST_H }}
           >
             <img
               src={PINO_HOME_SRC}
@@ -157,8 +151,8 @@ export default function PinoHomepageHelper() {
               decoding="async"
               width={PINO_HOME_W}
               height={PINO_HOME_H}
-              className="block w-auto max-w-none -translate-y-[3px] object-contain"
-              style={{ height: PINO_CLOSED_IMG_H }}
+              className="absolute block h-auto w-auto max-w-none"
+              style={{ height: PINO_BUST_IMG_H, top: PINO_BUST_TOP, left: 0 }}
             />
           </button>
 
