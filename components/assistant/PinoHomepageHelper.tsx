@@ -135,7 +135,7 @@ export default function PinoHomepageHelper() {
             className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             style={{ width: PINO_CLOSED_SIZE, height: PINO_CLOSED_SIZE }}
           >
-            <span className="flex h-full w-full items-start justify-center overflow-hidden">
+            <span className="flex h-full w-full items-start justify-center overflow-hidden rounded-full">
               <img
                 src={PINO_HOME_SRC}
                 alt=""
@@ -144,7 +144,7 @@ export default function PinoHomepageHelper() {
                 decoding="async"
                 width={PINO_HOME_W}
                 height={PINO_HOME_H}
-                className="block h-auto w-[46px] max-w-none object-contain -translate-y-1"
+                className="block h-full w-full object-cover object-top scale-[1.9] origin-top translate-y-[6%]"
               />
             </span>
           </button>

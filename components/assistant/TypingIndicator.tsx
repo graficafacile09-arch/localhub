@@ -5,7 +5,7 @@ import PinoSprite from "./PinoSprite";
 export default function TypingIndicator() {
   return (
     <div className="flex items-end gap-2 pl-1" role="status" aria-label="Pino sta cercando...">
-      <PinoSprite mood="neutral" className="h-[92px] w-[70px] animate-pulse" />
+      <PinoSprite mood="neutral" className="h-[106px] w-[72px] animate-pulse" />
       <div className="mb-2 rounded-2xl rounded-bl-sm bg-blue-50 px-3 py-2 shadow-sm ring-1 ring-blue-100">
         <div className="text-xs font-bold text-blue-900">Pino sta cercando...</div>
         <div className="mt-1 flex items-center gap-1.5">

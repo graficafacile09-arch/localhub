@@ -465,9 +465,12 @@ try {
     asset?.src ?? "n/d"
   );
   if (asset) {
-    const proporzioni = asset.resa.width / asset.resa.height;
+    // Nella fascia l'immagine è ritagliata (object-cover) sulla testa: la resa
+    // del riquadro non è più la proporzione del personaggio. Il controllo sulla
+    // deformazione va quindi fatto sul file naturale, che non deve cambiare.
+    const proporzioni = asset.natural[0] / asset.natural[1];
     check(
-      "proporzioni corrette: nessuna deformazione",
+      "proporzioni corrette: nessuna deformazione del file",
       Math.abs(proporzioni - attese) / attese < 0.015,
       `${proporzioni.toFixed(3)} vs ${attese.toFixed(3)}`
     );
