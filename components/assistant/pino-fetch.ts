@@ -84,23 +84,55 @@ export function contaRisultatiPino(risposta: RispostaPinoGrezza | null | undefin
 export type MoodPinoChat = "neutral" | "happy" | "sad";
 
 /**
- * Stato d'animo della chat, deciso dai dati della risposta e non dalla frase
- * del modello:
- * - ALLEGRO se c'è almeno un risultato, in qualunque elenco;
- * - TRISTE solo per una ricerca andata a vuoto o per un errore;
- * - NEUTRO quando il turno non ha cercato (saluto, cortesia, risposta diretta:
- *   `ricercaEseguita: false`) o quando l'intento dichiarato è "generic".
+ * Frasi che dichiarano un esito negativo nel testo della risposta. Sono l'unico
+ * segnale per TRISTE senza risultati strutturati: il testo è ciò che l'utente legge.
+ */
+const FRASI_ESITO_NEGATIVO: readonly RegExp[] = [
+  /non ho trovato/i,
+  /non risulta/i,
+  /nessun risultato/i,
+  /nessuna attivit[àa]/i,
+  /nessun negozio/i,
+  /nessun prodotto/i,
+  /nessuna offerta/i,
+  /nessun evento/i,
+  /non ci sono/i,
+  /spiacente,? non/i,
+];
+
+/** Saluti e convenevoli brevi: l'unico caso in cui Pino resta neutro dopo l'apertura. */
+const SALUTO_BREVE =
+  /^(ciao|salve|buongiorno|buonasera|buon pomeriggio|hey|hei|grazie|ti ringrazio|chi sei|come stai|arrivederci|a presto)\b/i;
+const LUNGHEZZA_MASSIMA_SALUTO = 30;
+
+/** `true` se la domanda è un saluto o una cortesia breve (nessuna richiesta di catalogo). */
+export function eSalutoBreve(domanda: string): boolean {
+  const pulita = domanda.trim();
+  return pulita.length <= LUNGHEZZA_MASSIMA_SALUTO && SALUTO_BREVE.test(pulita);
+}
+
+/**
+ * Stato d'animo della chat, deciso dalla risposta (non dalla frase del modello):
+ * - ALLEGRO se c'è almeno un risultato strutturato, oppure la risposta è un testo
+ *   utile (ricerca o domanda sul catalogo) senza frasi di esito negativo;
+ * - TRISTE se il testo dichiara un mancato ritrovamento ("non ho trovato",
+ *   "nessun negozio", ...) senza risultati strutturati, oppure se la risposta è vuota;
+ * - NEUTRO per un saluto o una cortesia breve (`domanda` passata dalla chat).
  *
- * `ricercaEseguita` assente (percorso degradato, guasto) vale come ricerca:
- * meglio il viso dispiaciuto che un sorriso su una risposta vuota.
+ * Il conteggio non dipende da `intent` né da `ricercaEseguita`: una domanda di
+ * testo sul catalogo che non produce schede resta allegra se risponde.
  */
 export function moodDaRispostaPino(
-  risposta: RispostaPino | null | undefined
+  risposta: RispostaPino | null | undefined,
+  domanda?: string
 ): MoodPinoChat {
-  if (contaRisultatiPino(risposta) > 0) return "happy";
-  if (risposta?.ricercaEseguita === false) return "neutral";
-  if (risposta?.intent === "generic") return "neutral";
-  return "sad";
+  if (contaRisultatiPino(risposta) >= 1) return "happy";
+
+  const testo = (risposta?.risposta ?? "").trim();
+  if (FRASI_ESITO_NEGATIVO.some((frase) => frase.test(testo))) return "sad";
+  if (domanda !== undefined && eSalutoBreve(domanda)) return "neutral";
+  if (!testo) return "sad";
+  return "happy";
 }
 
 /**

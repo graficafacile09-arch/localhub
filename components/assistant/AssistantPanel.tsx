@@ -162,7 +162,7 @@ export default function AssistantPanel() {
         source: (data.source as ChatMessage["source"]) ?? "assistente",
         lingua: data.lingua,
         // Allegro con almeno un risultato, triste solo per una ricerca a vuoto.
-        mood: moodDaRispostaPino(data),
+        mood: moodDaRispostaPino(data, termine),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
