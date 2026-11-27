@@ -50,6 +50,7 @@ export async function costruisciEntitaCorrentePino(
         `Prezzo: ${typeof p.prezzo === "number" ? `${p.prezzo} €` : ""}`,
         `Territorio: ${testo(p.territorio, 120)}`,
         `Negozio: ${testo(negozio?.nome, 120)}`,
+        `Istruzione: il soggetto principale di questo turno è questo prodotto. Rispondi specificamente su di esso (uso o ricetta e abbinamento con un vino calabrese), senza parlare di altri prodotti se non richiesto.`,
       ].filter((r) => !/: $/.test(r));
       return `<entita_corrente>\n${righe.join("\n")}\n</entita_corrente>`;
     }

@@ -312,7 +312,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             </p>
           )}
 
-          <PinoChiediButton domanda={`Come posso abbinare o cucinare ${String(prodotto.nome ?? "questo prodotto")}?`} />
+          <PinoChiediButton productName={String(prodotto.nome ?? "questo prodotto")} />
 
           {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (
