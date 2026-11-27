@@ -268,6 +268,9 @@ export type ToolInvocation = {
   params?: ToolParams;
 };
 
+/** Scadenza del function calling: sotto la scadenza della route (25 s). */
+export const TIMEOUT_FUNCTION_CALLING_PINO_MS = 18_000;
+
 export type NativeFunctionCallingProvider = (
   input: GroqFunctionCallingParams
 ) => Promise<{ calls?: unknown; text?: string }>;
@@ -299,6 +302,8 @@ export async function selezionaStrumentiNativoPino(
     surface?: string | null;
     intent?: string | null;
     followUp?: boolean;
+    deadlineMs?: number;
+    signal?: AbortSignal;
   },
   provider: NativeFunctionCallingProvider = callGroqFunctionCalling
 ): Promise<EsitoSelezioneNativaPino> {
@@ -311,7 +316,9 @@ export async function selezionaStrumentiNativoPino(
       declarations: buildNativeToolDeclarations(),
       maxTokens: 450,
       temperature: 0.1,
-      timeoutMs: 45_000,
+      timeoutMs: TIMEOUT_FUNCTION_CALLING_PINO_MS,
+      deadlineMs: input.deadlineMs,
+      signal: input.signal,
     });
   } catch {
     // Il provider non ha prodotto una risposta utilizzabile. Il chiamante
@@ -3619,6 +3626,10 @@ export type OpzioniChatPino = {
    * della domanda.
    */
   contestoDatabase?: string | null;
+  /** Pagina su cui si trova l'utente (es. `/prodotto/slug`), dal client. */
+  currentPath?: string | null;
+  /** Segnale della route: se scade, le chiamate Groq in corso vengono interrotte. */
+  signal?: AbortSignal;
 };
 
 export async function chatConAssistente(
@@ -3634,9 +3645,16 @@ export async function chatConAssistente(
 
   const ultimo = storico[storico.length - 1];
   // Contesto dinamico: dati reali del database già verificati dalla rotta.
-  const systemPromptPino = opzioni?.contestoDatabase?.trim()
-    ? `${SYSTEM_PROMPT}\n\n${opzioni.contestoDatabase.trim()}`
-    : SYSTEM_PROMPT;
+  const paginaCorrente = opzioni?.currentPath?.trim()
+    ? `<pagina_corrente>${opzioni.currentPath.trim().slice(0, 200)}</pagina_corrente>`
+    : "";
+  const systemPromptPino = [
+    SYSTEM_PROMPT,
+    opzioni?.contestoDatabase?.trim() ?? "",
+    paginaCorrente,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 1200 caratteri per gli ultimi messaggi).
   // Se l'utente ha corretto Pino, la domanda di lavoro è quella corretta:
@@ -4237,6 +4255,8 @@ export async function chatConAssistente(
       try {
         const esitoNativo = await chiamataAIConBudgetPino(budgetAI, () =>
           selezionaStrumentiNativoPino({
+            deadlineMs: budgetAI.scadenzaMs,
+            signal: opzioni?.signal,
             systemPrompt: systemPromptPino,
             userPrompt: buildNativeFunctionCallingPrompt(
               storico,
@@ -4286,6 +4306,8 @@ export async function chatConAssistente(
             temperature: 0.1,
             // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
             timeoutMs: Math.max(1_000, Math.min(4_500, tempoRestanteAIPino(budgetAI))),
+            deadlineMs: budgetAI.scadenzaMs,
+            signal: opzioni?.signal,
           })
         );
         const parsed = JSON.parse(extractJsonFromText(raw)) as {

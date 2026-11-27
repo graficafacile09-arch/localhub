@@ -102,13 +102,21 @@ function vuoleStreaming(request: Request): boolean {
  * solo in quel caso la route schedula l'osservazione Shadow Tier 0.
  */
 async function rispostaPino(
-  messaggi: MessaggioAssistente[]
+  messaggi: MessaggioAssistente[],
+  currentPath: string | null = null
 ): Promise<{
   risultato: RispostaAssistente;
   dalPercorsoAI: boolean;
   msContesto: number | null;
 }> {
   let msContesto: number | null = null;
+  // Alla scadenza della route le chiamate Groq in corso vengono interrotte
+  // davvero (fetch annullata), non lasciate appese in background.
+  const controller = new AbortController();
+  const timerScadenza = setTimeout(
+    () => controller.abort(),
+    SCADENZA_PERCORSO_AI_MS
+  );
   try {
     // La ricerca tradizionale conta nella scadenza complessiva della rotta: un
     // database lento non deve sommare il proprio ritardo a quello dell'AI.
@@ -119,6 +127,8 @@ async function rispostaPino(
         msContesto = Date.now() - inizioContesto;
         return chatConAssistente(messaggi, {
           contestoDatabase: contesto?.blocco ?? null,
+          currentPath,
+          signal: controller.signal,
         });
       })(),
       SCADENZA_PERCORSO_AI_MS
@@ -126,11 +136,15 @@ async function rispostaPino(
     if (esito.ok) {
       return { risultato: esito.valore, dalPercorsoAI: true, msContesto };
     }
+    controller.abort();
     console.warn(
       "[/api/assistente] percorso AI oltre la scadenza, uso la ricerca classica"
     );
   } catch (error) {
     console.error("[/api/assistente] Errore:", error);
+    controller.abort();
+  } finally {
+    clearTimeout(timerScadenza);
   }
 
   try {
@@ -200,7 +214,8 @@ async function registraTelemetriaTurno(input: {
 function rispostaInStreaming(
   messaggi: MessaggioAssistente[],
   origine: string,
-  sessionId: string | null
+  sessionId: string | null,
+  currentPath: string | null = null
 ): Response {
   const encoder = new TextEncoder();
   const codiceLingua = rilevaLinguaConversazionePino(messaggi);
@@ -213,7 +228,7 @@ function rispostaInStreaming(
 
       try {
         invia({ type: "stato", fase: "ricerca" });
-        const esito = await rispostaPino(messaggi);
+        const esito = await rispostaPino(messaggi, currentPath);
         invia({ type: "risultato", ...esito.risultato, lingua: codiceLingua });
         // Il risultato è già partito: la scrittura può attendere senza
         // aggiungere latenza percepita, e garantisce la riga anche se la
@@ -269,7 +284,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { messages?: unknown; sessionId?: string };
+  let body: { messages?: unknown; sessionId?: string; currentPath?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -302,6 +317,13 @@ export async function POST(request: Request) {
   // Memoria di sessione: si legge solo per un messaggio breve di continuazione
   // («e rosso?»), così le ricerche normali non pagano una query in più.
   const sessionId = sessionIdValidoPino(body.sessionId) ? body.sessionId : null;
+  // Pagina su cui si trova l'utente: solo percorsi relativi del sito.
+  const currentPath =
+    typeof body.currentPath === "string" &&
+    body.currentPath.startsWith("/") &&
+    !body.currentPath.startsWith("//")
+      ? body.currentPath.slice(0, 200)
+      : null;
   const ultimoUtente = [...messaggi].reverse().find((m) => m.role === "user");
   const sessionePrecedente: SessionePino | null =
     sessionId && ultimoUtente && sembraContinuazionePino(ultimoUtente.content)
@@ -321,10 +343,10 @@ export async function POST(request: Request) {
   // Streaming opt-in: i client della chat lo richiedono, gli altri ricevono
   // il JSON storico. In entrambi i casi lo status è 200.
   if (vuoleStreaming(request)) {
-    return rispostaInStreaming(messaggiPerPino, origine, sessionId);
+    return rispostaInStreaming(messaggiPerPino, origine, sessionId, currentPath);
   }
 
-  const esito = await rispostaPino(messaggiPerPino);
+  const esito = await rispostaPino(messaggiPerPino, currentPath);
   const risultato = esito.risultato;
 
   // Telemetria del turno: una riga per risposta, scritta DOPO la risposta

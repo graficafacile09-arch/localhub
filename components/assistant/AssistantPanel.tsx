@@ -11,14 +11,18 @@ import {
   isPinoSezioneNascosta,
   isPinoTransactionalRoute,
 } from "./pino-route";
-import { chiediAPino, sessionIdPino } from "./pino-fetch";
+import {
+  chiediAPino,
+  isDuplicatoRecente,
+  paginaCorrentePino,
+  sessionIdPino,
+} from "./pino-fetch";
 
 const SUGGESTIONS = [
-  "Esplora le filiere calabresi",
-  "Cerca un prodotto DOP o IGP",
-  "Scopri i parchi della Calabria",
-  "Ultime notizie sulle filiere",
-  "Produttori e eccellenze del territorio",
+  "Consigliami una ricetta tipica calabrese",
+  "Abbina un vino calabrese a un piatto",
+  "Scopri prodotti DOP/IGP e filiere",
+  "Cerca negozi e prodotti vicino a me",
 ];
 
 let _idCounter = 0;
@@ -102,6 +106,8 @@ export default function AssistantPanel() {
   const sendMessage = useCallback(async (query: string) => {
     const termine = query.trim();
     if (!termine || isLoadingRef.current) return;
+    // Anti-doppio invio: stesso testo ripetuto entro 3 secondi viene ignorato.
+    if (isDuplicatoRecente(termine)) return;
 
     const userMsg: ChatMessage = {
       id: nextId(),
@@ -129,6 +135,7 @@ export default function AssistantPanel() {
       const data = await chiediAPino({
         messaggi: storico,
         sessionId,
+        currentPath: paginaCorrentePino(),
       });
 
       let content = data.risposta?.trim() ?? "";
