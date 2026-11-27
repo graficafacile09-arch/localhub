@@ -453,13 +453,12 @@ try {
       `${Math.round(m.sprite.width)}x${Math.round(m.sprite.height)}`
     );
     check(
-      "sfondo circolare bianco con bordo sottile e ombra morbida",
+      "sfondo bianco circolare senza bordo né ombra",
       m.sprite.cerchio.sfondo === "rgb(255, 255, 255)" &&
-        parseFloat(m.sprite.cerchio.bordo) > 0 &&
-        parseFloat(m.sprite.cerchio.bordo) <= 1.5 &&
-        m.sprite.cerchio.ombra !== "none" &&
+        parseFloat(m.sprite.cerchio.bordo) === 0 &&
+        m.sprite.cerchio.ombra === "none" &&
         (m.sprite.cerchio.raggio.includes("50%") || parseFloat(m.sprite.cerchio.raggio) >= 39),
-      `${m.sprite.cerchio.sfondo} / bordo ${m.sprite.cerchio.bordo} / radius ${m.sprite.cerchio.raggio} / ombra ${m.sprite.cerchio.ombra !== "none"}`
+      `${m.sprite.cerchio.sfondo} / bordo ${m.sprite.cerchio.bordo} / radius ${m.sprite.cerchio.raggio} / ombra ${m.sprite.cerchio.ombra === "none" ? "assente" : "presente"}`
     );
     check(
       "tutto Pino dentro il cerchio, chioma e piedi compresi",

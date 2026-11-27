@@ -14,7 +14,9 @@ const PINO_HOME_H = 560;
 // Il cerchio bianco (80px) contiene il personaggio per intero: la sagoma di
 // pino-neutro.webp è larga quasi quanto il canvas, quindi l'immagine va resa a
 // 66px di altezza (≈60px di figura) perché chioma, rami e piedi restino dentro
-// il cerchio senza tagli. Alzato di 15px rispetto al centro della barra (58px)
+// il cerchio senza tagli. Il cerchio non ha bordo né ombra: si vede solo come
+// alone bianco dove sporge dallo sfondo della pagina, senza fare da badge.
+// Alzato di 15px rispetto al centro della barra (58px)
 // sporge di 26px sopra la fascia e resta 4px sopra il bordo inferiore della
 // viewport. Lo spostamento è un transform, non un margine: così l'altezza della
 // riga non lo riassorbe e la sporgenza resta esatta.
@@ -140,7 +142,7 @@ export default function PinoHomepageHelper() {
             data-testid="pino-richiama"
             aria-label="Apri Pino, assistente di Radici Calabria"
             title="Apri Pino"
-            className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-white p-1.5 shadow-md outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-white p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             style={{
               width: PINO_CLOSED_SIZE,
               height: PINO_CLOSED_SIZE,
