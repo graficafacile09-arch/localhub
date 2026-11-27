@@ -142,6 +142,9 @@ export default function AssistantPanel() {
           "Non ho trovato risultati corrispondenti alla tua ricerca. Prova con termini diversi.";
       }
 
+      // Ricerca = intento diverso da "generic" (saluti e domande generiche restano neutri).
+      const trovati = data.negozi.length + data.prodotti.length;
+      const eraRicerca = data.intent !== undefined && data.intent !== "generic";
       const assistantMsg: ChatMessage = {
         id: nextId(),
         role: "assistant",
@@ -151,6 +154,8 @@ export default function AssistantPanel() {
         processingMs: data.processingMs,
         source: (data.source as ChatMessage["source"]) ?? "assistente",
         lingua: data.lingua,
+        // Ricerca con risultati → allegro; ricerca senza risultati → triste.
+        mood: !eraRicerca ? "neutral" : trovati > 0 ? "happy" : "sad",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -162,6 +167,7 @@ export default function AssistantPanel() {
         id: nextId(),
         role: "assistant",
         content: `**Si è verificato un errore**\n\n${message}\n\nRiprova tra qualche secondo.`,
+        mood: "sad",
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -274,14 +280,10 @@ export default function AssistantPanel() {
                   message.role === "assistant" &&
                   !messages.slice(index + 1).some((m) => m.role === "assistant");
 
+                // Stato deciso al momento della risposta dal risultato reale;
+                // saluti, apertura e attesa restano neutri.
                 const pinoMood: PinoMood =
-                    message.role !== "assistant"
-                      ? "neutral"
-                      : message.negozi?.length || message.prodotti?.length
-                        ? "happy"
-                        : message.content.includes("Non ho trovato") || message.content.includes("errore")
-                          ? "sad"
-                          : "neutral";
+                    message.role !== "assistant" ? "neutral" : (message.mood ?? "neutral");
 
                 return (
                   <div

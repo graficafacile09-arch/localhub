@@ -20,6 +20,8 @@ export interface ChatMessage {
   source?: "brain" | "fallback" | "assistente";
   /** Lingua della risposta di Pino: le etichette dei risultati la seguono. */
   lingua?: "it" | "en";
+  /** Stato d'animo di Pino deciso dal risultato reale della ricerca (non dal testo). */
+  mood?: "happy" | "sad" | "neutral";
 }
 
 interface AssistantMessageProps {

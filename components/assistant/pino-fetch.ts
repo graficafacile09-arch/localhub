@@ -18,7 +18,8 @@ export type MessaggioStoricoPino = {
   content: string;
 };
 
-export type RispostaPino = SearchResult;
+/** Intento riconosciuto dal server: "generic" = saluto/domanda senza ricerca. */
+export type RispostaPino = SearchResult & { intent?: string };
 
 const TIPO_STREAMING = "application/x-ndjson";
 

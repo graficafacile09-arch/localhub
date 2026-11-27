@@ -20,7 +20,7 @@
  * Verifica infine che i TRE stati di Pino restino collegati come prima e che
  * condividano lo stesso canvas e la stessa linea d'appoggio dei piedi:
  * homepage = neutro (a riposo), chat e /ricerca = allegro con risultati,
- * triste senza risultati.
+ * triste senza risultati (ricerca a vuoto); saluti e domande generiche = neutro.
  *
  * Uso: node scripts/__verify-pino-presentazione.mjs [--url http://localhost:3110]
  */
@@ -625,9 +625,23 @@ try {
     `${statoChat?.src ?? "n/d"} — "${statoChat?.testo ?? "n/d"}" (input ${await statoInput()})`
   );
 
-  skip(
+  // Ricerca senza alcun risultato (termine inesistente): lo stato deve essere
+  // TRISTE, deciso dal conteggio reale e non dalla frase del modello.
+  await invia("zxqvwkjhpt catalogo inesistente");
+  const statoTriste = await leggiStatoChat();
+  check(
     "chat senza risultati: Pino TRISTE",
-    "lo stato dipende dalla frase del modello (AssistantPanel cerca «Non ho trovato»/«errore»): in locale la risposta è «non risultano attività», quindi lo stato resta neutro. L'asset triste è comunque verificato in A5."
+    statoTriste?.src === "/pino-triste.webp",
+    `${statoTriste?.src ?? "n/d"} — "${statoTriste?.testo ?? "n/d"}" (input ${await statoInput()})`
+  );
+
+  // Saluto senza ricerca: deve restare NEUTRO anche se non trova risultati.
+  await invia("ciao");
+  const statoSaluto = await leggiStatoChat();
+  check(
+    "saluto senza ricerca: Pino NEUTRO",
+    statoSaluto?.src === "/pino-neutro.webp",
+    `${statoSaluto?.src ?? "n/d"} — "${statoSaluto?.testo ?? "n/d"}" (input ${await statoInput()})`
   );
 
   await chiudiPannello(desktop);

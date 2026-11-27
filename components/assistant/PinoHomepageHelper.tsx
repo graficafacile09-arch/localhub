@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 import {
   isPinoAreaRiservata,
   isPinoSezioneNascosta,
   isPinoTransactionalRoute,
 } from "./pino-route";
 
-const PINO_HOME_SRC = PINO_ASSET.neutral;
-const PINO_HOME_W = PINO_ASSET_W;
-const PINO_HOME_H = PINO_ASSET_H;
+const PINO_HOME_SRC = "/pino-avatar.webp";
+const PINO_HOME_W = 768;
+const PINO_HOME_H = 768;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
 const PINO_TRIGGER_SCROLL = 560;
@@ -144,7 +143,7 @@ export default function PinoHomepageHelper() {
                 decoding="async"
                 width={PINO_HOME_W}
                 height={PINO_HOME_H}
-                className="block h-full w-full object-cover object-top scale-[1.9] origin-top translate-y-[6%]"
+                className="block h-full w-full object-cover object-center"
               />
             </span>
           </button>
