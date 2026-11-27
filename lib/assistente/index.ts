@@ -3728,7 +3728,16 @@ export async function chatConAssistente(
   // Se l'utente ha corretto Pino, la domanda di lavoro è quella corretta:
   // lo storico resta com'è.
   const domandaGrezza = ultimo && ultimo.role === "user" ? ultimo.content : "";
-  const domanda = (correzioneUtente?.domandaCorretta ?? domandaGrezza).slice(0, 500);
+  // Follow-up molto brevi ("sì", "ok", "dammi la ricetta") senza un soggetto: se la
+  // pagina è una scheda prodotto, il soggetto è quel prodotto. Così la ricerca
+  // non parte con una query vuota e la risposta resta sul prodotto corretto.
+  const soggettoPagina = (contestoEntita ? contestoEntita.match(/^Nome: (.+)$/m)?.[1] : null)?.trim() ?? null;
+  const domandaBreveSenzaSoggetto = /^(?:s[iì]|ok|va bene|dimmi|dammi|e\s+con\s+cosa|con\s+cosa|dimmi\s+la\s+ricetta|dammi\s+la\s+ricetta|la\s+ricetta)[\s?.!]*$/i.test(domandaGrezza.trim());
+  const domandaSoggetto =
+    domandaBreveSenzaSoggetto && soggettoPagina
+      ? `${domandaGrezza.trim()} (riferito a «${soggettoPagina}»)`
+      : domandaGrezza;
+  const domanda = (correzioneUtente?.domandaCorretta ?? domandaSoggetto).slice(0, 500);
   const restrizioneAlimentareRigida = restrizioneAlimentareRigidaPino(domanda);
 
   type DatiShadowTier0 = {
