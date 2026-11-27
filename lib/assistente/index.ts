@@ -177,6 +177,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
+import { recuperaSuggerimentiCatalogoDinamici, componiRispostaChefPino } from "./suggerimenti-catalogo";
 import {
   rilevaDomandaAggregata,
   rilevaConteggioAttivitaPino,
@@ -4476,7 +4477,7 @@ export async function chatConAssistente(
             systemPrompt: systemPromptPino,
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
-            temperature: 0.1,
+            temperature: 0,
             // Timeout diretto Groq: in caso di errore Pino usa il fallback deterministico.
             timeoutMs: Math.max(1_000, Math.min(4_500, tempoRestanteAIPino(budgetAI))),
             deadlineMs: opzioni?.deadlineMs,
@@ -5693,7 +5694,47 @@ export async function chatConAssistente(
     notaContestoAttributi,
   ];
   if (notaDisponibilita && !soloProdottiEsauriti) partiRisposta.push(notaDisponibilita);
-  partiRisposta.push(rispostaBaseEffettiva);
+  // Chef & Sommelier: la risposta la scrive il modello con la cronologia della
+  // conversazione, il contesto dell'entità corrente, i dati di catalogo e gli
+  // abbinamenti reali letti adesso da Supabase. `fallbackTestuale` resta solo
+  // il paracadute quando Groq non risponde, va in timeout o non c'è nulla da
+  // dire (nessun risultato e nessun suggerimento di catalogo).
+  const suggerimentiCatalogo = await recuperaSuggerimentiCatalogoDinamici(
+    contestoEntita || soggettoPagina,
+    domanda
+  );
+  const bloccoSuggerimenti =
+    suggerimentiCatalogo.length > 0
+      ? `<suggerimenti_catalogo>\n${suggerimentiCatalogo
+          .map(
+            (s) =>
+              `- ${s.nome}${s.categoria ? ` (${s.categoria})` : ""}${s.negozio ? ` — ${s.negozio}` : ""}${s.prezzo != null ? ` — €${s.prezzo.toFixed(2)}` : ""}: /prodotto/${s.slug}`
+          )
+          .join("\n")}\n</suggerimenti_catalogo>`
+      : "";
+  const qualcosaDaDire =
+    negozi.length + prodotti.length + offerte.length + eventi.length + notizie.length +
+      contenuti.length + categorie.length > 0 || suggerimentiCatalogo.length > 0;
+  // Le risposte vincolate (restrizione alimentare, servizio, indisponibilità,
+  // fonti non disponibili) restano deterministiche: lì il testo è un obbligo,
+  // non una scelta di stile.
+  const rispostaAI =
+    qualcosaDaDire &&
+    !rispostaRestrizioneAlimentare &&
+    !rispostaServiziTrovata &&
+    !rispostaServizioTrovata &&
+    !rispostaIndisponibilitaAI &&
+    !rispostaFontiNonDisponibili
+      ? await componiRispostaChefPino({
+          systemPrompt: systemPromptPino,
+          storico,
+          blocchi: [contestoEntita, bloccoSuggerimenti, contesto].filter(Boolean).join("\n\n"),
+          budgetAI,
+          deadlineMs: opzioni?.deadlineMs,
+          signal: opzioni?.signal,
+        })
+      : null;
+  partiRisposta.push(rispostaAI?.trim() || rispostaBaseEffettiva);
   const risposta = partiRisposta
     .filter((parte): parte is string => Boolean(parte && parte.trim()))
     .join("\n\n");

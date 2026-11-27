@@ -31,25 +31,26 @@ const attesa = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const mai = <T,>() => new Promise<T>(() => undefined);
 
 test.describe("M6-B1 — budget AI condiviso", () => {
-  test("il tetto è due chiamate per richiesta", () => {
-    expect(MASSIMO_CHIAMATE_AI_PINO).toBe(2);
+  test("il tetto è tre chiamate per richiesta (piano, selezione, risposta finale)", () => {
+    expect(MASSIMO_CHIAMATE_AI_PINO).toBe(3);
     const budget = creaBudgetAIPino();
-    expect(budget).toEqual({ limite: 2, usate: 0, scadenzaMs: expect.any(Number) });
+    expect(budget).toEqual({ limite: 3, usate: 0, scadenzaMs: expect.any(Number) });
     expect(budget.scadenzaMs).toBeGreaterThan(Date.now());
   });
 
-  test("due chiamate partono, la terza è bloccata", async () => {
+  test("tre chiamate partono, la quarta è bloccata", async () => {
     const budget = creaBudgetAIPino();
     const esiti: string[] = [];
     esiti.push(await chiamataAIConBudgetPino(budget, async () => "selezione"));
     esiti.push(await chiamataAIConBudgetPino(budget, async () => "semantica"));
+    esiti.push(await chiamataAIConBudgetPino(budget, async () => "finale"));
 
-    expect(esiti).toEqual(["selezione", "semantica"]);
-    expect(budget.usate).toBe(2);
+    expect(esiti).toEqual(["selezione", "semantica", "finale"]);
+    expect(budget.usate).toBe(3);
     await expect(
-      chiamataAIConBudgetPino(budget, async () => "terza")
+      chiamataAIConBudgetPino(budget, async () => "quarta")
     ).rejects.toBeInstanceOf(ErroreBudgetPinoAI);
-    expect(budget.usate).toBe(2);
+    expect(budget.usate).toBe(3);
   });
 
   test("una chiamata fallita resta conteggiata", async () => {

@@ -1,5 +1,5 @@
 /** Budget condiviso delle chiamate AI di una singola richiesta Pino. */
-export const MASSIMO_CHIAMATE_AI_PINO = 2;
+export const MASSIMO_CHIAMATE_AI_PINO = 3;
 
 /** Budget totale del flusso AI di una richiesta (sotto il limite Vercel Hobby). */
 export const BUDGET_TEMPO_AI_MS = 8_500;

@@ -169,7 +169,7 @@ export async function componiRispostaConoscenzaPino({
         systemPrompt: sistema,
         userPrompt: utente,
         maxTokens,
-        temperature: 0.2,
+        temperature: 0.45,
         timeoutMs: Math.max(1_500, Math.min(6_000, tempoRestanteAIPino(budgetAI))),
       })
     );

@@ -130,9 +130,10 @@ test("la rotta fa l'intercettazione prima dell'AI e il contesto va nel system pr
   );
   // Il blocco è nel system prompt (invisibile all'utente) e arriva alle chiamate AI.
   assert.match(orchestratore, /systemPromptPino/);
+  // Tre chiamate con systemPromptPino: selezione tool, semantica e risposta finale.
   assert.equal(
     (orchestratore.match(/systemPrompt: systemPromptPino,/g) ?? []).length,
-    2
+    3
   );
 });
 
