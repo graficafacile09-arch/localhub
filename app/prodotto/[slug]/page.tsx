@@ -24,6 +24,7 @@ import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloBu
 import AvvisamiDisponibilitaButton from "@/components/prodotto/AvvisamiDisponibilitaButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag, Store } from "lucide-react";
 import ProductAgeGate from "@/components/prodotto/ProductAgeGate";
+import PinoChiediButton from "@/components/prodotto/PinoChiediButton";
 
 type Params = { slug: string };
 
@@ -310,6 +311,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               {(prodotto as Record<string, unknown>).descrizione_completa as string}
             </p>
           )}
+
+          <PinoChiediButton domanda={`Come posso abbinare o cucinare ${String(prodotto.nome ?? "questo prodotto")}?`} />
 
           {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (

@@ -51,6 +51,7 @@ import {
 } from "./apprendimento";
 import { alternativeBisognoPino, rilevaBisognoPino } from "./bisogni";
 import { rispostaIdentitaPino } from "./identity";
+import { costruisciEntitaCorrentePino } from "./entita-corrente";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import {
   CATEGORIE_REGALO,
@@ -3714,10 +3715,13 @@ export async function chatConAssistente(
   const contestoPagina = paginaCorrente
     ? `<pagina_corrente>${paginaCorrente.slice(0, 200)}</pagina_corrente>`
     : "";
+  // Dati principali della scheda prodotto/negozio mostrata (lettura leggera).
+  const contestoEntita = (await costruisciEntitaCorrentePino(paginaCorrente)) ?? "";
   const systemPromptPino = [
     SYSTEM_PROMPT,
     opzioni?.contestoDatabase?.trim() ?? "",
     contestoPagina,
+    contestoEntita,
   ].filter(Boolean).join("\n\n");
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 1200 caratteri per gli ultimi messaggi).
