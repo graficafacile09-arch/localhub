@@ -153,13 +153,12 @@ test.describe("S4.8 — luoghi raccontati dai contenuti del sito", () => {
     expect(r.risposta.length).toBeGreaterThan(0);
   });
 
-  test("Castello Aragonese: la risposta viene dalla scheda Castrovillari", async () => {
+  test("Castello Aragonese: la sezione Attrazioni è stata rimossa, quindi il luogo non viene più proposto", async () => {
     const r = await rispondi("Castello Aragonese");
 
     nessunRisultatoCommerciale(r);
     expect(r.risposta).not.toMatch(/guida Attrazioni|Attractions guide/i);
-    expect(r.risposta).toMatch(/Castello Aragonese/);
-    expect(r.risposta).toMatch(/Castrovillari/);
+    expect(r.risposta).not.toMatch(/Castello Aragonese/);
   });
 
   test("richiesta inglese con città: usa la scheda del comune", async () => {

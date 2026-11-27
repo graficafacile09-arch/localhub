@@ -81,7 +81,7 @@ economico?", "ne avete rossi?" o "qualcosa del genere"; non inventare vincoli.
 Route:
 - conversation: saluti, ringraziamenti, chiacchiere e domande rivolte a Pino.
 - catalog: ricerca di prodotti o attività/servizi commerciali.
-- attractions: luoghi da visitare, monumenti, itinerari e attrazioni.
+- attractions: luoghi da visitare e monumenti. Non esiste più una guida alle attrazioni: queste richieste vanno alla sezione Territorio.
 - events: eventi, concerti, sagre, manifestazioni e appuntamenti.
 - weather: meteo e previsioni.
 - pharmacies: farmacie di turno o farmacie.

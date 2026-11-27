@@ -11,7 +11,6 @@ import { pianoIntentoLocale } from "../lib/assistente/local-intents.ts";
 import { trovaRispostaFaqPino } from "../lib/assistente/faq.ts";
 import { parseFarmacieTurno } from "../lib/farmacie-turno.ts";
 import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.ts";
-import { ATTRAZIONI_DINTORNI, ATTRAZIONI_LUOGHI } from "../lib/attrazioni-data.ts";
 
 // ─── Precedenza degli intenti locali sul ramo Attrazioni ────────────────────
 //
@@ -200,18 +199,6 @@ test("i toponimi da soli non identificano un'attrazione", () => {
   }
 });
 
-test("i nomi del catalogo restano riconosciuti anche con il toponimo nella frase", () => {
-  for (const luogo of [...ATTRAZIONI_LUOGHI, ...ATTRAZIONI_DINTORNI]) {
-    const frase = `${luogo.nome} a Castrovillari`;
-    if (/\bparco\b/i.test(luogo.nome)) {
-      // I parchi non passano più dalla guida: li gestiscono i dati Territorio.
-      assert.equal(richiestaGuidaAttrazioniPino(frase), false, frase);
-      continue;
-    }
-    assert.equal(isAttractionNameQuery(frase), true, frase);
-    assert.equal(richiestaGuidaAttrazioniPino(frase), true, frase);
-  }
-});
 
 test("«tempo», «stato» e «storia» non identificano da soli un luogo", () => {
   for (const parola of ["tempo", "stato", "storia"]) {
