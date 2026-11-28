@@ -380,13 +380,14 @@ export function bloccoAbbinamentoVinoPino(query: string): string {
     righe.push(`- Vini e vitigni indicati: ${abbinamento.vini.join(", ")}.`);
   } else {
     righe.push(
-      "- Se il prodotto tipico non è esplicito, chiedi in una riga per quale piatto o prodotto serve l'abbinamento e intanto proponi due o tre vitigni calabresi adatti al tipo di portata."
+      "- Se il prodotto tipico non è esplicito, proponi comunque due o tre vitigni calabresi adatti al tipo di portata, spiegando il perché sensoriale (tannino, acidità, sapidità, morbidezza, grassezza, piccantezza). Non chiudere con domande: la risposta deve essere completa."
     );
   }
 
   righe.push(
     `- Etichette e cantine: cita SOLO vini, cantine o attività vinicole presenti nei dati del catalogo, con il link markdown fornito. Termini utili per la ricerca: ${terminiRicercaViniPino(query).join(", ")}.`,
-    "- Se il catalogo non contiene un'etichetta del vino indicato, scrivi «Nel catalogo attuale le etichette di questo vino non sono ancora presenti» e indica comunque il vitigno: non usare formule come «non ho trovato», «non risultano» o «nessun risultato»."
+    "- Non chiudere con domande o rinvii (niente «vuoi sapere», «preferisci», «dimmi se»): la risposta deve essere completa e auto-sufficiente. Non usare formule come «non ho trovato», «non risultano» o «nessun risultato» per le etichette.",
+    "- Se il catalogo non contiene un'etichetta del vino indicato, scrivi «Nel catalogo attuale le etichette di questo vino non sono ancora presenti» e indica comunque il vitigno."
   );
   return righe.join("\n");
 }

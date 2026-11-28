@@ -651,12 +651,12 @@ export function bloccoChefSommelierPino(query: string): string {
     );
   } else {
     righe.push(
-      "- Il prodotto non è nell'elenco dei tipici: proponi la cucina calabrese in generale (soffritto, pasta con la mollica, verdure ripiene) e chiedi in una riga quale prodotto tipico vuole cucinare."
+      "- Il prodotto non è nell'elenco dei tipici: proponi la cucina calabrese in generale (soffritto, pasta con la mollica, verdure ripiene) con un abbinamento calabrese completo. Non chiudere con domande."
     );
   }
 
   righe.push(
-    "- Non usare formule come «non ho trovato», «non risultano» o «nessun risultato»: se una scheda non c'è, prosegui con ricette e vino senza commentare l'assenza."
+    "- Non chiudere con domande o rinvii (niente «vuoi sapere», «preferisci», «dimmi se»): la risposta deve essere completa e auto-sufficiente. Non usare formule come «non ho trovato», «non risultano» o «nessun risultato»: se una scheda non c'è, prosegui con ricette e vino senza commentare l'assenza."
   );
   return righe.join("\n");
 }

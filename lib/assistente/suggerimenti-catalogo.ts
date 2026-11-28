@@ -26,6 +26,7 @@ export type SuggerimentoCatalogo = {
 };
 
 const LIMITE_SUGGERIMENTI = 5;
+const LIMITE_FALLBACK = 8;
 
 // Vino e bevande: il loro abbinamento è il cibo.
 const PAROLE_VINO = /\b(vino|vini|rosso|rosato|bianco|cirò|ciro|gaglioppo|magliocco|greco|mantonico|savuto|bivongi|pollino|birra|liquore|amaro|spumante)\b/i;
@@ -90,9 +91,22 @@ export async function recuperaSuggerimentiCatalogoDinamici(
       return ca - cb;
     });
 
+    // Filtro per parola chiave senza risultati: il catalogo attivo resta visibile
+    // con gastronomia e bevande, così il suggerimento non torna mai vuoto.
+    const tutti = righe.filter((p) => Boolean(p.slug));
+    const èVinoOBevanda = (p: { nome: string; categoria: string | null }) =>
+      entitaEVino(`${p.nome} ${p.categoria ?? ""}`);
+    const sorgente =
+      ordinati.length > 0
+        ? ordinati
+        : [
+            ...tutti.filter((p) => !èVinoOBevanda(p)).slice(0, 4),
+            ...tutti.filter((p) => èVinoOBevanda(p)).slice(0, 4),
+          ];
+    const limite = ordinati.length > 0 ? LIMITE_SUGGERIMENTI : LIMITE_FALLBACK;
     const visti = new Set<string>();
     const risultato: SuggerimentoCatalogo[] = [];
-    for (const p of ordinati) {
+    for (const p of sorgente) {
       const slug = String(p.slug);
       if (visti.has(slug)) continue;
       visti.add(slug);
@@ -103,7 +117,7 @@ export async function recuperaSuggerimentiCatalogoDinamici(
         prezzo: p.prezzo == null ? null : Number(p.prezzo),
         negozio: nomeNegozio.get(String(p.negozio_id)) ?? null,
       });
-      if (risultato.length >= LIMITE_SUGGERIMENTI) break;
+      if (risultato.length >= limite) break;
     }
     return risultato;
   } catch (errore) {
@@ -139,7 +153,7 @@ export async function componiRispostaChefPino({
         systemPrompt,
         userPrompt: buildFinalPrompt(storico, blocchi),
         temperature: 0.45,
-        maxTokens: 900,
+        maxTokens: 1400,
         timeoutMs: Math.max(1_000, Math.min(8_000, tempoRestanteAIPino(budgetAI))),
         deadlineMs,
         signal,

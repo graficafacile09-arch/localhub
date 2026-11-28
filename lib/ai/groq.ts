@@ -60,8 +60,14 @@ type GroqCompletion = {
 };
 
 const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-const MODELLO_FALLBACK = "openai/gpt-oss-120b";
+/**
+ * Modello primario per le risposte discorsive. GPT-OSS consuma token di
+ * reasoning nascosto prima del testo e può troncare le risposte; Llama 3.3 70B
+ * scrive direttamente il testo. `GROQ_MODEL`, se impostato, ha la precedenza.
+ */
+const MODELLO_FALLBACK = "llama-3.3-70b-versatile";
 const TIMEOUT_DEFAULT_MS = 12_000;
+const MODELLI_CON_REASONING = /gpt-oss|qwen|deepseek/i;
 /**
  * GPT-OSS consuma token di reasoning prima del testo. Il tetto minimo evita
  * risposte JSON troncate; resta configurabile tramite GROQ_MODEL.
@@ -123,7 +129,10 @@ async function completaGroq(
       stream: false,
     };
     if (options.json) body.response_format = { type: "json_object" };
-    if (options.json || options.tools?.length) body.reasoning_format = "hidden";
+    // reasoning_format serve solo ai modelli con reasoning (GPT-OSS, Qwen, DeepSeek).
+    if ((options.json || options.tools?.length) && MODELLI_CON_REASONING.test(model)) {
+      body.reasoning_format = "hidden";
+    }
     if (options.tools?.length) {
       body.tools = options.tools;
       body.tool_choice = "auto";

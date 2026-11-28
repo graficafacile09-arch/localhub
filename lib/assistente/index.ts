@@ -68,7 +68,7 @@ import {
  *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
  *   3. contesto strutturato dei risultati → risposta finale dell'AI.
  *
- * Usa GROQ_API_KEY e GROQ_MODEL (default openai/gpt-oss-120b), timeout su ogni
+ * Usa GROQ_API_KEY e GROQ_MODEL (default llama-3.3-70b-versatile), timeout su ogni
  * chiamata e budget condiviso per richiesta. Fallback: se la selezione tool fallisce
  * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
  * dei risultati recuperati. Nessuna scrittura su DB.
