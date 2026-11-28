@@ -43,121 +43,12 @@ function buildOpenRouter(): VisionProvider | null {
   return new OpenRouterProvider(apiKey, model);
 }
 
-function buildGemini(): VisionProvider | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  const model = process.env.GEMINI_VISION_MODEL ?? "gemini-flash-latest";
-  return new GeminiVisionProvider(apiKey, model);
-}
-
-/**
- * Adattatore Gemini Vision locale a RadiciScan.
- *
- * Non riusa `lib/product-assistant/providers/gemini.ts` perché quel modulo
- * espone una funzione, non un `VisionProvider`: tenerlo qui evita di
- * modificare il codice di Aggiungi prodotti.
- */
-class GeminiVisionProvider implements VisionProvider {
-  constructor(
-    private readonly apiKey: string,
-    private readonly modello: string
-  ) {}
-
-  get model(): string {
-    return `google/${this.modello}`;
-  }
-
-  async analyze(
-    images: VisionImage[],
-    _context?: VisionContext,
-    promptOverride?: string,
-    signal?: AbortSignal,
-    opzioni?: OpzioniChiamataProvider
-  ): Promise<ProviderResult> {
-    const prompt = promptOverride ?? "Descrivi l'etichetta.";
-    const inizio = Date.now();
-
-    const parti = [
-      { text: prompt },
-      ...images.map((immagine) => ({
-        inline_data: {
-          mime_type: detectMimeType(immagine.filename),
-          data: immagine.buffer.toString("base64"),
-        },
-      })),
-    ];
-
-    const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
-      opzioni?.timeoutMs ?? 12_000
-    );
-    const annullaSegnale = () => controller.abort();
-    signal?.addEventListener("abort", annullaSegnale, { once: true });
-    if (signal?.aborted) controller.abort();
-
-    try {
-      const risposta = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.modello}:generateContent?key=${this.apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: parti }],
-            generationConfig: {
-              maxOutputTokens: opzioni?.maxOutputTokens ?? 1_400,
-              temperature: 0.1,
-            },
-          }),
-        }
-      );
-
-      if (!risposta.ok) {
-        const corpo = await risposta.text().catch(() => "");
-        const codice =
-          risposta.status === 429
-            ? AI_PROVIDER_QUOTA_EXCEEDED
-            : AI_PROVIDER_UNKNOWN_ERROR;
-        throw new ProviderError(
-          codice,
-          `Gemini: HTTP ${risposta.status}. Body: ${corpo.slice(0, 300)}`,
-          risposta.status
-        );
-      }
-
-      const corpo = (await risposta.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
-      };
-      const testo =
-        corpo.candidates?.[0]?.content?.parts
-          ?.map((parte) => parte.text ?? "")
-          .join("") ?? "";
-
-      return {
-        // RadiciScan legge solo `rawText`: il parser RadiciScan interpreta il
-        // testo grezzo e produce il proprio schema. Gli altri campi del
-        // contratto condiviso non sono usati da questa catena.
-        suggestion: {} as ProviderResult["suggestion"],
-        rawText: testo,
-        model: this.model,
-        latencyMs: Date.now() - inizio,
-        httpStatus: risposta.status,
-      };
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener("abort", annullaSegnale);
-    }
-  }
-}
-
-// Catena: Cloudflare/Gemma 4 -> OpenRouter -> Gemini Vision.
+// Catena: Cloudflare/Gemma 4 (primario) -> OpenRouter (emergenza).
 // Ogni voce senza credenziali viene saltata, così un provider non
 // configurato non impedisce il tentativo dei successivi.
 const PROVIDER_CHAIN: ProviderEntry[] = [
   { name: "Cloudflare", build: buildCloudflare },
   { name: "OpenRouter", build: buildOpenRouter },
-  { name: "Gemini", build: buildGemini },
 ];
 
 export interface OpzioniVisionRadiciScan {
@@ -239,7 +130,7 @@ export async function analyzeRadiciScanImages(
   // variabili d'ambiente mancano, senza esporne il valore.
   throw new ProviderError(
     "MISSING_KEYS",
-    `Nessun provider vision configurato (attesi CLOUDFLARE_ACCOUNT_ID+CLOUDFLARE_API_TOKEN, OPENROUTER_API_KEY o GEMINI_API_KEY). Catena: ${catenaEffettiva
+    `Nessun provider vision configurato (attesi CLOUDFLARE_ACCOUNT_ID+CLOUDFLARE_API_TOKEN oppure OPENROUTER_API_KEY). Catena: ${catenaEffettiva
       .map((voce) => voce.name)
       .join(" -> ")}.`
   );
