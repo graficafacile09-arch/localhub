@@ -9,7 +9,7 @@
 import { SOGGETTI_ALIMENTARI_PINO, SOGGETTI_ALIMENTARI_INGLESI_PINO } from "./lexicon.ts";
 import { richiestaCucinaPino } from "./chef-sommelier";
 import { isWeatherQuery, isPharmacyQuery } from "./local-intents";
-const RE_ORARI_PARCHEGGI_CHEF = /(?:parcheggi\w*|orari)/i;
+const RE_ORARI_PARCHEGGI_CHEF = /\b(?:parcheggi\w*|orari)\b/i;
 import { richiestaAbbinamentoVinoPino } from "./abbinamenti-vino";
 
 const FOOD_PRODUCTS: readonly string[] = [
@@ -170,9 +170,16 @@ export function richiestaParchiPino(query: string): boolean {
   return RE_PARCHI_PINO.test(String(query ?? ""));
 }
 
-/** Termini di territorio, filiere, certificazioni e portale: sempre risposta AI. */
+/**
+ * Termini di territorio, filiere, certificazioni, cultura e portale: sempre
+ * risposta AI. Comprende i borghi, la storia e le tradizioni comunitarie
+ * (arbëreshë, grecanici, Magna Grecia), gli itinerari e la stagionalità dei
+ * raccolti: sono la conoscenza che solo la generazione discorsiva può dare.
+ * Meteo, farmacie, parcheggi, orari e attrazioni del planner restano fuori,
+ * esclusi a monte in `isRichiestaChefSommelierOTerritorio`.
+ */
 const RE_TERRITORIO_CHEF_PINO =
-  /\b(?:calabri\w*|comun[ei]|borgo|borghi|territorio|filier[ae]|dop|igp|pat|de\.?co|denominazion\w*|radici\s?scan|portale|sito|esplor\w*|sila|aspromonte|pollino|tropea|castrovillari|morano|mormanno|civita|saracena|rocca imperiale|rotonda|corigliano|vitign\w*|magliocco|gaglioppo|cir[oò]|ricett\w*|piatt\w* tipic\w*|cucin\w*|ingredient\w*|abbinament\w*|vitigni?|nduja|fileja|stocco|parch[ie])\b/i;
+  /\b(?:calabri\w*|comun[ei]|borgo|borghi|territorio|filier[ae]|dop|igp|pat|de\.?co|denominazion\w*|radici\s?scan|portale|sito|esplor\w*|sila|aspromonte|pollino|tropea|castrovillari|morano|mormanno|civita|saracena|rocca imperiale|rotonda|corigliano|vitign\w*|magliocco|gaglioppo|cir[oò]|ricett\w*|piatt\w* tipic\w*|cucin\w*|ingredient\w*|abbinament\w*|vitigni?|nduja|fileja|stocco|parch[ie]|cultur\w*|stori\w*|tradizion\w*|arb[eë]resh\w*|grecanic\w*|griko|magna grecia|itinerar\w*|stagion\w*|raccolt\w*|dialett\w*|santuar\w*|abbazi[ae]|monaster\w*|villages?|history|culture|traditions?|itinerar(?:y|ies))\b/i;
 
 /**
  * Domanda su ricette, cucina, abbinamenti cibo-vino, vitigni, territorio,
