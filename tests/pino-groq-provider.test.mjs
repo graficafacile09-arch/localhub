@@ -25,13 +25,13 @@ test("Groq text provider sends system/history/user messages and JSON mode", asyn
     assert.equal(String(url), "https://api.groq.com/openai/v1/chat/completions");
     assert.equal(options.headers.Authorization, "Bearer test-groq-key");
     const body = JSON.parse(options.body);
-    assert.equal(body.model, "llama-3.3-70b-versatile");
+    assert.equal(body.model, "openai/gpt-oss-120b");
     assert.deepEqual(body.messages.map((message) => message.role), [
       "system", "user", "assistant", "user",
     ]);
     assert.deepEqual(body.response_format, { type: "json_object" });
     assert.ok(body.max_completion_tokens >= 700);
-    assert.equal(body.reasoning_format, undefined);
+    assert.equal(body.reasoning_format, "hidden");
     return new Response(JSON.stringify({
       choices: [{ message: { content: '{"route":"catalog"}' } }],
     }), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -53,7 +53,7 @@ test("Groq text provider sends system/history/user messages and JSON mode", asyn
 test("Groq Function Calling returns normalized tool calls and parsed arguments", async () => {
   await conProviderMock(async (_url, options) => {
     const body = JSON.parse(options.body);
-    assert.equal(body.reasoning_format, undefined);
+    assert.equal(body.reasoning_format, "hidden");
     assert.equal(body.tool_choice, "auto");
     assert.equal(body.parallel_tool_calls, false);
     assert.equal(body.tools[0].function.name, "searchProducts");

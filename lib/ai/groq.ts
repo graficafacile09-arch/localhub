@@ -65,7 +65,7 @@ const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
  * reasoning nascosto prima del testo e può troncare le risposte; Llama 3.3 70B
  * scrive direttamente il testo. `GROQ_MODEL`, se impostato, ha la precedenza.
  */
-const MODELLO_FALLBACK = "llama-3.3-70b-versatile";
+const MODELLO_FALLBACK = "openai/gpt-oss-120b";
 const TIMEOUT_DEFAULT_MS = 12_000;
 const MODELLI_CON_REASONING = /gpt-oss|qwen|deepseek/i;
 /**

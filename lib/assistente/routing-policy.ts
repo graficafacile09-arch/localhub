@@ -8,6 +8,8 @@
 // posto da estendere per tutte le decisioni di routing di Pino.
 import { SOGGETTI_ALIMENTARI_PINO, SOGGETTI_ALIMENTARI_INGLESI_PINO } from "./lexicon.ts";
 import { richiestaCucinaPino } from "./chef-sommelier";
+import { isWeatherQuery, isPharmacyQuery } from "./local-intents";
+const RE_ORARI_PARCHEGGI_CHEF = /(?:parcheggi\w*|orari)/i;
 import { richiestaAbbinamentoVinoPino } from "./abbinamenti-vino";
 
 const FOOD_PRODUCTS: readonly string[] = [
@@ -170,7 +172,7 @@ export function richiestaParchiPino(query: string): boolean {
 
 /** Termini di territorio, filiere, certificazioni e portale: sempre risposta AI. */
 const RE_TERRITORIO_CHEF_PINO =
-  /\b(?:calabri\w*|comun[ei]|borgo|borghi|territorio|filier[ae]|dop|igp|pat|de\.?co|denominazion\w*|radici\s?scan|portale|sito|esplor\w*|sila|aspromonte|pollino|tropea|castrovillari|morano|mormanno|civita|saracena|rocca imperiale|rotonda|corigliano|vitign\w*|magliocco|gaglioppo|cir[oò]|ricett\w*|piatt\w* tipic\w*|cucin\w*|ingredient\w*|abbinament\w*|vitigni?|nduja|fileja|stocco|parc\w*|vin[oi]|cibo)\b/i;
+  /\b(?:calabri\w*|comun[ei]|borgo|borghi|territorio|filier[ae]|dop|igp|pat|de\.?co|denominazion\w*|radici\s?scan|portale|sito|esplor\w*|sila|aspromonte|pollino|tropea|castrovillari|morano|mormanno|civita|saracena|rocca imperiale|rotonda|corigliano|vitign\w*|magliocco|gaglioppo|cir[oò]|ricett\w*|piatt\w* tipic\w*|cucin\w*|ingredient\w*|abbinament\w*|vitigni?|nduja|fileja|stocco|parch[ie])\b/i;
 
 /**
  * Domanda su ricette, cucina, abbinamenti cibo-vino, vitigni, territorio,
@@ -180,6 +182,7 @@ const RE_TERRITORIO_CHEF_PINO =
  */
 export function isRichiestaChefSommelierOTerritorio(testo: string): boolean {
   const q = String(testo ?? "");
+  if (isWeatherQuery(q) || isPharmacyQuery(q) || RE_ORARI_PARCHEGGI_CHEF.test(q)) return false;
   return (
     richiestaCucinaPino(q) ||
     richiestaAbbinamentoVinoPino(q) ||

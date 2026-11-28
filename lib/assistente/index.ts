@@ -69,7 +69,7 @@ import {
  *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
  *   3. contesto strutturato dei risultati → risposta finale dell'AI.
  *
- * Usa GROQ_API_KEY e GROQ_MODEL (default llama-3.3-70b-versatile), timeout su ogni
+ * Usa GROQ_API_KEY e GROQ_MODEL (default openai/gpt-oss-120b), timeout su ogni
  * chiamata e budget condiviso per richiesta. Fallback: se la selezione tool fallisce
  * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
  * dei risultati recuperati. Nessuna scrittura su DB.
@@ -3866,6 +3866,49 @@ export async function chatConAssistente(
   if (richiestaIstruzioniInternePino(domanda)) {
     return esci("istruzioni_interne", {
       risposta: rispostaIstruzioniInternePino(linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
+  // Chef, sommelier e territorio: corsia diretta verso la generazione AI.
+  // Va prima del planner e della ricerca prodotti: altrimenti «qual è una
+  // ricetta tipica calabrese» finisce su una scheda prodotto a caso.
+  if (isRichiestaChefSommelierOTerritorio(domanda) && !richiestaGuidaAttrazioniPino(domanda)) {
+    const budgetChef = creaBudgetAIPino();
+    const [suggerimentiChef, contestoTerritorioChef] = await Promise.all([
+      recuperaSuggerimentiCatalogoDinamici(contestoEntita || soggettoPagina, domanda),
+      recuperaContestoTerritorioESito(domanda),
+    ]);
+    const bloccoSuggerimentiChef =
+      suggerimentiChef.length > 0
+        ? `<suggerimenti_catalogo>\n${suggerimentiChef
+            .map(
+              (s) =>
+                `- ${s.nome}${s.categoria ? ` (${s.categoria})` : ""}${s.negozio ? ` — ${s.negozio}` : ""}${s.prezzo != null ? ` — €${s.prezzo.toFixed(2)}` : ""}: /prodotto/${s.slug}`
+            )
+            .join("\n")}\n</suggerimenti_catalogo>`
+        : "";
+    const testoChef = await componiRispostaChefPino({
+      systemPrompt: systemPromptPino,
+      storico,
+      blocchi: [
+        contestoEntita,
+        bloccoSuggerimentiChef,
+        formattaContestoTerritorioESito(contestoTerritorioChef),
+      ].filter(Boolean).join("\n\n"),
+      budgetAI: budgetChef,
+      deadlineMs: opzioni?.deadlineMs,
+      signal: opzioni?.signal,
+    });
+    return esci("chef_territorio_ai", {
+      risposta:
+        testoChef ??
+        (linguaConversazione === "en"
+          ? "I can't answer this right now. Please try again in a moment."
+          : "Non riesco a rispondere in questo momento. Riprova tra poco."),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
