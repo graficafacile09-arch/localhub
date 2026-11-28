@@ -58,7 +58,36 @@ async function utenteCorrente(): Promise<{ id: string } | null> {
   return null;
 }
 
+/** Nome e messaggio sicuri di un'eccezione, senza stack né segreti. */
+function dettaglioSicuro(err: unknown): string {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message.slice(0, 120)}`;
+  }
+  return "UNKNOWN";
+}
+
 export async function POST(request: Request): Promise<Response> {
+  try {
+    return await gestisciAnalisi(request);
+  } catch (err) {
+    // Qualsiasi eccezione fuori dall'handler (inizializzazione, cookie, client
+    // Supabase) diventa un JSON diagnosticabile invece di un 500 generico.
+    console.error("[radiscan][route]", { dettaglio: dettaglioSicuro(err) });
+    return Response.json(
+      {
+        success: false,
+        errore: {
+          codice: "ERRORE_INTERNO",
+          messaggio: "Errore interno. Riprova più tardi.",
+          dettaglio: dettaglioSicuro(err),
+        },
+      },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+}
+
+async function gestisciAnalisi(request: Request): Promise<Response> {
   const tokenEsistente = leggiTokenSessioneRadiciScan(request);
   const tokenSessione = tokenEsistente ?? creaTokenSessioneRadiciScan();
   const sessioneHash = hashTokenSessioneRadiciScan(tokenSessione);

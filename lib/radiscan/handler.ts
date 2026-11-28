@@ -168,7 +168,7 @@ function dettaglioErrore(causa: unknown): DettaglioErrore {
       stato: 500,
       codice: "ERRORE_INTERNO",
       messaggio: "Errore interno. Riprova più tardi.",
-      debugCode: DEBUG_CODICI.VISION_ERR,
+      debugCode: nomeSicuro(causa),
     };
   }
 
@@ -240,8 +240,21 @@ function dettaglioErrore(causa: unknown): DettaglioErrore {
         messaggio: "Non riesco a verificare la quota. Riprova tra poco.",
       };
     default:
-      return { stato: 500, codice: "ERRORE_INTERNO", messaggio: "Errore interno. Riprova più tardi." };
+      return {
+        stato: 500,
+        codice: "ERRORE_INTERNO",
+        messaggio: "Errore interno. Riprova più tardi.",
+        debugCode: nomeSicuro(causa),
+      };
   }
+}
+
+/** `name: message` troncato, senza stack: serve a diagnosticare un ERRORE_INTERNO. */
+function nomeSicuro(causa: unknown): string {
+  if (causa instanceof Error) {
+    return `${causa.name}: ${causa.message.slice(0, 120)}`;
+  }
+  return "UNKNOWN";
 }
 
 function rispostaErrore(causa: unknown): Response {
@@ -422,12 +435,13 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
         richiestaId: randomUUID(),
         sessioneAnonimaHash: dipendenze.sessioneAnonimaHash?.() ?? null,
       });
-    } catch {
+    } catch (causa) {
       return {
         tipo: "errore",
         statoHttp: 500,
         codice: "ERRORE_INTERNO",
         messaggio: "Errore interno. Riprova più tardi.",
+        debugCode: nomeSicuro(causa),
       };
     }
 
