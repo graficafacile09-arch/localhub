@@ -20,6 +20,8 @@ type Props = {
   marchio?: string | null;
   /** Logo ufficiale già risolto lato server; null quando non esiste un asset. */
   logoMarchio?: { src: string; alt: string } | null;
+  /** Elementi sovrapposti all'immagine principale (es. Pino). */
+  overlay?: React.ReactNode;
 };
 
 /**
@@ -35,6 +37,7 @@ export default function ProductGallery({
   nomeProdotto,
   marchio,
   logoMarchio,
+  overlay,
 }: Props) {
   const lista = useMemo(() => immagini.filter((img) => img.url), [immagini]);
   const primaria =
@@ -114,6 +117,7 @@ export default function ProductGallery({
               {marchio}
             </span>
           ) : null}
+          {overlay}
         </div>
       </div>
 

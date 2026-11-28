@@ -51,6 +51,8 @@ type Props = {
   altText: string | null;
   varianti: VariantePubblica[];
   soggettoVerificaEta?: boolean;
+  /** Elementi sovrapposti all'immagine principale (es. Pino). */
+  overlay?: React.ReactNode;
 };
 
 type SelezioniAttributi = Record<string, string>;
@@ -89,6 +91,7 @@ export default function ProductVariantSelector({
   immagineBase,
   altText,
   varianti,
+  overlay,
   soggettoVerificaEta = false,
 }: Props) {
   const [selezioni, setSelezioni] = useState<SelezioniAttributi>(() =>
@@ -169,6 +172,7 @@ export default function ProductVariantSelector({
             alt={altText?.trim() || nome}
             className="h-full w-full object-cover"
           />
+          {overlay}
         </div>
       </div>
       </div>

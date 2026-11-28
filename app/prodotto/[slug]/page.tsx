@@ -231,6 +231,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
               varianti={varianti}
               soggettoVerificaEta={soggettoVerificaEta}
+              overlay={<PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />}
             />
             <div className="mt-4">
               <FavoritoButton
@@ -264,6 +265,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           nomeProdotto={prodotto.nome as string}
           marchio={riconoscimento}
           logoMarchio={logoRiconoscimento}
+          overlay={<PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />}
         />
         </div>
 
@@ -485,7 +487,6 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         )}
       </div>
 
-      <PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />
     </main>
   );
 }

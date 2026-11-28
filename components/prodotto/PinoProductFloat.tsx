@@ -56,21 +56,23 @@ export default function PinoProductFloat({
     const el = areaRef.current;
     const w = el?.offsetWidth ?? 80;
     const h = el?.offsetHeight ?? 80;
+    const contenitore = el?.offsetParent as HTMLElement | null | undefined;
     return {
-      x: Math.min(Math.max(0, x), window.innerWidth - w),
-      y: Math.min(Math.max(0, y), window.innerHeight - h),
+      x: Math.min(Math.max(0, x), (contenitore?.clientWidth ?? window.innerWidth) - w),
+      y: Math.min(Math.max(0, y), (contenitore?.clientHeight ?? window.innerHeight) - h),
     };
   }, []);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const r = areaRef.current?.getBoundingClientRect();
-    if (!r) return;
+    const padre = areaRef.current?.offsetParent?.getBoundingClientRect();
+    if (!r || !padre) return;
     trascinamento.current = {
       id: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
-      origX: r.left,
-      origY: r.top,
+      origX: r.left - padre.left,
+      origY: r.top - padre.top,
       mosso: false,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -113,8 +115,8 @@ export default function PinoProductFloat({
           ? { left: posizione.x, top: posizione.y, right: "auto", bottom: "auto" }
           : {}),
       }}
-      className={`fixed z-40 flex cursor-grab select-none flex-row items-end gap-2 active:cursor-grabbing ${
-        posizione ? "" : "top-20 right-3 md:bottom-8 md:right-8 md:top-auto"
+      className={`absolute z-20 flex cursor-grab select-none flex-row items-end gap-2 active:cursor-grabbing ${
+        posizione ? "" : "bottom-3 right-3"
       }`}
       aria-label="Chiedi a Pino"
     >
