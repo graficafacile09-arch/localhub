@@ -12,6 +12,7 @@ import {
   richiestaCinemaPino,
   richiestaRistorazionePino,
   richiestaParchiPino,
+  isRichiestaChefSommelierOTerritorio,
 } from "./routing-policy";
 import { ATTIVITA_CATALOGO_PINO, soggettoAlimentarePino } from "./lexicon";
 import {
@@ -178,6 +179,7 @@ import {
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
 import { recuperaSuggerimentiCatalogoDinamici, componiRispostaChefPino } from "./suggerimenti-catalogo";
+import { recuperaContestoTerritorioESito, formattaContestoTerritorioESito } from "./conoscenza-territorio-sito";
 import {
   rilevaDomandaAggregata,
   rilevaConteggioAttivitaPino,
@@ -3959,7 +3961,9 @@ export async function chatConAssistente(
   // finivano in un vuoto di catalogo («non ho trovato») e Pino diventava
   // TRISTE. La risposta è deterministica: ricette, consiglio di cottura, vino
   // calabrese e schede reali del catalogo.
-  if (richiestaCucinaPino(domanda)) {
+  // Ricette e cucina: con il rilevatore AI-first la domanda va alla generazione
+  // completa (vedi composizione finale), senza il blocco deterministico.
+  if (richiestaCucinaPino(domanda) && !isRichiestaChefSommelierOTerritorio(domanda)) {
     let prodottiCucina: Awaited<ReturnType<typeof searchProducts>> = [];
     for (const termine of terminiRicercaProdottoCucinaPino(domanda).slice(0, 2)) {
       try {
@@ -4011,7 +4015,7 @@ export async function chatConAssistente(
   // dedicata e deterministica. Senza questo ramo la domanda finiva nel percorso
   // conoscenza dei prodotti tipici, che cita la scheda ma non propone mai un
   // vino, oppure in un vuoto di catalogo.
-  if (richiestaAbbinamentoVinoPino(domanda)) {
+  if (richiestaAbbinamentoVinoPino(domanda) && !isRichiestaChefSommelierOTerritorio(domanda)) {
     const etichetteCatalogo = await cercaEtichetteVinoPino(
       terminiRicercaViniPino(domanda)
     );
@@ -5718,8 +5722,14 @@ export async function chatConAssistente(
   // Le risposte vincolate (restrizione alimentare, servizio, indisponibilità,
   // fonti non disponibili) restano deterministiche: lì il testo è un obbligo,
   // non una scelta di stile.
+  // Chef, sommelier e territorio: sempre generazione AI, anche senza risultati di catalogo.
+  const aiChefOTerritorio = isRichiestaChefSommelierOTerritorio(domanda);
+  // Territori, denominazioni e pagine del sito letti da Supabase (cache 5 min).
+  const contestoTerritorio = aiChefOTerritorio
+    ? formattaContestoTerritorioESito(await recuperaContestoTerritorioESito(domanda))
+    : "";
   const rispostaAI =
-    qualcosaDaDire &&
+    (qualcosaDaDire || aiChefOTerritorio) &&
     !rispostaRestrizioneAlimentare &&
     !rispostaServiziTrovata &&
     !rispostaServizioTrovata &&
@@ -5728,7 +5738,7 @@ export async function chatConAssistente(
       ? await componiRispostaChefPino({
           systemPrompt: systemPromptPino,
           storico,
-          blocchi: [contestoEntita, bloccoSuggerimenti, contesto].filter(Boolean).join("\n\n"),
+          blocchi: [contestoEntita, bloccoSuggerimenti, contesto, contestoTerritorio].filter(Boolean).join("\n\n"),
           budgetAI,
           deadlineMs: opzioni?.deadlineMs,
           signal: opzioni?.signal,

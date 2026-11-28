@@ -7,6 +7,8 @@
 // I soggetti alimentari (italiani e inglesi) vivono in `lexicon.ts`: un solo
 // posto da estendere per tutte le decisioni di routing di Pino.
 import { SOGGETTI_ALIMENTARI_PINO, SOGGETTI_ALIMENTARI_INGLESI_PINO } from "./lexicon.ts";
+import { richiestaCucinaPino } from "./chef-sommelier";
+import { richiestaAbbinamentoVinoPino } from "./abbinamenti-vino";
 
 const FOOD_PRODUCTS: readonly string[] = [
   ...SOGGETTI_ALIMENTARI_PINO,
@@ -164,6 +166,26 @@ const RE_PARCHI_PINO = /\b(?:parco|parchi|parks?)\b/i;
 /** Richiesta che nomina parchi o aree: va ai dati territorio, non alla guida. */
 export function richiestaParchiPino(query: string): boolean {
   return RE_PARCHI_PINO.test(String(query ?? ""));
+}
+
+/** Termini di territorio, filiere, certificazioni e portale: sempre risposta AI. */
+const RE_TERRITORIO_CHEF_PINO =
+  /\b(?:calabri\w*|comun[ei]|borgo|borghi|territorio|filier[ae]|dop|igp|pat|de\.?co|denominazion\w*|radici\s?scan|portale|sito|esplor\w*|sila|aspromonte|pollino|tropea|castrovillari|morano|mormanno|civita|saracena|rocca imperiale|rotonda|corigliano|vitign\w*|magliocco|gaglioppo|cir[oò]|ricett\w*|piatt\w* tipic\w*|cucin\w*|ingredient\w*|abbinament\w*|vitigni?|nduja|fileja|stocco|parc\w*|vin[oi]|cibo)\b/i;
+
+/**
+ * Domanda su ricette, cucina, abbinamenti cibo-vino, vitigni, territorio,
+ * parchi, comuni, filiere, DOP/IGP/PAT o esplorazione del portale.
+ * Queste richieste passano sempre alla generazione AI completa, senza i blocchi
+ * deterministici di «nessun risultato».
+ */
+export function isRichiestaChefSommelierOTerritorio(testo: string): boolean {
+  const q = String(testo ?? "");
+  return (
+    richiestaCucinaPino(q) ||
+    richiestaAbbinamentoVinoPino(q) ||
+    richiestaParchiPino(q) ||
+    RE_TERRITORIO_CHEF_PINO.test(q)
+  );
 }
 
 type RegolaRoutingPino = {

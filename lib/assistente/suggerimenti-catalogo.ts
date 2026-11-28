@@ -153,7 +153,7 @@ export async function componiRispostaChefPino({
         systemPrompt,
         userPrompt: buildFinalPrompt(storico, blocchi),
         temperature: 0.45,
-        maxTokens: 1400,
+        maxTokens: 1500,
         timeoutMs: Math.max(1_000, Math.min(8_000, tempoRestanteAIPino(budgetAI))),
         deadlineMs,
         signal,
