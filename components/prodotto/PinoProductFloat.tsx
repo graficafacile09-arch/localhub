@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import PinoSprite from "@/components/assistant/PinoSprite";
-
-/** Vino o bevanda (liquore, amaro): in questi casi si chiede il piatto da abbinare. */
-const RE_BEVANDA = /\b(vin[oi]|vitigno|cirò|ciro|gaglioppo|mantonico|greco|aglianico|rosso|bianco|rosato|liquor[ei]|amaro|amari|grappa|distillat|birra|spumante|passito)\b/i;
+import {
+  categoriaProdottoPino,
+  domandaProdottoPino,
+} from "@/lib/assistente/prodotti-pino";
 
 /** Distanza minima (px) oltre la quale un movimento è trascinamento, non tap. */
 const SOGLIA_TRASCINAMENTO = 6;
@@ -22,10 +23,8 @@ export default function PinoProductFloat({
   productName: string;
   categoria?: string;
 }) {
-  const bevanda = RE_BEVANDA.test(`${productName} ${categoria}`);
-  const domanda = bevanda
-    ? `Consigliami un piatto tradizionale calabrese da cucinare e quali prodotti tipici abbinare a «${productName}»`
-    : `Dammi una ricetta tradizionale calabrese con «${productName}» e consigliami il vino calabrese ideale da abbinare`;
+  const famiglia = categoriaProdottoPino(productName, categoria);
+  const domanda = domandaProdottoPino(productName, categoria);
 
   const [chiuso, setChiuso] = useState(false);
   const [pannelloAperto, setPannelloAperto] = useState(false);
@@ -130,7 +129,7 @@ export default function PinoProductFloat({
         </div>
         <div className="mt-0.5 flex items-center gap-1.5">
           <span className="text-[13px] font-medium leading-snug text-stone-800">
-            Ricette e abbinamenti
+            {famiglia === "dolce" ? "Abbinamento e vino" : "Ricette e abbinamenti"}
           </span>
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-700" aria-hidden />
         </div>

@@ -18,6 +18,7 @@ import {
   vinoCalabreseCatalogoPino,
   type EtichettaVinoPino,
 } from "./abbinamenti-vino";
+import { eProdottoFinitoPino } from "./prodotti-pino";
 
 /** Ricetta tradizionale calabrese con il suo procedimento in una riga. */
 export type RicettaCucinaPino = {
@@ -426,6 +427,8 @@ const RE_CIBO =
 /** Vero quando la domanda chiede come cucinare o usare un prodotto. */
 export function richiestaCucinaPino(query: string): boolean {
   const testo = normalizza(query);
+  // Un dolce o un prodotto finito è già pronto: non si cucina, si abbina.
+  if (eProdottoFinitoPino(testo)) return false;
   if (!RE_CUCINA.test(testo)) return false;
   if (CUCINA.some((voce) => voce.forme.test(testo))) return true;
   return RE_CIBO.test(testo);

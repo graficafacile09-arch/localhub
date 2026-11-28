@@ -1,9 +1,10 @@
 "use client";
 
 import PinoSprite from "@/components/assistant/PinoSprite";
-
-/** Vino o bevanda (liquore, amaro): in questi casi si chiede il piatto da abbinare. */
-const RE_BEVANDA = /\b(vin[oi]|vitigno|cirò|ciro|gaglioppo|mantonico|greco|aglianico|rosso|bianco|rosato|liquor[ei]|amaro|amari|grappa|distillat|birra|spumante|passito)\b/i;
+import {
+  categoriaProdottoPino,
+  domandaProdottoPino,
+} from "@/lib/assistente/prodotti-pino";
 
 /**
  * Pillola discreta nella scheda prodotto. Apre Pino con una domanda precompilata
@@ -18,10 +19,8 @@ export default function PinoChiediButton({
   productName: string;
   categoria?: string;
 }) {
-  const bevanda = RE_BEVANDA.test(`${productName} ${categoria}`);
-  const domanda = bevanda
-    ? `Consigliami un piatto tradizionale calabrese da cucinare e quali prodotti tipici abbinare a «${productName}»`
-    : `Dammi una ricetta tradizionale calabrese con «${productName}» e consigliami il vino calabrese ideale da abbinare`;
+  const famiglia = categoriaProdottoPino(productName, categoria);
+  const domanda = domandaProdottoPino(productName, categoria);
 
   return (
     <button
@@ -36,7 +35,7 @@ export default function PinoChiediButton({
       <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm">
         <PinoSprite mood="happy" className="h-[34px] w-auto max-w-none shrink-0 object-contain" />
       </span>
-      Chiedi a Pino: ricette e abbinamenti
+      {famiglia === "dolce" ? "Chiedi a Pino: abbinamento e vino" : "Chiedi a Pino: ricette e abbinamenti"}
     </button>
   );
 }

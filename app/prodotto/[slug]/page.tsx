@@ -173,6 +173,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   const disponibile = disponibilitaReale(quantita, quantitaRiservata);
   const esaurito = prodottoEsaurito(quantita, quantitaRiservata);
   const stato = "stato_condizione" in prodotto ? (prodotto.stato_condizione as string | null) : null;
+  // Famiglia del prodotto per la domanda precompilata di Pino (vino, dolce o alimento).
+  const categoriaPino = "categoria" in prodotto ? String(prodotto.categoria ?? "") : "";
 
   const buildWhatsAppUrl = () => {
     if (!negozio) return "#";
@@ -231,7 +233,12 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
               varianti={varianti}
               soggettoVerificaEta={soggettoVerificaEta}
-              overlay={<PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />}
+              overlay={
+                <PinoProductFloat
+                  productName={String(prodotto.nome ?? "questo prodotto")}
+                  categoria={categoriaPino}
+                />
+              }
             />
             <div className="mt-4">
               <FavoritoButton
@@ -265,7 +272,12 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           nomeProdotto={prodotto.nome as string}
           marchio={riconoscimento}
           logoMarchio={logoRiconoscimento}
-          overlay={<PinoProductFloat productName={String(prodotto.nome ?? "questo prodotto")} />}
+          overlay={
+            <PinoProductFloat
+              productName={String(prodotto.nome ?? "questo prodotto")}
+              categoria={categoriaPino}
+            />
+          }
         />
         </div>
 
