@@ -46,7 +46,7 @@ function buildOpenRouter(): VisionProvider | null {
 function buildGemini(): VisionProvider | null {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  const model = process.env.GEMINI_VISION_MODEL ?? "gemini-2.0-flash";
+  const model = process.env.GEMINI_VISION_MODEL ?? "gemini-flash-latest";
   return new GeminiVisionProvider(apiKey, model);
 }
 

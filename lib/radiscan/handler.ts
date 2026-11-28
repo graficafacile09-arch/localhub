@@ -778,7 +778,7 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     if (!progressivo) {
       const risultato = await eseguiAnalisi(contesto, request.signal);
       if (risultato.tipo === "errore") {
-        return errore(risultato.statoHttp, risultato.codice, risultato.messaggio);
+        return errore(risultato.statoHttp, risultato.codice, risultato.messaggio, risultato.debugCode);
       }
       return json(
         { success: true, esito: risultato.esito, meta: risultato.meta, cache: risultato.cache },
