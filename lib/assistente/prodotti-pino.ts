@@ -54,14 +54,33 @@ export function eBevandaProdottoPino(nome: string): boolean {
 }
 
 /**
- * Famiglia del prodotto. Il dolce viene controllato per primo: «liquore al
- * bergamotto» e «amaro calabrese» sono chiusure da abbinare, non piatti.
+ * Ortaggi e legumi restano sempre alimenti da cucinare: senza questo controllo
+ * «Cipolla bianca di Castrovillari» rischiava di finire tra i vini per via di
+ * «bianca» (e «cipolla dolce» tra i dolci per via di «dolce»).
+ */
+const RE_ORTOGGI_LEGUMI =
+  /\b(cipoll\w*|patat\w*|melanzan\w*|pomodor\w*|peperon\w*|fagiol\w*|ceci|lenticchi\w*|zucchin\w*|zucc\w*|cavol\w*|carciof\w*|asparag\w*|broccol\w*|spinac\w*|bietol\w*|cicori\w*|radicchi\w*|finocchi[oi])\b/;
+
+/** Preparati a base di ortaggi (liquori, confetture) che non sono da cucinare. */
+const RE_PREPARATO_ORTOGGIO = /\b(liquor\w*|amar[oi]|confettur\w*|marmellat\w*)\b/;
+
+/**
+ * Famiglia del prodotto. Ortaggi e legumi vengono riconosciuti per primi, poi
+ * il dolce: «liquore al bergamotto» e «amaro calabrese» sono chiusure da
+ * abbinare, non piatti.
  */
 export function categoriaProdottoPino(
   nome: string,
   categoria = ""
 ): CategoriaProdottoPino {
   const testo = `${nome} ${categoria}`;
+  const nomeNormalizzato = normalizza(nome);
+  if (
+    RE_ORTOGGI_LEGUMI.test(nomeNormalizzato) &&
+    !RE_PREPARATO_ORTOGGIO.test(normalizza(testo))
+  ) {
+    return "alimento";
+  }
   if (eProdottoFinitoPino(testo)) return "dolce";
   if (eBevandaProdottoPino(testo)) return "vino";
   return "alimento";
@@ -216,6 +235,8 @@ export function bloccoAlimentoDaCucinarePino(query: string): string {
     "- Struttura la risposta in due sezioni nette, senza premesse:",
     "  1. **La Ricetta Calabrese**: titolo del piatto della tradizione in cui il prodotto è protagonista, ingredienti con dosi per 4 persone e procedimento pratico passo-passo.",
     "  2. **L'Abbinamento del Sommelier**: un vino calabrese specifico con denominazione e vitigno, temperatura di servizio e spiegazione tecnica dell'abbinamento (tannino, acidità, sapidità, morbidezza, grassezza, piccantezza).",
+    "- Se il catalogo non ha una ricetta specifica del prodotto, NON dire «non ho trovato ricette»: scegli subito una ricetta tradizionale calabrese collaudata, per esempio Frittata calabrese con Cipolla bianca di Castrovillari e Pecorino del Pollino, Cipolle bianche di Castrovillari ripiene al forno oppure Spaghetti con cipolla bianca stufata e guanciale.",
+    "- L'abbinamento vino è obbligatorio in ogni risposta: indica una bottiglia calabrese reale (es. Terre di Cosenza DOC Pollino Rosato o Montonico IGP) e linkala se è presente in <suggerimenti_catalogo>.",
     "- Linka il vino reale con /prodotto/[slug] se è presente in <suggerimenti_catalogo>; non inventare slug, prezzi o etichette.",
     "- Non chiudere con domande o rinvii: la risposta è completa e auto-sufficiente.",
   ].join("\n");

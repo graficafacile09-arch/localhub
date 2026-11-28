@@ -10,7 +10,14 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { callGroqText } from "@/lib/ai/groq";
+import type { ProdottoRicerca } from "@/lib/ricerca-ai";
 import { buildFinalPrompt } from "./prompt";
+import {
+  categoriaProdottoPino,
+  eBevandaProdottoPino,
+  eProdottoFinitoPino,
+  type CategoriaProdottoPino,
+} from "./prodotti-pino";
 import {
   chiamataAIConBudgetPino,
   tempoRestanteAIPino,
@@ -18,24 +25,264 @@ import {
 } from "./budget-ai";
 
 export type SuggerimentoCatalogo = {
+  id: string;
   nome: string;
   slug: string;
   categoria: string | null;
+  descrizione: string | null;
   prezzo: number | null;
   negozio: string | null;
+  negozio_id: string;
+  immagine_principale: string | null;
+  ha_varianti: boolean;
+  quantita_disponibile: number | null;
+  quantita_riservata: number | null;
 };
+
+/** Suggerimento pronto per le mini-card prodotto della chat. */
+export function prodottoDaSuggerimentoCatalogo(s: SuggerimentoCatalogo): ProdottoRicerca {
+  return {
+    id: s.id,
+    slug: s.slug,
+    negozio_id: s.negozio_id,
+    nome: s.nome,
+    descrizione: s.descrizione,
+    categoria: s.categoria,
+    prezzo: s.prezzo ?? 0,
+    negozio_nome: s.negozio ?? "",
+    immagine_principale: s.immagine_principale,
+    ha_varianti: s.ha_varianti,
+    quantita_disponibile: s.quantita_disponibile,
+    quantita_riservata: s.quantita_riservata,
+  };
+}
+
+/**
+ * Mini-card da mostrare in chat: prima i prodotti che Pino ha citato davvero,
+ * poi i più pertinenti all'abbinamento, al massimo `massimo` card.
+ */
+export function selezionaProdottiSuggeritiPino(
+  suggerimenti: SuggerimentoCatalogo[],
+  testo: string,
+  massimo = 3
+): ProdottoRicerca[] {
+  const normalizzato = normalizzaTesto(testo);
+  const citati = suggerimenti.filter((s) => {
+    const nome = normalizzaTesto(s.nome);
+    return nome.length > 3 && normalizzato.includes(nome);
+  });
+  const scelti = [
+    ...citati,
+    ...suggerimenti.filter((s) => !citati.includes(s)),
+  ].slice(0, Math.max(0, massimo));
+  return scelti.map(prodottoDaSuggerimentoCatalogo);
+}
+
+type RigaProdottoCatalogo = {
+  id: string;
+  nome: string;
+  slug: string | null;
+  categoria: string | null;
+  descrizione: string | null;
+  prezzo: number | null;
+  negozio_id: string;
+  immagine_principale: string | null;
+  ha_varianti: boolean | null;
+  quantita_disponibile: number | null;
+  quantita_riservata: number | null;
+};
+
+const CAMPI_PRODOTTO_CATALOGO =
+  "id, nome, slug, categoria, descrizione, prezzo, negozio_id, immagine_principale, ha_varianti, quantita_disponibile, quantita_riservata";
 
 const LIMITE_SUGGERIMENTI = 5;
 const LIMITE_FALLBACK = 8;
 
-// Vino e bevande: il loro abbinamento è il cibo.
-const PAROLE_VINO = /\b(vino|vini|rosso|rosato|bianco|cirò|ciro|gaglioppo|magliocco|greco|mantonico|savuto|bivongi|pollino|birra|liquore|amaro|spumante)\b/i;
-
 // Parole che indicano cibo gastronomico da abbinare a un vino.
 const CATEGORIE_CIBO = ["salumi", "formaggi", "conserve", "pasta", "dolci", "olio", "miele", "pane"];
 
+// Abbinamento ai dolci e ai prodotti finiti: si cercano passiti e liquori.
+const TERMINI_PASSITI_LIQUORI = [
+  "moscato",
+  "passito",
+  "liquore",
+  "amaro",
+  "greco di bianco",
+  "magliocco dolce",
+  "vino",
+];
+
+// Alimenti da cucinare: prima le etichette calabresi, poi il resto dei vini.
+const TERMINI_VINI_ALIMENTO = [
+  "terre di cosenza",
+  "montonico",
+  "pollino rosato",
+  "pollino rosso",
+  "cirò",
+  "ciro",
+  "gaglioppo",
+  "magliocco",
+  "mantonico",
+  "greco",
+  "savuto",
+  "bivongi",
+  "vino",
+  "rosato",
+  "rosso",
+];
+
+// Ingredienti complementari da suggerire accanto a un ortaggio o un legume.
+const TERMINI_COMPLEMENTI_ALIMENTO = [
+  "pecorino",
+  "caciocavallo",
+  "ricotta",
+  "olio",
+  "guanciale",
+  "peperoncino",
+  "pane",
+];
+
+// Cibo gastronomico da abbinare quando la domanda è su un vino.
+const TERMINI_CIBO_VINO = [
+  "salumi",
+  "formaggi",
+  "conserve",
+  "pasta",
+  "olio",
+  "miele",
+  "pane",
+  "pecorino",
+  "caciocavallo",
+  "nduja",
+];
+
+/**
+ * Vero per un vino o una bevanda: usa la classificazione di prodotti-pino, che
+ * non scambia «Cipolla bianca di Castrovillari» per un vino bianco.
+ */
 export function entitaEVino(entita: string | null | undefined): boolean {
-  return PAROLE_VINO.test(String(entita ?? ""));
+  return eBevandaProdottoPino(String(entita ?? ""));
+}
+
+function normalizzaTesto(testo: string): string {
+  return String(testo ?? "")
+    .toLowerCase()
+    .replace(/[’‘`´]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Vero per passiti, vini dolci e liquori: l'abbinamento di un dolce. */
+function eBevandaAbbinamentoPino(p: RigaProdottoCatalogo): boolean {
+  const testo = `${p.nome} ${p.categoria ?? ""}`;
+  return eBevandaProdottoPino(testo) || /\b(liquor\w*|amar[oi])\b/.test(normalizzaTesto(testo));
+}
+
+/** Vero per un'etichetta di vino (i liquori restano fuori). */
+function eVinoPino(p: RigaProdottoCatalogo): boolean {
+  const testo = `${p.nome} ${p.categoria ?? ""}`;
+  return eBevandaProdottoPino(testo) && !eProdottoFinitoPino(testo);
+}
+
+/** Vero per formaggi, salumi, olio e altri ingredienti da portare in tavola. */
+function eComplementoAlimentoPino(p: RigaProdottoCatalogo): boolean {
+  const categoria = String(p.categoria ?? "").toLowerCase();
+  if (CATEGORIE_CIBO.some((c) => categoria.includes(c))) return true;
+  const testo = normalizzaTesto(`${p.nome} ${categoria}`);
+  return TERMINI_COMPLEMENTI_ALIMENTO.some((termine) => testo.includes(termine));
+}
+
+function punteggioTermini(p: RigaProdottoCatalogo, termini: string[]): number {
+  const testo = normalizzaTesto(`${p.nome} ${p.categoria ?? ""}`);
+  const indice = termini.findIndex((termine) => testo.includes(termine));
+  return indice === -1 ? termini.length : indice;
+}
+
+function terminiMiratiPino(famiglia: CategoriaProdottoPino): string[] {
+  switch (famiglia) {
+    case "dolce":
+      return TERMINI_PASSITI_LIQUORI;
+    case "alimento":
+      return [...TERMINI_VINI_ALIMENTO, ...TERMINI_COMPLEMENTI_ALIMENTO];
+    default:
+      return TERMINI_CIBO_VINO;
+  }
+}
+
+/** Famiglia del prodotto corrente: il modello chiede sempre il caso giusto. */
+function famigliaProdottoPino(
+  entitaCorrente: string | null | undefined,
+  query: string
+): CategoriaProdottoPino {
+  const entita = String(entitaCorrente ?? "").trim();
+  return categoriaProdottoPino(entita || query);
+}
+
+function deduplicaPerSlug(righe: RigaProdottoCatalogo[]): RigaProdottoCatalogo[] {
+  const visti = new Set<string>();
+  const uniche: RigaProdottoCatalogo[] = [];
+  for (const riga of righe) {
+    const chiave = String(riga.slug ?? riga.id);
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    uniche.push(riga);
+  }
+  return uniche;
+}
+
+async function cercaProdottiCatalogo(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  idsNegozi: string[],
+  termini: string[] | null,
+  limite: number
+): Promise<RigaProdottoCatalogo[]> {
+  let query = db
+    .from("prodotti")
+    .select(CAMPI_PRODOTTO_CATALOGO)
+    .eq("attivo", true)
+    .in("negozio_id", idsNegozi);
+  if (termini && termini.length > 0) {
+    query = query.or(
+      termini
+        .flatMap((termine) => [`nome.ilike.%${termine}%`, `categoria.ilike.%${termine}%`])
+        .join(",")
+    );
+  }
+  const { data } = await query.order("created_at", { ascending: false }).limit(limite);
+  return (data ?? []) as unknown as RigaProdottoCatalogo[];
+}
+
+function ordinaCandidatiPino(
+  righe: RigaProdottoCatalogo[],
+  famiglia: CategoriaProdottoPino
+): RigaProdottoCatalogo[] {
+  // Dolci e prodotti finiti: solo passiti, vini dolci e liquori, i più vicini
+  // all'abbinamento per primi (Moscato al Governo, Greco di Bianco, liquori).
+  if (famiglia === "dolce") {
+    return righe
+      .filter(eBevandaAbbinamentoPino)
+      .sort((a, b) => punteggioTermini(a, TERMINI_PASSITI_LIQUORI) - punteggioTermini(b, TERMINI_PASSITI_LIQUORI));
+  }
+  // Alimento da cucinare: prima i vini calabresi (servono all'abbinamento),
+  // poi gli ingredienti complementari. Così la ricetta ha sempre la bottiglia.
+  if (famiglia === "alimento") {
+    const vini = righe
+      .filter(eVinoPino)
+      .sort((a, b) => punteggioTermini(a, TERMINI_VINI_ALIMENTO) - punteggioTermini(b, TERMINI_VINI_ALIMENTO))
+      .slice(0, 3);
+    const complementi = righe
+      .filter((p) => !eBevandaAbbinamentoPino(p) && eComplementoAlimentoPino(p))
+      .sort(
+        (a, b) =>
+          punteggioTermini(a, TERMINI_COMPLEMENTI_ALIMENTO) -
+          punteggioTermini(b, TERMINI_COMPLEMENTI_ALIMENTO)
+      );
+    return [...vini, ...complementi];
+  }
+  // Domanda su un vino: il cibo gastronomico di categorie note viene prima.
+  return righe
+    .filter((p) => !eBevandaAbbinamentoPino(p) && String(p.categoria ?? "").trim() !== "")
+    .sort((a, b) => punteggioTermini(a, TERMINI_CIBO_VINO) - punteggioTermini(b, TERMINI_CIBO_VINO));
 }
 
 /**
@@ -48,7 +295,7 @@ export async function recuperaSuggerimentiCatalogoDinamici(
   entitaCorrente: string | null | undefined,
   query: string
 ): Promise<SuggerimentoCatalogo[]> {
-  const entitaVino = entitaEVino(entitaCorrente) || entitaEVino(query);
+  const famiglia = famigliaProdottoPino(entitaCorrente, query);
   try {
     const db = createAdminSupabaseClient();
     const { data: negoziAttivi } = await db
@@ -61,47 +308,27 @@ export async function recuperaSuggerimentiCatalogoDinamici(
     if (negozi.length === 0) return [];
     const nomeNegozio = new Map(negozi.map((n) => [String(n.id), n.nome]));
 
-    const { data: prodotti } = await db
-      .from("prodotti")
-      .select("nome, slug, categoria, prezzo, negozio_id")
-      .eq("attivo", true)
-      .in("negozio_id", negozi.map((n) => n.id))
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const idsNegozi = negozi.map((n) => String(n.id));
 
-    const righe = (prodotti ?? []) as {
-      nome: string;
-      slug: string | null;
-      categoria: string | null;
-      prezzo: number | null;
-      negozio_id: string;
-    }[];
-
-    const candidati = righe.filter((p) => {
-      if (!p.slug) return false;
-      const categoria = String(p.categoria ?? "").toLowerCase();
-      const vinoOBevanda = entitaEVino(`${p.nome} ${categoria}`);
-      return entitaVino ? !vinoOBevanda && categoria !== "" : vinoOBevanda;
-    });
-
-    // Per il vino preferisce il cibo di categorie note; per il cibo i vini.
-    const ordinati = [...candidati].sort((a, b) => {
-      const ca = CATEGORIE_CIBO.some((c) => String(a.categoria).toLowerCase().includes(c)) ? 0 : 1;
-      const cb = CATEGORIE_CIBO.some((c) => String(b.categoria).toLowerCase().includes(c)) ? 0 : 1;
-      return ca - cb;
-    });
+    // Due letture in parallelo: una mirata sui termini dell'abbinamento (così i
+    // passiti e le etichette calabresi entrano anche se sono righe vecchie) e
+    // una recente come rete di sicurezza quando il catalogo non ha quei termini.
+    const [mirati, recenti] = await Promise.all([
+      cercaProdottiCatalogo(db, idsNegozi, terminiMiratiPino(famiglia), 60),
+      cercaProdottiCatalogo(db, idsNegozi, null, 200),
+    ]);
+    const righe = deduplicaPerSlug([...mirati, ...recenti]);
+    const tutti = righe.filter((p) => Boolean(p.slug));
+    const ordinati = ordinaCandidatiPino(tutti, famiglia);
 
     // Filtro per parola chiave senza risultati: il catalogo attivo resta visibile
     // con gastronomia e bevande, così il suggerimento non torna mai vuoto.
-    const tutti = righe.filter((p) => Boolean(p.slug));
-    const èVinoOBevanda = (p: { nome: string; categoria: string | null }) =>
-      entitaEVino(`${p.nome} ${p.categoria ?? ""}`);
     const sorgente =
       ordinati.length > 0
         ? ordinati
         : [
-            ...tutti.filter((p) => !èVinoOBevanda(p)).slice(0, 4),
-            ...tutti.filter((p) => èVinoOBevanda(p)).slice(0, 4),
+            ...tutti.filter((p) => !eBevandaAbbinamentoPino(p)).slice(0, 4),
+            ...tutti.filter((p) => eBevandaAbbinamentoPino(p)).slice(0, 4),
           ];
     const limite = ordinati.length > 0 ? LIMITE_SUGGERIMENTI : LIMITE_FALLBACK;
     const visti = new Set<string>();
@@ -111,11 +338,18 @@ export async function recuperaSuggerimentiCatalogoDinamici(
       if (visti.has(slug)) continue;
       visti.add(slug);
       risultato.push({
+        id: String(p.id),
         nome: p.nome,
         slug,
         categoria: p.categoria,
+        descrizione: p.descrizione,
         prezzo: p.prezzo == null ? null : Number(p.prezzo),
         negozio: nomeNegozio.get(String(p.negozio_id)) ?? null,
+        negozio_id: String(p.negozio_id),
+        immagine_principale: p.immagine_principale,
+        ha_varianti: Boolean(p.ha_varianti),
+        quantita_disponibile: p.quantita_disponibile,
+        quantita_riservata: p.quantita_riservata,
       });
       if (risultato.length >= limite) break;
     }

@@ -178,7 +178,11 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
-import { recuperaSuggerimentiCatalogoDinamici, componiRispostaChefPino } from "./suggerimenti-catalogo";
+import {
+  recuperaSuggerimentiCatalogoDinamici,
+  componiRispostaChefPino,
+  selezionaProdottiSuggeritiPino,
+} from "./suggerimenti-catalogo";
 import { recuperaContestoTerritorioESito, formattaContestoTerritorioESito } from "./conoscenza-territorio-sito";
 import {
   rilevaDomandaAggregata,
@@ -3903,14 +3907,17 @@ export async function chatConAssistente(
       deadlineMs: opzioni?.deadlineMs,
       signal: opzioni?.signal,
     });
+    const rispostaChef =
+      testoChef ??
+      (linguaConversazione === "en"
+        ? "I can't answer this right now. Please try again in a moment."
+        : "Non riesco a rispondere in questo momento. Riprova tra poco.");
     return esci("chef_territorio_ai", {
-      risposta:
-        testoChef ??
-        (linguaConversazione === "en"
-          ? "I can't answer this right now. Please try again in a moment."
-          : "Non riesco a rispondere in questo momento. Riprova tra poco."),
+      risposta: rispostaChef,
       negozi: [],
-      prodotti: [],
+      // Mini-card reali: i prodotti citati nella risposta (o i più pertinenti
+      // all'abbinamento) portano foto, prezzo e link /prodotto/[slug].
+      prodotti: selezionaProdottiSuggeritiPino(suggerimentiChef, rispostaChef, 3),
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente" });

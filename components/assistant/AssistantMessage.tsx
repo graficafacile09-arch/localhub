@@ -31,59 +31,67 @@ interface AssistantMessageProps {
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+// Tipografia compatta delle bolle di Pino: titoli mai giganti, corpo leggibile
+// a 13px e link interni in smeraldo, riconoscibili come azione.
+const CLASSE_TITOLO_CHAT =
+  "mt-2.5 mb-1 text-[13.5px] font-bold leading-snug text-stone-900 first:mt-0";
+const CLASSE_TESTO_CHAT = "text-[13px] leading-relaxed text-stone-700";
+const CLASSE_LINK_INTERNO =
+  "font-semibold text-emerald-700 underline decoration-emerald-400 underline-offset-2 transition hover:text-emerald-900";
+
 const markdownComponents: Components = {
-  h1: ({ children }) => (
-    <h3 className="mt-4 text-base font-black tracking-tight text-slate-950 first:mt-0">
-      {children}
-    </h3>
-  ),
-  h2: ({ children }) => (
-    <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">
-      {children}
-    </h3>
-  ),
-  h3: ({ children }) => (
-    <h4 className="mt-2 text-sm font-bold text-slate-900 first:mt-0">
-      {children}
-    </h4>
-  ),
+  h1: ({ children }) => <h1 className={CLASSE_TITOLO_CHAT}>{children}</h1>,
+  h2: ({ children }) => <h2 className={CLASSE_TITOLO_CHAT}>{children}</h2>,
+  h3: ({ children }) => <h3 className={CLASSE_TITOLO_CHAT}>{children}</h3>,
   p: ({ children }) => (
-    <p className="mt-2 text-[13px] leading-5 text-slate-700 first:mt-0">
-      {children}
-    </p>
+    <p className={`mt-2 first:mt-0 ${CLASSE_TESTO_CHAT}`}>{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="mt-2 space-y-1 text-slate-700">{children}</ul>
+    <ul className={`mt-1.5 list-disc space-y-1 pl-4 marker:text-emerald-600 ${CLASSE_TESTO_CHAT}`}>
+      {children}
+    </ul>
   ),
   ol: ({ children }) => (
-    <ol className="mt-2 list-decimal space-y-1 pl-4 text-slate-700 marker:font-semibold marker:text-blue-600">
+    <ol className={`mt-1.5 list-decimal space-y-1 pl-4 marker:font-semibold marker:text-emerald-700 ${CLASSE_TESTO_CHAT}`}>
       {children}
     </ol>
   ),
-  li: ({ children }) => (
-    <li className="text-[13px] leading-5 text-slate-700">{children}</li>
-  ),
+  li: ({ children }) => <li className={CLASSE_TESTO_CHAT}>{children}</li>,
   strong: ({ children }) => (
-    <strong className="font-extrabold text-slate-950">{children}</strong>
+    <strong className="font-bold text-stone-900">{children}</strong>
   ),
   em: ({ children }) => (
-    <em className="font-medium text-blue-700">{children}</em>
+    <em className="font-medium text-stone-800">{children}</em>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="mt-2 rounded-lg border-l-2 border-yellow-400 bg-yellow-50 px-3 py-2 text-[13px] text-slate-700">
+    <blockquote className={`mt-2 rounded-lg border-l-2 border-emerald-400 bg-emerald-50/70 px-3 py-2 ${CLASSE_TESTO_CHAT}`}>
       {children}
     </blockquote>
   ),
-  a: ({ children, href }) => (
-    <a
-      href={href}
-      className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-800"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {children}
-    </a>
-  ),
+  a: ({ children, href }) => {
+    // Prodotti e territori restano nella chat: link interno, navigazione diretta.
+    if (href && href.startsWith("/")) {
+      return (
+        <Link
+          href={href}
+          onClick={() => window.dispatchEvent(new Event("assistant:close"))}
+          className={CLASSE_LINK_INTERNO}
+        >
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <a
+        href={href}
+        className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-800"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    );
+  },
   code: ({ children }) => (
     <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px] font-mono text-slate-800">
       {children}
