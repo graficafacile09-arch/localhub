@@ -64,18 +64,33 @@ export function prodottoDaSuggerimentoCatalogo(s: SuggerimentoCatalogo): Prodott
 export function selezionaProdottiSuggeritiPino(
   suggerimenti: SuggerimentoCatalogo[],
   testo: string,
-  massimo = 3
+  massimo = 3,
+  famiglia: CategoriaProdottoPino | null = null
 ): ProdottoRicerca[] {
   const normalizzato = normalizzaTesto(testo);
   const citati = suggerimenti.filter((s) => {
     const nome = normalizzaTesto(s.nome);
     return nome.length > 3 && normalizzato.includes(nome);
   });
-  const scelti = [
+  const ordine = [
     ...citati,
     ...suggerimenti.filter((s) => !citati.includes(s)),
-  ].slice(0, Math.max(0, massimo));
+  ];
+  let scelti = ordine.slice(0, Math.max(0, massimo));
+  // Su un alimento da cucinare la card del vino non deve mai mancare, anche se
+  // il modello non l'ha linkato: se nei primi posti non c'è, entra al posto
+  // dell'ultimo complemento.
+  if (famiglia === "alimento" && massimo > 0) {
+    const vino = ordine.find((s) => eVinoCalabreseSuggerimento(s));
+    if (vino && !scelti.includes(vino)) {
+      scelti = [...scelti.slice(0, Math.max(0, massimo - 1)), vino];
+    }
+  }
   return scelti.map(prodottoDaSuggerimentoCatalogo);
+}
+
+function eVinoCalabreseSuggerimento(s: SuggerimentoCatalogo): boolean {
+  return eBevandaProdottoPino(`${s.nome} ${s.categoria ?? ""}`) && !eProdottoFinitoPino(s.nome);
 }
 
 type RigaProdottoCatalogo = {
@@ -127,6 +142,24 @@ const TERMINI_VINI_ALIMENTO = [
   "savuto",
   "bivongi",
   "vino",
+  "rosato",
+  "rosso",
+];
+
+// Termini delle etichette calabresi da abbinare a un alimento da cucinare.
+const TERMINI_VINI_CALABRESI_DEDICATI = [
+  "vino",
+  "doc",
+  "igp",
+  "cirò",
+  "ciro",
+  "pollino",
+  "montonico",
+  "mantonico",
+  "gaglioppo",
+  "magliocco",
+  "savuto",
+  "terre di cosenza",
   "rosato",
   "rosso",
 ];
@@ -210,7 +243,7 @@ function terminiMiratiPino(famiglia: CategoriaProdottoPino): string[] {
 }
 
 /** Famiglia del prodotto corrente: il modello chiede sempre il caso giusto. */
-function famigliaProdottoPino(
+export function famigliaProdottoPino(
   entitaCorrente: string | null | undefined,
   query: string
 ): CategoriaProdottoPino {
@@ -313,11 +346,16 @@ export async function recuperaSuggerimentiCatalogoDinamici(
     // Due letture in parallelo: una mirata sui termini dell'abbinamento (così i
     // passiti e le etichette calabresi entrano anche se sono righe vecchie) e
     // una recente come rete di sicurezza quando il catalogo non ha quei termini.
-    const [mirati, recenti] = await Promise.all([
+    const [mirati, recenti, vini] = await Promise.all([
       cercaProdottiCatalogo(db, idsNegozi, terminiMiratiPino(famiglia), 60),
       cercaProdottiCatalogo(db, idsNegozi, null, 200),
+      // Per un alimento: lettura dedicata ai vini calabresi, così la bottiglia
+      // da abbinare c'è sempre anche se le altre letture l'hanno esclusa.
+      famiglia === "alimento"
+        ? cercaProdottiCatalogo(db, idsNegozi, TERMINI_VINI_CALABRESI_DEDICATI, 40)
+        : Promise.resolve([] as RigaProdottoCatalogo[]),
     ]);
-    const righe = deduplicaPerSlug([...mirati, ...recenti]);
+    const righe = deduplicaPerSlug([...vini, ...mirati, ...recenti]);
     const tutti = righe.filter((p) => Boolean(p.slug));
     const ordinati = ordinaCandidatiPino(tutti, famiglia);
 

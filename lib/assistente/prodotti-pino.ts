@@ -232,12 +232,15 @@ export function bloccoAlimentoDaCucinarePino(query: string): string {
   return [
     "ALIMENTO DA CUCINARE — RISPOSTA IN DUE SEZIONI, NIENTE DESCRIZIONI GENERICHE:",
     "- È vietato limitarsi a una descrizione organolettica del prodotto o a consigli soft e generici («si può usare in insalata o nei soffritti», «ottimo con i formaggi»).",
-    "- Struttura la risposta in due sezioni nette, senza premesse:",
-    "  1. **La Ricetta Calabrese**: titolo del piatto della tradizione in cui il prodotto è protagonista, ingredienti con dosi per 4 persone e procedimento pratico passo-passo.",
-    "  2. **L'Abbinamento del Sommelier**: un vino calabrese specifico con denominazione e vitigno, temperatura di servizio e spiegazione tecnica dell'abbinamento (tannino, acidità, sapidità, morbidezza, grassezza, piccantezza).",
+    "- LIMITE FERREO: massimo 150-180 parole totali, senza introduzioni né chiacchiere organolettiche.",
+    "- Schema obbligatorio, in quest'ordine:",
+    "  **1. La Ricetta: [Titolo]**",
+    "  - *Ingredienti (4 pers.):* elenco sintetico su 1-2 righe.",
+    "  - *Preparazione:* massimo 3-4 righe chiare e pratiche.",
+    "  **2. Il Vino Abbinato**",
+    "  - Un vino calabrese scelto tra quelli in <suggerimenti_catalogo>, linkato [Nome Esatto](/prodotto/slug); se nessun vino è in catalogo, in testo normale.",
+    "  - 2 righe sul perché sensoriale e sulla temperatura di servizio.",
     "- Se il catalogo non ha una ricetta specifica del prodotto, NON dire «non ho trovato ricette»: scegli subito una ricetta tradizionale calabrese collaudata, per esempio Frittata calabrese con Cipolla bianca di Castrovillari e Pecorino del Pollino, Cipolle bianche di Castrovillari ripiene al forno oppure Spaghetti con cipolla bianca stufata e guanciale.",
-    "- L'abbinamento vino è obbligatorio in ogni risposta: indica una bottiglia calabrese reale (es. Terre di Cosenza DOC Pollino Rosato o Montonico IGP) e linkala se è presente in <suggerimenti_catalogo>.",
-    "- Linka il vino reale con /prodotto/[slug] se è presente in <suggerimenti_catalogo>; non inventare slug, prezzi o etichette.",
     "- Non chiudere con domande o rinvii: la risposta è completa e auto-sufficiente.",
   ].join("\n");
 }

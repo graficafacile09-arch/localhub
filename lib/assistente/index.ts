@@ -182,6 +182,7 @@ import {
   recuperaSuggerimentiCatalogoDinamici,
   componiRispostaChefPino,
   selezionaProdottiSuggeritiPino,
+  famigliaProdottoPino,
 } from "./suggerimenti-catalogo";
 import { recuperaContestoTerritorioESito, formattaContestoTerritorioESito } from "./conoscenza-territorio-sito";
 import {
@@ -3882,6 +3883,7 @@ export async function chatConAssistente(
   // ricetta tipica calabrese» finisce su una scheda prodotto a caso.
   if (isRichiestaChefSommelierOTerritorio(domanda) && !richiestaGuidaAttrazioniPino(domanda)) {
     const budgetChef = creaBudgetAIPino();
+    const famigliaChef = famigliaProdottoPino(contestoEntita || soggettoPagina, domanda);
     const [suggerimentiChef, contestoTerritorioChef] = await Promise.all([
       recuperaSuggerimentiCatalogoDinamici(contestoEntita || soggettoPagina, domanda),
       recuperaContestoTerritorioESito(domanda),
@@ -3917,7 +3919,7 @@ export async function chatConAssistente(
       negozi: [],
       // Mini-card reali: i prodotti citati nella risposta (o i più pertinenti
       // all'abbinamento) portano foto, prezzo e link /prodotto/[slug].
-      prodotti: selezionaProdottiSuggeritiPino(suggerimentiChef, rispostaChef, 3),
+      prodotti: selezionaProdottiSuggeritiPino(suggerimentiChef, rispostaChef, 3, famigliaChef),
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente" });
