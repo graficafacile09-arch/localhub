@@ -121,20 +121,53 @@ function json(
   });
 }
 
-function errore(stato: number, codice: string, messaggio: string): Response {
-  return json({ success: false, errore: { codice, messaggio } }, stato);
+function errore(
+  stato: number,
+  codice: string,
+  messaggio: string,
+  debugCode?: string
+): Response {
+  return json(
+    {
+      success: false,
+      errore: {
+        codice,
+        messaggio,
+        ...(debugCode ? { dettaglio: debugCode } : {}),
+      },
+    },
+    stato
+  );
 }
+
+/** Codici tecnici stabili: mai chiavi, URL o contenuto dell'immagine. */
+export const DEBUG_CODICI = {
+  MISSING_KEYS: "MISSING_KEYS",
+  QUOTA_ERR: "QUOTA_ERR",
+  REGISTRO_ERR: "REGISTRO_ERR",
+  VISION_ERR: "VISION_ERR",
+  VISION_TIMEOUT: "VISION_TIMEOUT",
+  VISION_QUOTA: "VISION_QUOTA",
+  SCHEMA_ERR: "SCHEMA_ERR",
+  CONFIG_ERR: "CONFIG_ERR",
+} as const;
 
 interface DettaglioErrore {
   stato: number;
   codice: string;
   messaggio: string;
+  debugCode?: string;
 }
 
 /** Messaggi pubblici: nessun dettaglio di provider, database o configurazione. */
 function dettaglioErrore(causa: unknown): DettaglioErrore {
   if (!(causa instanceof ErroreRadiciScan)) {
-    return { stato: 500, codice: "ERRORE_INTERNO", messaggio: "Errore interno. Riprova più tardi." };
+    return {
+      stato: 500,
+      codice: "ERRORE_INTERNO",
+      messaggio: "Errore interno. Riprova più tardi.",
+      debugCode: DEBUG_CODICI.VISION_ERR,
+    };
   }
 
   switch (causa.codice) {
@@ -159,18 +192,21 @@ function dettaglioErrore(causa: unknown): DettaglioErrore {
         stato: 502,
         codice: "RISPOSTA_AI_NON_VALIDA",
         messaggio: "Il servizio di analisi ha restituito un esito non valido.",
+        debugCode: DEBUG_CODICI.SCHEMA_ERR,
       };
     case CODICI_ERRORE.PROVIDER_TIMEOUT:
       return {
         stato: 504,
         codice: "ANALISI_SCADUTA",
         messaggio: "L'analisi ha impiegato troppo tempo. Riprova.",
+        debugCode: DEBUG_CODICI.VISION_TIMEOUT,
       };
     case CODICI_ERRORE.PROVIDER_QUOTA:
       return {
         stato: 503,
         codice: "ANALISI_NON_DISPONIBILE",
         messaggio: "Servizio di analisi non disponibile. Riprova più tardi.",
+        debugCode: DEBUG_CODICI.VISION_QUOTA,
       };
     case CODICI_ERRORE.PROVIDER_RETE:
     case CODICI_ERRORE.PROVIDER_RISPOSTA:
@@ -178,18 +214,21 @@ function dettaglioErrore(causa: unknown): DettaglioErrore {
         stato: 502,
         codice: "ANALISI_NON_RIUSCITA",
         messaggio: "Il servizio di analisi non ha risposto correttamente.",
+        debugCode: DEBUG_CODICI.VISION_ERR,
       };
     case CODICI_ERRORE.PROVIDER_MODELLO:
       return {
         stato: 503,
         codice: "MODELLO_NON_DISPONIBILE",
         messaggio: "Il modello di riconoscimento non è disponibile. Riprova più tardi.",
+        debugCode: DEBUG_CODICI.VISION_ERR,
       };
     case CODICI_ERRORE.PROVIDER_CONFIGURAZIONE:
       return {
         stato: 503,
         codice: "CONFIGURAZIONE_NON_DISPONIBILE",
         messaggio: "Il servizio di riconoscimento non è configurato correttamente.",
+        debugCode: DEBUG_CODICI.MISSING_KEYS,
       };
     case CODICI_ERRORE.QUOTA_NON_DISPONIBILE:
     case CODICI_ERRORE.QUOTA_CONFIGURAZIONE:
@@ -205,7 +244,7 @@ function dettaglioErrore(causa: unknown): DettaglioErrore {
 
 function rispostaErrore(causa: unknown): Response {
   const dettaglio = dettaglioErrore(causa);
-  return errore(dettaglio.stato, dettaglio.codice, dettaglio.messaggio);
+  return errore(dettaglio.stato, dettaglio.codice, dettaglio.messaggio, dettaglio.debugCode);
 }
 
 /**
@@ -276,7 +315,13 @@ interface ContestoAnalisi {
 
 type EsecuzioneAnalisi =
   | { tipo: "ok"; esito: EsitoAnalisi; meta: MetaAnalisi; cache: boolean }
-  | { tipo: "errore"; statoHttp: number; codice: string; messaggio: string };
+  | {
+      tipo: "errore";
+      statoHttp: number;
+      codice: string;
+      messaggio: string;
+      debugCode?: string;
+    };
 
 export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
   /**
@@ -310,6 +355,7 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
           statoHttp: 503,
           codice: "ANALISI_NON_DISPONIBILE",
           messaggio: "Servizio di analisi non disponibile.",
+          debugCode: DEBUG_CODICI.MISSING_KEYS,
         };
       }
 
@@ -352,6 +398,7 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
           statoHttp: dettaglio.stato,
           codice: dettaglio.codice,
           messaggio: dettaglio.messaggio,
+          debugCode: dettaglio.debugCode,
         };
       } finally {
         clearTimeout(timer);
@@ -514,8 +561,17 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     let repository: RepositoryRadiciScan;
     try {
       repository = await dipendenze.creaRepository();
-    } catch {
-      return errore(503, "SERVIZIO_NON_DISPONIBILE", "Servizio non disponibile. Riprova più tardi.");
+    } catch (causa) {
+      console.error("[radiscan][repository]", {
+        fase: "creazione",
+        ...descriviEccezioneQuota(causa),
+      });
+      return errore(
+        503,
+        "SERVIZIO_NON_DISPONIBILE",
+        "Servizio non disponibile. Riprova più tardi.",
+        DEBUG_CODICI.CONFIG_ERR
+      );
     }
 
     // ── Identità: sessione verificata oppure IP attendibile + sale ─────────
@@ -556,20 +612,23 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
       return rispostaErrore(causa);
     }
 
-    // ── Quota: obbligatoria, fail-closed ──────────────────────────────────
-    let quota: EsitoQuota;
+    // ── Quota: best-effort ─────────────────────────────────────────────────
+    // Un errore della RPC o una tabella mancante non devono impedire la
+    // scansione: si prosegue senza quota verificata. Il superamento dei
+    // limiti resta comunque bloccante quando il database risponde.
+    let quota: EsitoQuota | null = null;
     try {
       quota = await repository.consumaQuota(chiaveQuota, modalita);
     } catch (causa) {
       console.error("[radiscan][quota]", {
         fase: "handler_quota_catch",
         modalita,
+        debugCode: "QUOTA_ERR",
         ...descriviEccezioneQuota(causa),
       });
-      return errore(503, "QUOTA_NON_DISPONIBILE", "Non riesco a verificare la quota. Riprova tra poco.");
     }
 
-    if (!quota.consentita) {
+    if (quota && !quota.consentita) {
       return json(
         {
           success: false,
@@ -611,10 +670,17 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     if (daCache && daCache.livello === "verificato") {
       try {
         registroPrecaricato = await repository.leggiRegistro();
-      } catch {
-        return errore(503, "REGISTRO_NON_DISPONIBILE", "Servizio non disponibile. Riprova più tardi.");
+      } catch (causa) {
+        // Senza registro non si può rivalidare la cache: si ignora la cache
+        // verificata e si rifà l'analisi, invece di bloccare l'utente.
+        console.error("[radiscan][registro]", {
+          fase: "cache_verificata",
+          debugCode: "REGISTRO_ERR",
+          ...descriviEccezioneQuota(causa),
+        });
+        daCache = null;
       }
-      if (!cacheVerificataAncoraValida(daCache, registroPrecaricato)) {
+      if (daCache && !cacheVerificataAncoraValida(daCache, registroPrecaricato ?? [])) {
         daCache = null;
       }
     }
@@ -627,8 +693,16 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     if ((!daCache || daCache.livello === "verificato") && !registro) {
       try {
         registro = await repository.leggiRegistro();
-      } catch {
-        return errore(503, "REGISTRO_NON_DISPONIBILE", "Servizio non disponibile. Riprova più tardi.");
+      } catch (causa) {
+        // Il registro serve alla verifica documentale, non al riconoscimento:
+        // se non è leggibile si prosegue con un registro vuoto e l'esito
+        // resta non verificato, invece di restituire 503.
+        console.error("[radiscan][registro]", {
+          fase: "analisi",
+          debugCode: "REGISTRO_ERR",
+          ...descriviEccezioneQuota(causa),
+        });
+        registro = [];
       }
     }
 
@@ -637,8 +711,18 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
     if (!daCache) {
       try {
         provider = dipendenze.creaProvider();
-      } catch {
-        return errore(503, "ANALISI_NON_DISPONIBILE", "Servizio di analisi non disponibile.");
+      } catch (causa) {
+        console.error("[radiscan][provider]", {
+          fase: "creazione",
+          debugCode: "MISSING_KEYS",
+          ...descriviEccezioneQuota(causa),
+        });
+        return errore(
+          503,
+          "ANALISI_NON_DISPONIBILE",
+          "Servizio di analisi non disponibile.",
+          DEBUG_CODICI.MISSING_KEYS
+        );
       }
     }
 
