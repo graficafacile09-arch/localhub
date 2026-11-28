@@ -210,6 +210,8 @@ export interface QuotaApi {
 export interface ErroreApi {
   codice: string;
   messaggio: string;
+  /** Codice tecnico diagnostico del server (es. MISSING_KEYS), mai segreti. */
+  dettaglio?: string;
   quota?: QuotaApi;
   /** Secondi indicati dal server in `Retry-After`, quando presenti. */
   riprovaSecondi?: number;
@@ -267,8 +269,18 @@ export function estraiErrore(dati: unknown): ErroreApi | null {
       ? dettaglio.messaggio.trim()
       : "Errore non specificato.";
 
+  const debugCode =
+    typeof dettaglio.dettaglio === "string" && dettaglio.dettaglio.trim()
+      ? dettaglio.dettaglio.trim()
+      : undefined;
+
   const quota = leggiQuota(record.quota);
-  return { codice, messaggio, ...(quota ? { quota } : {}) };
+  return {
+    codice,
+    messaggio,
+    ...(debugCode ? { dettaglio: debugCode } : {}),
+    ...(quota ? { quota } : {}),
+  };
 }
 
 /** Verifica minima ma sufficiente a non far crashare la UI su una risposta strana. */
@@ -323,8 +335,9 @@ export function messaggioErrore(input: {
   codice: string;
   messaggio?: string;
   riprovaSecondi?: number;
+  dettaglio?: string;
 }): string {
-  const { stato, codice, riprovaSecondi } = input;
+  const { stato, codice, riprovaSecondi, dettaglio } = input;
 
   if (stato === 429 || codice === "QUOTA_SUPERATA") {
     return `Hai raggiunto il limite di analisi disponibili.${
@@ -372,7 +385,8 @@ export function messaggioErrore(input: {
     codice === "REGISTRAZIONE_NON_DISPONIBILE" ||
     codice === "IDENTIFICAZIONE_NON_DISPONIBILE"
   ) {
-    return "Il servizio di analisi non è disponibile in questo momento. Riprova tra poco.";
+    const base = "Il servizio di analisi non è disponibile in questo momento. Riprova tra poco.";
+    return dettaglio ? `${base} [${dettaglio}]` : base;
   }
 
   const messaggio = input.messaggio?.trim();

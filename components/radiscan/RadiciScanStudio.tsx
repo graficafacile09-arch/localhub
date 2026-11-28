@@ -629,6 +629,7 @@ export default function RadiciScanStudio() {
         codice: errore.codice,
         messaggio: errore.messaggio,
         riprovaSecondi: errore.riprovaSecondi,
+        dettaglio: errore.dettaglio,
       })
     : "";
 
@@ -888,6 +889,9 @@ export default function RadiciScanStudio() {
                 Analisi non completata
               </p>
               <p className="mt-1 text-sm leading-6 text-red-800">{testoErrore}</p>
+              <p className="mt-1 font-mono text-[10px] text-red-700/80">
+                Codice: {errore.codice}
+              </p>
               {errore.quota ? (
                 <p className="mt-2 text-xs leading-5 text-red-700">
                   {descriviQuota(errore.quota)}

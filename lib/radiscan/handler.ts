@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { analizzaProdotto } from "./analisi";
 import {
   cacheVerificataAncoraValida,
@@ -60,6 +60,8 @@ const TIMEOUT_ANALISI_MS = 18_000;
  * `maxDuration` di 30 s, così un database lento non porta via l'esito. */
 const TIMEOUT_REGISTRAZIONE_MS = 4_000;
 const SALE_MINIMO = 16;
+/** Sale di ripiego per processo, generato solo se `RADISCAN_QUOTA_SALT` manca. */
+let saleQuotaDiProcesso: string | null = null;
 
 /** `true` solo se il lavoro si chiude entro il budget; `false` su errore o
  * timeout. La promessa originale non viene annullata: chi chiama ha già
@@ -587,13 +589,28 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
         chiaveQuota = creaChiaveQuotaAutenticata(utente.id);
       } else {
         const ip = ipAttendibile(request);
-        const sale = (dipendenze.saleQuota ?? "").trim();
-        if (!ip || sale.length < SALE_MINIMO) {
+        if (!ip) {
           return errore(
             503,
             "IDENTIFICAZIONE_NON_DISPONIBILE",
-            "Non riesco a verificare la quota. Riprova più tardi."
+            "Non riesco a verificare la quota. Riprova più tardi.",
+            DEBUG_CODICI.CONFIG_ERR
           );
+        }
+        // Senza `RADISCAN_QUOTA_SALT` si usa un sale casuale di processo: la
+        // quota anonima resta pseudonimizzata e non blocca la scansione. Il
+        // contatore si azzera al riavvio del processo, quindi va configurato.
+        let sale = (dipendenze.saleQuota ?? "").trim();
+        if (sale.length < SALE_MINIMO) {
+          if (!saleQuotaDiProcesso) {
+            saleQuotaDiProcesso = randomBytes(32).toString("hex");
+            console.warn("[radiscan][config]", {
+              debugCode: "CONFIG_ERR",
+              chiave: "RADISCAN_QUOTA_SALT",
+              esito: "sale di processo casuale",
+            });
+          }
+          sale = saleQuotaDiProcesso;
         }
         chiaveQuota = creaChiaveQuotaAnonima(ip, sale);
       }
@@ -601,7 +618,12 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
       if (causa instanceof ErroreRadiciScan && causa.codice === CODICI_ERRORE.SESSIONE_NON_VALIDA) {
         return rispostaErrore(causa);
       }
-      return errore(503, "IDENTIFICAZIONE_NON_DISPONIBILE", "Non riesco a verificare la quota.");
+      return errore(
+        503,
+        "IDENTIFICAZIONE_NON_DISPONIBILE",
+        "Non riesco a verificare la quota.",
+        DEBUG_CODICI.CONFIG_ERR
+      );
     }
 
     // ── Immagine: validata prima di consumare quota ────────────────────────
