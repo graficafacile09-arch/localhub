@@ -16,6 +16,7 @@ import {
   contaRisultatiPino,
   moodDaRispostaPino,
   sessionIdPino,
+  nuovaSessionePino,
 } from "./pino-fetch";
 
 const SUGGESTIONS = [
@@ -52,6 +53,27 @@ export default function AssistantPanel() {
   // Query iniziale passata dalla barra di ricerca (pulsante ✨): viene inviata
   // automaticamente all'apertura, così l'utente non deve riscriverla.
   const pendingInitialRef = useRef<string | null>(null);
+  // Incrementata a ogni reset: la risposta di un invio precedente non entra nella chat nuova.
+  const generazioneRef = useRef(0);
+
+  // Chiusura del pannello: la conversazione riparte da zero (schermata iniziale,
+  // sessione nuova, nessun errore o caricamento residuo).
+  const resetConversazione = useCallback(() => {
+    generazioneRef.current += 1;
+    messagesRef.current = [];
+    pendingInitialRef.current = null;
+    nuovaSessionePino(sessionIdRef);
+    isLoadingRef.current = false;
+    assistantCountRef.current = 0;
+    setMessages([]);
+    setInputValue("");
+    setIsLoading(false);
+  }, []);
+
+  const chiudiPannello = useCallback(() => {
+    resetConversazione();
+    setIsOpen(false);
+  }, [resetConversazione]);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -61,7 +83,11 @@ export default function AssistantPanel() {
     const handleOpen = (e: Event) => {
       setIsOpen(true);
       const query = (e as CustomEvent<{ initialQuery?: string }>).detail?.initialQuery?.trim();
-      if (query) pendingInitialRef.current = query;
+      if (query) {
+        // Una domanda nuova (es. dal float di un prodotto) parte da una chat pulita.
+        resetConversazione();
+        pendingInitialRef.current = query;
+      }
     };
     window.addEventListener("assistant:open", handleOpen);
     return () => window.removeEventListener("assistant:open", handleOpen);
@@ -71,7 +97,7 @@ export default function AssistantPanel() {
   // dispatchano "assistant:close" prima di navigare, così il pannello non
   // resta aperto sopra la pagina di destinazione.
   useEffect(() => {
-    const handleClose = () => setIsOpen(false);
+    const handleClose = () => chiudiPannello();
     window.addEventListener("assistant:close", handleClose);
     return () => window.removeEventListener("assistant:close", handleClose);
   }, []);
@@ -106,6 +132,7 @@ export default function AssistantPanel() {
   const sendMessage = useCallback(async (query: string) => {
     const termine = query.trim();
     if (!termine || isLoadingRef.current) return;
+    const generazione = generazioneRef.current;
 
     const userMsg: ChatMessage = {
       id: nextId(),
@@ -152,6 +179,7 @@ export default function AssistantPanel() {
           "Non ho trovato risultati corrispondenti alla tua ricerca. Prova con termini diversi.";
       }
 
+      if (generazione !== generazioneRef.current) return;
       const assistantMsg: ChatMessage = {
         id: nextId(),
         role: "assistant",
@@ -170,6 +198,7 @@ export default function AssistantPanel() {
       const message =
         error instanceof Error ? error.message : "Si è verificato un errore.";
 
+      if (generazione !== generazioneRef.current) return;
       const errorMsg: ChatMessage = {
         id: nextId(),
         role: "assistant",
@@ -178,8 +207,8 @@ export default function AssistantPanel() {
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
-      isLoadingRef.current = false;
-      setIsLoading(false);
+      if (generazione === generazioneRef.current) isLoadingRef.current = false;
+      if (generazione === generazioneRef.current) setIsLoading(false);
     }
   }, []);
 
@@ -223,7 +252,7 @@ export default function AssistantPanel() {
       <div
         data-pino-panel-backdrop="true"
         className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm sm:bg-black/10"
-        onClick={() => setIsOpen(false)}
+        onClick={chiudiPannello}
         aria-hidden
       />
 
@@ -241,7 +270,7 @@ export default function AssistantPanel() {
           </div>
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={chiudiPannello}
             className="flex h-7 shrink-0 items-center gap-1 rounded-md bg-yellow-400 px-2 text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-95"
             aria-label="Chiudi assistente"
           >

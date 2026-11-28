@@ -202,6 +202,22 @@ export function isDuplicatoRecentePino(testo: string, ora: number = Date.now()):
   return duplicato;
 }
 
+/**
+ * Avvia una conversazione nuova: genera un sessionId fresco, lo salva in
+ * sessionStorage e lo mette nel ref. Usata alla chiusura del pannello, così
+ * alla riapertura non tornano i discorsi precedenti.
+ */
+export function nuovaSessionePino(ref: { current: string }): string {
+  const id = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  try {
+    window.sessionStorage.setItem(CHIAVE_SESSIONE_PINO, id);
+  } catch {
+    // Storage non disponibile: il ref basta per questa sessione di pagina.
+  }
+  ref.current = id;
+  return id;
+}
+
 export async function chiediAPino(input: {
   messaggi: MessaggioStoricoPino[];
   sessionId: string;

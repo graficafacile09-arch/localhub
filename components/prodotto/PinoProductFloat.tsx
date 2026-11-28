@@ -114,7 +114,7 @@ export default function PinoProductFloat({
           : {}),
       }}
       className={`fixed z-40 flex cursor-grab select-none flex-row items-end gap-2 active:cursor-grabbing ${
-        posizione ? "" : "bottom-24 left-4 sm:bottom-8 sm:left-6"
+        posizione ? "" : "top-20 right-3 md:bottom-8 md:right-8 md:top-auto"
       }`}
       aria-label="Chiedi a Pino"
     >
